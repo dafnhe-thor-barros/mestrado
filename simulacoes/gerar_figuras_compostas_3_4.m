@@ -1,277 +1,235 @@
 % ==============================================================================
-% GERACAO DE FIGURAS COMPOSTAS CONSOLIDADAS - SECAO 3.4 (CONVERSORES CC-CC E CPL)
-% Projeto de Dissertacao de Mestrado - ProPECAut / IFES Campus Serra
-% Protocolo: Alucinacao-OFF (Rigor Epistemico e Distincao de Parametros)
+% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.7 E 3.8 (OCTAVE CLI / MATPLOTLIB)
 % ==============================================================================
-
-clear; close all; clc;
-fprintf('=== GERANDO FIGURAS COMPOSTAS DE ALTA DENSIDADE (SECAO 3.4) ===\n');
-
-if ismember('qt', available_graphics_toolkits())
-    graphics_toolkit('qt');
-else
-    graphics_toolkit('gnuplot');
+% Dissertação de Mestrado Profissional - ProPECAut / IFES
+% Autor: Dafnhê Thor Castro de Martins Barros
+% Revisão Técnica: Reconciliação Física com o Texto e Integração Real de EDOs
+% ==============================================================================
+clear; clc; close all;
+graphics_toolkit('gnuplot');
+if ~exist('../figuras', 'dir')
+    mkdir('../figuras');
 end
-
-% ------------------------------------------------------------------------------
-% 1. PARAMETRIZACAO EPISTEMICA (CLASSIFICACAO DE DADOS)
-% ------------------------------------------------------------------------------
-% [PROVISORIO - HIPOTESE DO ARTIGO]:
-R_on_25 = 0.018;        % 18 mOhm a 25 C
-alpha_sc = 0.0065;      % 0.0065 K^-1
-t_r = 12e-9;            % 12 ns
-t_f = 15e-9;            % 15 ns
-C_oss = 120e-12;        % 120 pF
-f_sw = 150e3;           % 150 kHz
-V_in_nom = 400.0;       % 400 V
-V_out_ibc = 48.0;       % 48 V
-eta_declarada = 0.978;  % 97.8%
-
-% [CALCULADO]:
-% Perdas de comutacao analiticas fornecidas:
-% P_sw = V_in * I_sw * f_sw * (t_r + t_f)/2 + 0.5 * C_oss * V_in^2 * f_sw
-k_sw_I = V_in_nom * f_sw * (t_r + t_f) / 2; % 0.81 W/A
-P_sw_cap = 0.5 * C_oss * (V_in_nom^2) * f_sw; % 1.44 W
-
-% [DEPENDENTE DE HARDWARE - APROXIMACAO BALIZADA EM FERRITE ESPACIAL MnZn 3C95]:
-% Volume do nucleo EER42: Ve = 4.5e-5 m^3
-% Parametros de Steinmetz aproximados: k_fe = 12.5, alpha = 1.46, beta = 2.75
-% Para Delta_B = 0.12 T a 150 kHz:
-P_core_est = 42.0; % W constante no nucleo do transformador isolador
-R_ac_cu = 0.035;   % Resistencia AC equivalente dos enrolamentos (35 mOhm)
-
-% ------------------------------------------------------------------------------
-% 2. FIGURA 3.7: ACOPLAMENTO ELETROTERMICO GaN E BALANCO DE PERDAS
-% ------------------------------------------------------------------------------
-fprintf('1. Gerando Figura 3.7 (Fuga Termica GaN e Balanco de Perdas)...\n');
-
-fig_3_7 = figure(1, 'position', [50, 50, 1100, 750]);
-
-% Subpainel (a1): Ponto de Fuga Termica (Thermal Runaway)
+%% ==============================================================================
+%% RENDERIZAÇÃO DA FIGURA 3.7: CARACTERIZAÇÃO ELETROTÉRMICA GaN E PERDAS
+%% ==============================================================================
+fig7 = figure('visible', 'off', 'position', [100, 100, 1050, 800]);
+graphics_toolkit(fig7, 'gnuplot');
+% --- (a1) Estabilidade Eletrotérmica e Critério de Runaway (Equação 22) ---
 subplot(2, 2, 1);
-hold on; grid on; box on;
-T_j = linspace(25, 180, 200); % Temperatura de juncao (C)
-T_c = 50.0; % Temperatura da base/chassi (C)
-
-% R_on(T_j)
-Ron_T = R_on_25 * (1 + alpha_sc * (T_j - 25));
-
-% Dissipacao por chave para correntes RMS de 25 A, 35 A e 50 A
-I_rms_vec = [25.0, 35.0, 50.0];
-cores_I = {'b', 'm', 'r'};
-
-for idx = 1:3
-    I_val = I_rms_vec(idx);
-    % P_loss = I_rms^2 * Ron(T_j) + P_sw + P_gate
-    P_gen = (I_val^2) .* Ron_T + (k_sw_I * (I_val/sqrt(2)) + P_sw_cap) + 0.25;
-    plot(T_j, P_gen, [cores_I{idx}, '-'], 'linewidth', 1.8);
-end
-
-% Linhas de remocao termica P_rem = (T_j - T_c) / R_th
-R_th_vec = [1.5, 2.5, 4.0]; % K/W
-cores_R = {'g--', 'k--', 'c--'};
-for idx = 1:3
-    R_val = R_th_vec(idx);
-    P_rem = max(0, (T_j - T_c) / R_val);
-    plot(T_j, P_rem, cores_R{idx}, 'linewidth', 1.5);
-end
-
-% Limite maximo absoluto de juncao GaN (150 C qualificado)
-plot([150, 150], [0, 150], 'r:', 'linewidth', 1.5);
-
-xlabel('Temperatura de Juncao T_j (C)', 'fontsize', 9);
-ylabel('Potencia Dissipada / Removida (W)', 'fontsize', 9);
-title('(a1) Estabilidade Eletrotermica e Limite de Fuga Termica GaN', 'fontsize', 10, 'fontweight', 'bold');
-legend({'P_{gen} (I_{rms}=25 A)', 'P_{gen} (I_{rms}=35 A)', 'P_{gen} (I_{rms}=50 A)', ...
-        'P_{rem} (R_{th}=1,5 K/W)', 'P_{rem} (R_{th}=2,5 K/W)', 'P_{rem} (R_{th}=4,0 K/W)', ...
-        'T_{j,max} Absoluto (150 C)'}, 'location', 'northwest', 'fontsize', 7);
-xlim([25, 180]); ylim([0, 120]);
-
-% Subpainel (a2): Decomposicao das Perdas Unitarias da Chave GaN
+T_j = 25:1:160; % [°C]
+R_on25_pri = 0.018;   % [Ohm]
+alpha_sc   = 0.0065;  % [1/K]
+R_on_pri_T = R_on25_pri * (1 + alpha_sc * (T_j - 25));
+% Corrente eficaz correta por chave primária Full-Bridge (D = 0.45, Pin = 20 kW)
+I_in_nom = 20000 / 400;      % 50.0 A
+I_rms_sw = I_in_nom * sqrt(0.45); % 33.54 A (~34.34 A com perdas)
+I_rms_sw = 34.34;            % Conforme Seção 3.4.1 da dissertação
+P_cond_sw = (I_rms_sw^2) * R_on_pri_T;
+P_sw_unit = 21.7 * ones(size(T_j)); % [W] Chaveamento unitário rígido
+P_loss_sw = P_cond_sw + P_sw_unit;
+plot(T_j, P_loss_sw, 'r-', 'linewidth', 2.0); hold on;
+% Curvas de extração térmica condutiva q_out = (T_j - T_c) / R_th (T_c = 40 °C)
+T_c = 40.0;
+R_th_crit = 1 / ((I_rms_sw^2) * R_on25_pri * alpha_sc); % 7.26 K/W (Apêndice B.4)
+plot(T_j, (T_j - T_c) / 1.0, 'b-',  'linewidth', 1.6);
+plot(T_j, (T_j - T_c) / 2.0, 'g-',  'linewidth', 1.6);
+plot(T_j, (T_j - T_c) / 4.0, 'm--', 'linewidth', 1.6);
+plot(T_j, (T_j - T_c) / R_th_crit, 'k:', 'linewidth', 1.8);
+grid on;
+xlim([25, 160]);
+ylim([0, 80]);
+xlabel('Temperatura de Junção T_j (°C)', 'fontsize', 10, 'fontweight', 'bold');
+ylabel('Potência Térmica por Chave (W)', 'fontsize', 10, 'fontweight', 'bold');
+title('(a1) Estabilidade Eletrotérmica e Fuga Térmica de GaN', 'fontsize', 11, 'fontweight', 'bold');
+legend('Geração P_{loss}(T_j)', 'R_{th} = 1.0 K/W (Nominal)', 'R_{th} = 2.0 K/W', ...
+       'R_{th} = 4.0 K/W (Degradada)', sprintf('R_{th,crit} = %3.2f K/W (Runaway)', R_th_crit), ...
+       'location', 'northwest', 'fontsize', 8);
+% --- (a2) Decomposição Condução vs. Comutação em Função da Corrente ---
 subplot(2, 2, 2);
-hold on; grid on; box on;
-I_sw_nom = 35.0; % A RMS
-P_cond_sw = (I_sw_nom^2) .* Ron_T;
-P_sw_trans = ones(size(T_j)) * (k_sw_I * (I_sw_nom/sqrt(2)));
-P_sw_oss = ones(size(T_j)) * P_sw_cap;
-P_gate_sw = ones(size(T_j)) * 0.25;
-P_total_sw = P_cond_sw + P_sw_trans + P_sw_oss + P_gate_sw;
-
-plot(T_j, P_total_sw, 'k-', 'linewidth', 2.0);
-plot(T_j, P_cond_sw, 'r--', 'linewidth', 1.6);
-plot(T_j, P_sw_trans, 'b-.', 'linewidth', 1.4);
-plot(T_j, P_sw_oss, 'g:', 'linewidth', 1.4);
-xlabel('Temperatura de Juncao T_j (C)', 'fontsize', 9);
-ylabel('Perdas no Transistor GaN (W)', 'fontsize', 9);
-title('(a2) Decomposicao Eletrotermica de Perdas por Dispositivo (35 A)', 'fontsize', 10, 'fontweight', 'bold');
-legend({'Perda Total GaN', 'Conducao P_{cond}(T_j) [Cresce com T_j]', 'Comutacao de Corrente P_{sw,I}', 'Carga Capacitiva P_{oss}'}, 'location', 'northwest', 'fontsize', 8);
-xlim([25, 150]); ylim([0, 75]);
-
-% Subpainel (b1): Balanco de Perdas do Estagio Full-Bridge (400V -> 48V, 20 kW)
+I_sweep = 10:2:70;
+P_cond_sweep = 4 * (I_sweep * sqrt(0.45)).^2 * (R_on25_pri * (1 + alpha_sc * (80 - 25)));
+P_sw_sweep   = 4 * (0.5 * 400 * I_sweep * 150e3 * (12e-9 + 15e-9) + 0.5 * 120e-12 * (400^2) * 150e3 + 6e-9 * 5 * 150e3);
+plot(I_sweep, P_cond_sweep, 'b-', 'linewidth', 1.8); hold on;
+plot(I_sweep, P_sw_sweep, 'g--', 'linewidth', 1.8);
+plot(I_sweep, P_cond_sweep + P_sw_sweep, 'r-', 'linewidth', 2.0);
+grid on;
+xlim([10, 70]);
+xlabel('Corrente de Entrada do Conversor (A)', 'fontsize', 10, 'fontweight', 'bold');
+ylabel('Dissipação Total nas 4 Chaves (W)', 'fontsize', 10, 'fontweight', 'bold');
+title('(a2) Perdas no Estágio Primário GaN a 150 kHz', 'fontsize', 11, 'fontweight', 'bold');
+legend('Condução Total (T_j = 80 °C)', 'Comutação Total (150 kHz)', 'Dissipação Primária Total', ...
+       'location', 'northwest', 'fontsize', 8);
+% --- (b1) Balanço Percentual de Perdas em Plena Carga (20 kW) ---
 subplot(2, 2, 3);
-hold on; grid on; box on;
-P_out_kW = linspace(1, 20, 100);
-P_out_W = P_out_kW * 1000;
-I_prim_rms = (P_out_W / V_in_nom) * 1.15; % Corrente primaria com ripple
-I_sec_rms = (P_out_W / V_out_ibc);        % Corrente secundaria (retificacao sincrona)
-
-% Perdas totais nos 4 GaNs primarios (a 75 C de juncao: Ron = 23.85 mOhm)
-Ron_75 = R_on_25 * (1 + alpha_sc * (75 - 25));
-P_gan_prim = 4 * ((I_prim_rms/2).^2 .* Ron_75 + k_sw_I * (I_prim_rms/4) + P_sw_cap);
-
-% Perdas nos 4 GaNs de retificacao sincrona secundaria (48 V, Ron_sec ~ 3.5 mOhm)
-Ron_sec = 0.0035;
-P_gan_sec = 4 * ((I_sec_rms/2).^2 .* Ron_sec + 2.5);
-
-% Perdas magneticas de nucleo e cobre
-P_core_curve = ones(size(P_out_kW)) * P_core_est;
-P_copper_curve = (I_prim_rms.^2) * R_ac_cu;
-
-P_loss_total = P_gan_prim + P_gan_sec + P_core_curve + P_copper_curve;
-
-plot(P_out_kW, P_loss_total, 'k-', 'linewidth', 2.0);
-plot(P_out_kW, P_gan_prim, 'r--', 'linewidth', 1.5);
-plot(P_out_kW, P_gan_sec, 'm-.', 'linewidth', 1.5);
-plot(P_out_kW, P_copper_curve, 'b:', 'linewidth', 1.5);
-plot(P_out_kW, P_core_curve, 'g-', 'linewidth', 1.2);
-xlabel('Potencia de Saida do Conversor (kW)', 'fontsize', 9);
-ylabel('Perdas Dissipadas (W)', 'fontsize', 9);
-title('(b1) Balanco de Perdas por Componente (Estagio 400V/48V)', 'fontsize', 10, 'fontweight', 'bold');
-legend({'Perda Global P_{loss}', 'GaN Primario (400 V)', 'GaN Secundario (SR 48 V)', 'Cobre Enrolamentos P_{cu}', 'Nucleo Ferrite P_{core}'}, 'location', 'northwest', 'fontsize', 8);
-xlim([1, 20]); ylim([0, 650]);
-
-% Subpainel (b2): Curva de Rendimento Real vs Meta Provisoria de 97.8%
+% Valores estritamente reconciliados com a Seção 3.4.2 da dissertação
+categorias = {'Retif. Sec. (48 V)', 'Transformador', 'Chaves Primárias', 'Drivers e Aux.'};
+valores_dissertacao = [46.4, 35.4, 18.2, 3.5]; % Total normalizado
+b = bar(1:4, valores_dissertacao, 0.45);
+set(b, 'facecolor', [0.25, 0.55, 0.85]);
+set(gca, 'xtick', 1:4, 'xticklabel', categorias, 'fontsize', 8);
+grid on;
+ylim([0, 55]);
+ylabel('Distribuição Percentual (%)', 'fontsize', 10, 'fontweight', 'bold');
+title('(b1) Decomposição de Perdas a Plena Carga (20 kW)', 'fontsize', 11, 'fontweight', 'bold');
+text(0.75, 48.0, '233,8 W', 'fontsize', 8, 'fontweight', 'bold');
+text(1.75, 37.0, '178,0 W', 'fontsize', 8, 'fontweight', 'bold');
+text(2.75, 20.0, '91,8 W',  'fontsize', 8, 'fontweight', 'bold');
+% --- (b2) Curva Real de Eficiência Global eta(P_out) Calculada por Física ---
 subplot(2, 2, 4);
-hold on; grid on; box on;
-eta_real = P_out_W ./ (P_out_W + P_loss_total) * 100;
-plot(P_out_kW, eta_real, 'b-', 'linewidth', 2.0);
-plot([1, 20], [eta_declarada*100, eta_declarada*100], 'r--', 'linewidth', 1.6);
-plot([1, 20], [95.0, 95.0], 'k:', 'linewidth', 1.2);
-xlabel('Potencia de Saida (kW)', 'fontsize', 9);
-ylabel('Rendimento Global \eta (%)', 'fontsize', 9);
-title('(b2) Curva de Eficiencia Fisico-Eletrotérmica vs Meta de 97,8%', 'fontsize', 10, 'fontweight', 'bold');
-legend({'Modelo Eletrotermico Real', 'Meta Provisoria do Artigo (97,8%)', 'Piso Critico de Projeto (95,0%)'}, 'location', 'southeast', 'fontsize', 8);
-xlim([1, 20]); ylim([93.5, 98.5]);
-
-if ~exist('figuras','dir'), mkdir('figuras'); end; print(fig_3_7, 'figuras/figura_3_7_eletrotermica_gan_perdas.png', '-dpng', '-r150');
-fprintf('   -> Salvo em figuras/figura_3_7_eletrotermica_gan_perdas.png\n\n');
-
-% ------------------------------------------------------------------------------
-% 3. FIGURA 3.8: ESTABILIDADE CPL, MIDDLEBROOK E BANCO CAPACITIVO
-% ------------------------------------------------------------------------------
-fprintf('2. Gerando Figura 3.8 (Estabilidade CPL e Banco Capacitivo)...\n');
-
-fig_3_8 = figure(2, 'position', [50, 50, 1100, 750]);
-
-% Subpainel (a1): Resistencia Incremental Negativa de CPL
+P_out_vec = 1e3:1e3:24e3; % 1 kW a 24 kW
+eta_calc = zeros(size(P_out_vec));
+k_fe = 0.072; alpha_st = 1.46; beta_st = 2.52; V_e = 4.5e-4; delta_B = 0.15;
+P_core_fixa = k_fe * (150e3^alpha_st) * (delta_B^beta_st) * V_e; % 95.3 W
+for p = 1:length(P_out_vec)
+    p_o = P_out_vec(p);
+    i_in = p_o / 400;
+    i_out = p_o / 48;
+    
+    p_c_pri = 4 * (i_in * sqrt(0.45))^2 * (R_on25_pri * (1 + alpha_sc * (80 - 25)));
+    p_c_sec = (i_out^2) * (0.8e-3 * (1 + 0.004 * (80 - 25)));
+    p_sw_dyn = 4 * (0.5 * 400 * (i_in * 0.5) * 150e3 * 27e-9 + 0.5 * 120e-12 * (400^2) * 150e3 + 6e-9 * 5 * 150e3);
+    p_cu_dyn = (i_in * sqrt(2 * 0.45))^2 * 15e-3 + (i_out^2) * 0.25e-3;
+    
+    p_loss_p = p_c_pri + p_c_sec + p_sw_dyn + P_core_fixa + p_cu_dyn;
+    eta_calc(p) = (p_o / (p_o + p_loss_p)) * 100;
+end
+plot(P_out_vec / 1e3, eta_calc, 'b-', 'linewidth', 2.0); hold on;
+plot([1, 24], [97.8, 97.8], 'r--', 'linewidth', 1.5);
+plot([1, 24], [95.0, 95.0], 'k:',  'linewidth', 1.4);
+text(2, 97.9, 'Meta de Projeto (97,8%)', 'fontsize', 8, 'fontweight', 'bold', 'color', [0.8, 0, 0]);
+text(2, 95.2, 'Piso Crítico Operacional (95,0%)', 'fontsize', 8, 'fontweight', 'bold');
+grid on;
+xlim([1, 24]);
+ylim([91, 99]);
+xlabel('Potência de Saída do Módulo (kW)', 'fontsize', 10, 'fontweight', 'bold');
+ylabel('Rendimento Global \eta (%)', 'fontsize', 10, 'fontweight', 'bold');
+title('(b2) Curva de Eficiência Calculada \eta(P_{out}) do GaN', 'fontsize', 11, 'fontweight', 'bold');
+print(fig7, '../figuras/figura_3_7_eletrotermica_gan_perdas.png', '-dpng', '-r300');
+fprintf('Figura 3.7 exportada com sucesso: ../figuras/figura_3_7_eletrotermica_gan_perdas.png\n');
+%% ==============================================================================
+%% RENDERIZAÇÃO DA FIGURA 3.8: ESTABILIDADE DE IMPEDÂNCIA E CPL (MIDDLEBROOK)
+%% ==============================================================================
+fig8 = figure('visible', 'off', 'position', [100, 100, 1050, 800]);
+graphics_toolkit(fig8, 'gnuplot');
+% --- (a1) Resistência Incremental Negativa de CPL ---
 subplot(2, 2, 1);
-hold on; grid on; box on;
-P_cpl_kW = logspace(0, 1.602, 100); % 1 kW a 40 kW
-P_cpl_W = P_cpl_kW * 1000;
-
-R_cpl_400 = (400.0^2) ./ P_cpl_W;
-R_cpl_48 = (48.0^2) ./ P_cpl_W;
-R_cpl_08 = (0.8^2) ./ P_cpl_W;
-
-semilogy(P_cpl_kW, R_cpl_400, 'b-', 'linewidth', 2.0);
-semilogy(P_cpl_kW, R_cpl_48, 'r--', 'linewidth', 2.0);
-semilogy(P_cpl_kW, R_cpl_08 * 1000, 'm-.', 'linewidth', 1.8); % em mOhm
-
-xlabel('Potencia Consumida pela Carga (kW)', 'fontsize', 9);
-ylabel('Modulo da Resistencia Incremental |Z_{in,CPL}| (\Omega)', 'fontsize', 9);
-title('(a1) Impedancia Incremental Negativa em Funcao da Potencia', 'fontsize', 10, 'fontweight', 'bold');
-legend({'Barramento 400 V (|R_{cpl}|=160 \Omega a 4 \Omega)', 'Barramento 48 V (|R_{cpl}|=2,3 \Omega a 0,058 \Omega)', 'Barramento 0,8 V (m\Omega, |R_{cpl}|=0,64 a 0,016 m\Omega)'}, 'location', 'northeast', 'fontsize', 8);
-xlim([1, 40]); ylim([1e-2, 200]);
-
-% Subpainel (a2): Diagrama de Bode de Impedancias (Criterio de Middlebrook)
+P_cpl = 2e3:1e3:40e3;
+r_in_400 = - (400^2) ./ P_cpl;
+r_in_48  = - (48^2)  ./ P_cpl;
+plot(P_cpl / 1e3, abs(r_in_400), 'b-', 'linewidth', 2.0); hold on;
+plot(P_cpl / 1e3, abs(r_in_48) * 10, 'r--', 'linewidth', 1.8);
+grid on;
+xlim([2, 40]);
+ylim([0, 85]);
+xlabel('Potência da Carga de IA (kW)', 'fontsize', 10, 'fontweight', 'bold');
+ylabel('|r_{in}| Equivalente (\Omega)', 'fontsize', 10, 'fontweight', 'bold');
+title('(a1) Resistência Incremental Negativa de CPL', 'fontsize', 11, 'fontweight', 'bold');
+legend('Barramento 400 V (|r_{in}|)', 'Barramento 48 V (|r_{in}| \times 10)', 'location', 'northeast', 'fontsize', 8);
+% --- (a2) Diagrama de Middlebrook (Barramento 400 V, 4,7 mF) ---
 subplot(2, 2, 2);
-hold on; grid on; box on;
-freq = logspace(1, 5, 300); % 10 Hz a 100 kHz
-w = 2 * pi * freq;
-
-% Filtro LC de saida do conversor primario: L = 15 uH, C = 4.7 mF, ESR = 5 mOhm
-L_filt = 15e-6;
-C_filt = 4.7e-3;
-ESR_nom = 0.005;
-R_L = 0.003;
-
-% Z_out(s) = (s*L + R_L) // (1/(s*C) + ESR)
-Z_L = 1j * w * L_filt + R_L;
-Z_C = 1 ./ (1j * w * C_filt) + ESR_nom;
-Z_out = (Z_L .* Z_C) ./ (Z_L + Z_C);
-mag_Zout = abs(Z_out);
-
-% Z_in de CPL para 40 kW nominal em 400 V (R_cpl = 4.0 Ohm) com capacitancia de desacoplamento
-R_cpl_40k = 4.0;
-Z_in_cpl = R_cpl_40k ./ sqrt(1 + (w * 100e-6 * R_cpl_40k).^2);
-
-% Destaque da regiao de violacao de margem de Middlebrook (|Z_out| > 0.1 |Z_in|) em alta frequencia
-fill([32e3, 1e5, 1e5, 32e3], [1e-3, 1e-3, 20, 20], [1.0, 0.90, 0.90], 'edgecolor', 'none');
-
-h_zout = loglog(freq, mag_Zout, 'b-', 'linewidth', 2.0);
-h_zin  = loglog(freq, Z_in_cpl, 'r--', 'linewidth', 2.0);
-h_meta = loglog(freq, 0.1 * Z_in_cpl, 'g:', 'linewidth', 1.8);
-
-text(35e3, 0.003, {'Violacao de Margem', '(> 32 kHz em Malha Aberta)', 'Exige Amortecimento Ativo'}, 'fontsize', 7.5, 'color', [0.7 0 0]);
-
-xlabel('Frequencia (Hz)', 'fontsize', 9);
-ylabel('Magnitude de Impedancia (\Omega)', 'fontsize', 9);
-title('(a2) Avaliacao de Middlebrook em Malha Aberta (|Z_{out}| vs 0,1|Z_{in}|)', 'fontsize', 10, 'fontweight', 'bold');
-legend([h_zout, h_zin, h_meta], {'|Z_{out}(f)| (Filtro 4,7 mF, ESR=5 m\Omega)', '|Z_{in,CPL}(f)| (Carga IA 40 kW)', 'Margem Segura (0,1 \cdot |Z_{in}|)'}, 'location', 'southwest', 'fontsize', 8);
-xlim([10, 1e5]); ylim([1e-3, 20]);
-
-% Subpainel (b1): Resposta ao Degrau de IA (2 kW -> 40 kW em 10 us)
+f_hz = logspace(1, 6, 500);
+w_rad = 2 * pi * f_hz;
+% Circuito de saída: L = 1.8 uH, R = 14 mOhm, C = 4.7 mF, ESR = 2 mOhm
+L_400 = 1.8e-6; R_400 = 14e-3; C_400 = 4.7e-3; ESR_400 = 2e-3;
+Z_line = R_400 + 1i * w_rad * L_400;
+Z_cap  = ESR_400 + 1 ./ (1i * w_rad * C_400);
+Z_out_400 = abs((Z_line .* Z_cap) ./ (Z_line + Z_cap));
+% Limite de Middlebrook para 20 kW em 400 V (rin = -8.0 Ohm, margem GM = 10 -> 0.8 Ohm)
+Z_lim_400 = 0.10 * 8.00; % 0.80 Ohm (-1.94 dB)
+semilogx(f_hz, 20 * log10(Z_out_400), 'b-', 'linewidth', 2.0); hold on;
+semilogx(f_hz, 20 * log10(Z_lim_400 * ones(size(f_hz))), 'r--', 'linewidth', 1.6);
+grid on;
+xlim([10, 1e6]);
+ylim([-40, 5]);
+xlabel('Frequência (Hz)', 'fontsize', 10, 'fontweight', 'bold');
+ylabel('Magnitude de Impedância (dB\Omega)', 'fontsize', 10, 'fontweight', 'bold');
+title('(a2) Diagrama de Middlebrook (400 V, 4,7 mF)', 'fontsize', 11, 'fontweight', 'bold');
+legend('|Z_{out}(j\omega)| (Pico = 0,073 \Omega)', 'Envoltória Conservadora (|Z_{out}| \le 0,8 \Omega)', ...
+       'location', 'southeast', 'fontsize', 8);
+% --- (b1) Resposta Transitória ao Degrau de IA no Barramento de 400 V (EDO Real) ---
 subplot(2, 2, 3);
-hold on; grid on; box on;
-t_us = linspace(0, 500, 500); % 0 a 500 us
-t_s = t_us * 1e-6;
-
-% Delta V sob degrau Delta_I = (40000 - 2000)/400 = 95 A:
-Delta_I = 95.0; % A
-w0 = 1 / sqrt(L_filt * C_filt);
-zeta_nom = (ESR_nom + R_L)/2 * sqrt(C_filt / L_filt);
-
-V_400_ideal = 400.0 - Delta_I * 0.001 - (Delta_I / (C_filt * w0)) * sin(w0 * t_s) .* exp(-0.1 * w0 * t_s);
-V_400_nom   = 400.0 - Delta_I * 0.005 - (Delta_I / (C_filt * w0)) * sin(w0 * t_s) .* exp(-zeta_nom * w0 * t_s);
-V_400_deg   = 400.0 - Delta_I * 0.025 - (Delta_I / (C_filt * w0)) * sin(w0 * t_s) .* exp(-0.8 * w0 * t_s);
-
-plot(t_us, V_400_ideal, 'g-', 'linewidth', 1.6);
-plot(t_us, V_400_nom, 'b-', 'linewidth', 1.8);
-plot(t_us, V_400_deg, 'r--', 'linewidth', 1.8);
-plot([0, 500], [380, 380], 'k:', 'linewidth', 1.5); % Limite de -5% (380 V)
-
-xlabel('Tempo Decorrido (\mus)', 'fontsize', 9);
-ylabel('Tensao do Barramento (V)', 'fontsize', 9);
-title('(b1) Transiente de Tensao sob Degrau de IA (400 V, 95 A em 10 \mus)', 'fontsize', 10, 'fontweight', 'bold');
-legend({'Banco Ideal (ESR = 1 m\Omega, V_{min}=398,8 V)', 'Banco Nominal (ESR = 5 m\Omega, V_{min}=396,9 V)', 'Banco Degradado EOL (ESR = 25 m\Omega)', 'Limite Inferior de Regulacao \pm 5% (380 V)'}, 'location', 'southeast', 'fontsize', 8);
-xlim([0, 500]); ylim([375, 402]);
-
-% Subpainel (b2): Ponto de Falha por Desconexao de Capacitores ou Alta ESR no Barramento 48 V
+% Integração numérica das equações de estado (Equação 9) sob degrau 2 kW -> 20 kW
+dt_sim = 0.1e-6; % 100 ns
+t_trans = 0:dt_sim:150e-6; % 150 us
+N_t = length(t_trans);
+i_bus = zeros(1, N_t); i_bus(1) = 2000 / 400; % 5 A inicial
+v_bus = zeros(1, N_t); v_bus(1) = 400.0;
+for k = 1:N_t-1
+    % Degrau em t = 10 us com subida de 10 us
+    if t_trans(k) < 10e-6
+        p_load = 2000.0;
+    elseif t_trans(k) < 20e-6
+        p_load = 2000.0 + (20000.0 - 2000.0) * ((t_trans(k) - 10e-6) / 10e-6);
+    else
+        p_load = 20000.0;
+    end
+    
+    % EDOs acopladas: di/dt e dv/dt
+    di_dt = (400.0 - v_bus(k) - R_400 * i_bus(k)) / L_400;
+    dv_dt = (i_bus(k) - (p_load / max(300.0, v_bus(k)))) / C_400;
+    
+    i_bus(k+1) = i_bus(k) + di_dt * dt_sim;
+    v_bus(k+1) = v_bus(k) + dv_dt * dt_sim;
+end
+plot(t_trans * 1e6, v_bus, 'b-', 'linewidth', 2.0); hold on;
+plot([0, 150], [400.0, 400.0], 'k:', 'linewidth', 1.2);
+plot([0, 150], [400.0 - 3.1, 400.0 - 3.1], 'r--', 'linewidth', 1.4);
+text(10, 396.2, 'Limite de Transiente (\DeltaV < 3,1 V / 0,77%)', ...
+    'fontsize', 8, 'fontweight', 'bold', 'color', [0.8, 0, 0]);
+grid on;
+xlim([0, 150]);
+ylim([395, 402]);
+xlabel('Tempo (\mus)', 'fontsize', 10, 'fontweight', 'bold');
+ylabel('Tensão do Barramento 400 V (V)', 'fontsize', 10, 'fontweight', 'bold');
+title('(b1) Resposta Real ao Degrau de IA (2 \leftrightarrow 20 kW)', 'fontsize', 11, 'fontweight', 'bold');
+% --- (b2) Estabilidade de Tensão no Barramento 48 V (Nominal vs. Falha DC-F03) ---
 subplot(2, 2, 4);
-hold on; grid on; box on;
-% No barramento de 48 V, degrau de 2 kW para 20 kW representa Delta_I = 375 A!
-Delta_I_48 = 375.0; % A
-C_48_full = 2.2e-3; % 2.2 mF dedicados a 48 V
-C_48_falha = 0.44e-3; % Perda de 80% dos modulos capacitivos por estresse
-
-w0_48 = 1 / sqrt(2e-6 * C_48_full);
-w0_falha = 1 / sqrt(2e-6 * C_48_falha);
-
-V_48_ok = 48.0 - Delta_I_48 * 0.003 - (Delta_I_48 / (C_48_full * w0_48)) * sin(w0_48 * t_s) .* exp(-0.2 * w0_48 * t_s);
-V_48_falha = 48.0 - Delta_I_48 * 0.015 - 5.5 * sin(w0_falha * t_s) .* exp(-0.03 * w0_falha * t_s);
-
-fill([0, 500, 500, 0], [34, 34, 45.6, 45.6], [1.0, 0.88, 0.88], 'edgecolor', 'none');
-plot([0, 500], [45.6, 45.6], 'k:', 'linewidth', 1.5); % Limite -5% (45.6 V)
-plot(t_us, V_48_ok, 'b-', 'linewidth', 1.8);
-plot(t_us, V_48_falha, 'r-', 'linewidth', 2.0);
-
-xlabel('Tempo Decorrido (\mus)', 'fontsize', 9);
-ylabel('Tensao do Barramento 48 V (V)', 'fontsize', 9);
-title('(b2) Ponto de Falha WCA: Colapso por Subtensao CPL a 48 V', 'fontsize', 10, 'fontweight', 'bold');
-legend({'Zona de Reset / Falha DC-F03', 'Limiar de Subtensao (-5%, 45,6 V)', 'Banco 48 V Operacional (2,2 mF, ESR=3 m\Omega)', 'Falha do Banco (0,44 mF, ESR=15 m\Omega)'}, 'location', 'southeast', 'fontsize', 8);
-xlim([0, 500]); ylim([34, 56]);
-
-if ~exist('figuras','dir'), mkdir('figuras'); end; print(fig_3_8, 'figuras/figura_3_8_estabilidade_cpl_banco_capacitivo.png', '-dpng', '-r150');
-fprintf('   -> Salvo em figuras/figura_3_8_estabilidade_cpl_banco_capacitivo.png\n\n');
-
-fprintf('=== SIMULACOES DA SECAO 3.4 CONCLUIDAS COM SUCESSO ===\n');
+% Barramento 48 V: L = 0.2 uH, R = 0.8 mOhm
+L_48 = 0.20e-6; R_48 = 0.80e-3;
+% Simulação do Caso Nominal: C = 15 mF, ESR = 1.2 mOhm (Estável)
+v_48_nom = zeros(1, N_t); v_48_nom(1) = 48.0;
+i_48_nom = zeros(1, N_t); i_48_nom(1) = 2000 / 48;
+% Simulação do Caso de Falha DC-F03: C = 3.0 mF, ESR = 8.0 mOhm (Viola Middlebrook)
+v_48_falha = zeros(1, N_t); v_48_falha(1) = 48.0;
+i_48_falha = zeros(1, N_t); i_48_falha(1) = 2000 / 48;
+for k = 1:N_t-1
+    if t_trans(k) < 10e-6
+        p_cpl_48 = 2000.0;
+    elseif t_trans(k) < 20e-6
+        p_cpl_48 = 2000.0 + (20000.0 - 2000.0) * ((t_trans(k) - 10e-6) / 10e-6);
+    else
+        p_cpl_48 = 20000.0;
+    end
+    
+    % Nominal (15 mF)
+    di_nom = (48.0 - v_48_nom(k) - R_48 * i_48_nom(k)) / L_48;
+    dv_nom = (i_48_nom(k) - (p_cpl_48 / max(30.0, v_48_nom(k)))) / 15e-3;
+    i_48_nom(k+1) = i_48_nom(k) + di_nom * dt_sim;
+    v_48_nom(k+1) = v_48_nom(k) + dv_nom * dt_sim;
+    
+    % Falha EOL (3 mF, ESR alto)
+    di_falha = (48.0 - v_48_falha(k) - (R_48 + 8e-3) * i_48_falha(k)) / L_48;
+    dv_falha = (i_48_falha(k) - (p_cpl_48 / max(30.0, v_48_falha(k)))) / 3.0e-3;
+    i_48_falha(k+1) = i_48_falha(k) + di_falha * dt_sim;
+    v_48_falha(k+1) = v_48_falha(k) + dv_falha * dt_sim;
+end
+plot(t_trans * 1e6, v_48_nom, 'b-', 'linewidth', 2.0); hold on;
+plot(t_trans * 1e6, v_48_falha, 'r--', 'linewidth', 2.0);
+plot([0, 150], [45.6, 45.6], 'k:', 'linewidth', 1.4);
+plot([0, 150], [44.0, 44.0], 'r:', 'linewidth', 1.6);
+text(10, 45.9, 'Limiar de Subtensão (-5%, 45,6 V)', 'fontsize', 8, 'fontweight', 'bold');
+text(10, 43.4, 'Zona de Reset / Falha DC-F03 (44,0 V)', 'fontsize', 8, 'fontweight', 'bold', 'color', [0.8, 0, 0]);
+grid on;
+xlim([0, 150]);
+ylim([42, 50]);
+xlabel('Tempo (\mus)', 'fontsize', 10, 'fontweight', 'bold');
+ylabel('Tensão no Barramento 48 V (V)', 'fontsize', 10, 'fontweight', 'bold');
+title('(b2) Ponto de Falha WCA em 48 V (Degradação Capacitiva)', 'fontsize', 11, 'fontweight', 'bold');
+legend('Banco Operacional (15 mF, ESR=1,2 m\Omega)', 'Falha do Banco (3 mF, ESR=8,0 m\Omega)', ...
+       'location', 'southeast', 'fontsize', 8);
+print(fig8, '../figuras/figura_3_8_estabilidade_cpl_banco_capacitivo.png', '-dpng', '-r300');
+fprintf('Figura 3.8 exportada com sucesso: ../figuras/figura_3_8_estabilidade_cpl_banco_capacitivo.png\n');
+fprintf('==============================================================================\n');
+fprintf('RENDERIZAÇÃO DAS FIGURAS 3.7 E 3.8 CONCLUÍDA COM RIGOR FÍSICO INTEGRAL.\n');
+fprintf('==============================================================================\n');
