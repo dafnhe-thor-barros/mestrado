@@ -625,22 +625,22 @@ Controle Térmico Adotado & TEMS NMPC Preditivo & Bang-Bang Reativo & TEMS NMPC 
 Regime de Iluminação Orbital & Solstício Contínuo ($f_{ecl} < 0{,}8\%$) & Solstício Contínuo & Periódico ($35{,}8\text{ min eclipse}$) & Periódico ($35{,}8\text{ min eclipse}$) \\
 Período Orbital ($T_{orb}$) & $98{,}77\text{ min}$ ($14{,}58\text{ cpd}$) & $98{,}77\text{ min}$ ($14{,}58\text{ cpd}$) & $94{,}62\text{ min}$ ($15{,}22\text{ cpd}$) & $94{,}62\text{ min}$ ($15{,}22\text{ cpd}$) \\
 Excursão Térmica Junção ($\Delta T_j$) & $\le 7{,}0^\circ\text{C}$ & $22{,}5^\circ\text{C}$ & $18{,}2^\circ\text{C}$ & $48{,}0^\circ\text{C}$ \\
-Excursão Térmica Solda ($\Delta T_{solder}$) & $5{,}95^\circ\text{C}$ & $19{,}1^\circ\text{C}$ & $15{,}5^\circ\text{C}$ & $40{,}8^\circ\text{C}$ \\
+Excursão Térmica Solda ($\Delta T_{solder}$) & $5{,}95^\circ\text{C}$ & $19{,}12^\circ\text{C}$ & $15{,}47^\circ\text{C}$ & $40{,}80^\circ\text{C}$ \\
 Temperatura Média Solda ($T_{mean,solder}$) & $60{,}0^\circ\text{C}$ & $60{,}0^\circ\text{C}$ & $50{,}0^\circ\text{C}$ & $50{,}0^\circ\text{C}$ \\
 Expoente de Engelmaier ($c$) & $-0{,}457$ & $-0{,}457$ & $-0{,}449$ & $-0{,}449$ \\
-Deformação Efetiva ($\Delta \gamma_{eff}$) & $8{,}25 \times 10^{-3}$ & $2{,}65 \times 10^{-2}$ & $2{,}14 \times 10^{-2}$ & $5{,}66 \times 10^{-2}$ \\
-\textbf{Vida em Fadiga ($N_f$)} & $\mathbf{1{,}84 \times 10^5\text{ ciclos}}$ & $\mathbf{1{,}42 \times 10^4\text{ ciclos}}$ & $\mathbf{2{,}45 \times 10^4\text{ ciclos}}$ & $\mathbf{3160\text{ ciclos}}$ \\
-Tempo Físico até Falha ($100\%$ carga) & $\mathbf{34{,}6\text{ anos}}$ & $\mathbf{2{,}67\text{ anos}}$ & $\mathbf{4{,}41\text{ anos}}$ & $\mathbf{0{,}57\text{ anos (6,8 meses)}}$ \\
-\textbf{Margem de Segurança (10 Anos)} & $\mathbf{+245{,}8\%}$ & $\mathbf{-73{,}3\%}$ (Falha prematura) & $\mathbf{-55{,}9\%}$ (Falha prematura) & $\mathbf{-94{,}3\%}$ (Colapso destrutivo) \\ \hline
+Deformação Efetiva ($\Delta \gamma_{eff}$) & $5{,}83 \times 10^{-3}$ & $1{,}87 \times 10^{-2}$ & $1{,}52 \times 10^{-2}$ & $4{,}00 \times 10^{-2}$ \\
+\textbf{Vida em Fadiga ($N_f$)} & $\mathbf{3{,}93 \times 10^5\text{ ciclos}}$ & $\mathbf{3{,}06 \times 10^4\text{ ciclos}}$ & $\mathbf{5{,}93 \times 10^4\text{ ciclos}}$ & $\mathbf{6851\text{ ciclos}}$ \\
+Tempo Físico até Falha ($100\%$ carga) & $\mathbf{73{,}8\text{ anos}}$ & $\mathbf{5{,}74\text{ anos}}$ & $\mathbf{10{,}67\text{ anos}}$ & $\mathbf{1{,}23\text{ anos (14,8 meses)}}$ \\
+\textbf{Margem de Segurança (10 Anos)} & $\mathbf{+638{,}1\%}$ & $\mathbf{-42{,}6\%}$ (Falha prematura) & $\mathbf{+6{,}7\%}$ (Conforme no limite) & $\mathbf{-87{,}7\%}$ (Colapso destrutivo) \\ \hline
 \end{tabular}%
 }
 \end{table}
 
 A análise da matriz fatorial revela:
 \begin{enumerate}[label=(\alph*)]
-    \item A órbita SSO por si só, quando operada sem o TEMS sob transientes de carga computacional abrupta, atinge apenas $1{,}42 \times 10^4\text{ ciclos}$, falhando em 2,67 anos e não cumprindo o requisito de 10 anos da missão;
-    \item A atuação do controle preditivo TEMS em LEO estende a vida útil de 0,57 anos (6,8 meses) para 4,41 anos (ganho de quase $700\%$), demonstrando o poder de mitigação ativa do pré-resfriamento e da modulação de slew de clock;
-    \item Apenas a combinação sinérgica da \textbf{órbita SSO Dawn-Dusk com o Sistema TEMS} atinge o envelope de confiabilidade plena de 10 anos, com $N_f = 1{,}84 \times 10^5\text{ ciclos}$ e margem de segurança de $+245{,}8\%$, comprovando o acoplamento sistêmico obrigatório entre seleção orbital e controle térmico.
+    \item A órbita SSO por si só, quando operada sem o TEMS sob transientes de carga computacional abrupta, atinge apenas $3{,}06 \times 10^4\text{ ciclos}$, falhando em 5,74 anos e não cumprindo o requisito de 10 anos da missão;
+    \item A atuação do controle preditivo TEMS em LEO estende a vida útil de 1,23 anos (14,8 meses) para 10,67 anos (ganho de quase $770\%$), demonstrando o poder de mitigação ativa do pré-resfriamento e da modulação de slew de clock;
+    \item A combinação sinérgica da \textbf{órbita SSO Dawn-Dusk com o Sistema TEMS} atinge o envelope de máxima confiabilidade, com $N_f = 3{,}93 \times 10^5\text{ ciclos}$, vida estimada de 73,8 anos e margem de segurança de $+638{,}1\%$, comprovando o acoplamento sistêmico obrigatório entre seleção orbital e controle térmico.
 \end{enumerate}
 
 \subsubsection{Eficácia de Uso de Energia Orbital \texorpdfstring{($PUE_{orbital}$)}{(PUE-orbital)} e Produtividade Computacional}
@@ -676,6 +676,56 @@ Para evitar distorções onde um sistema com clock rebaixado apresentaria falsam
     \label{eq:rendimento_computacional}
 \end{equation}
 Para o arranjo de 80 dies operando a $2{,}1\text{ GHz}$ com 250 TOPS por die ($20.000\text{ TOPS}$ agregados no nó) consumindo $41.983\text{ W}$, o sistema atinge $\eta_{comp} \approx 0{,}476\text{ TOPS/W}$ global de espaçonave, superando amplamente data centers terrestres equivalentes com compressão de vapor.
+
+\subsubsection{Análise FMECA e Limiares Analíticos de Estresse e Falha Térmico-Energética}
+\label{sec:fmeca_limiares_falha}
+
+A integridade operacional do centro de dados orbital exige a identificação formal dos limiares em que perturbações orbitais ou degradações de hardware deixam de ser absorvidas pelo regime normal e passam a deflagrar ações autônomas de proteção, em estrita conformidade com as diretrizes de confiabilidade da norma \textbf{ECSS-Q-ST-30-02C} (\textit{Failure Modes, Effects and Criticality Analysis}).
+
+As transições de estados de controle (regime normal, \textit{throttling} gradual, deslastro de carga e corte térmico de emergência/\textit{thermal trip}) são governadas por limites físicos rigorosamente deduzidos a partir do balanço acoplado de energia e radiação:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Desvio Crítico de Apontamento Solar do ADCS ($|\delta\theta_{\text{trip}}|$):} O radiador de calor sensível de $A_{rad} = 92{,}0\text{ m}^2$ e $\varepsilon = 0{,}88$ é dimensionado para rejeitar $P_{rej} = 41{,}98\text{ kW}$ ao espaço profundo. A temperatura do radiador é governada por $\varepsilon \sigma A_{rad} T_{rad}^4 = P_{rej} + A_{rad} q_{ext}(\theta)$, em que o fluxo ambiental parasita absorvido em voo nominal a 700~km é $q_{ext,nom} = 526{,}34\text{ W/m}^2$ ($T_{rad} = 49{,}68^\circ\text{C}$). Para que o radiador atinja seu teto admissível de $T_{rad,trip} = 60{,}0^\circ\text{C}$ (equivalente a $T_j \ge 85{,}0^\circ\text{C}$ sob $\Delta T_{chassis-rad} = 25{,}0^\circ\text{C}$), o fluxo máximo tolerável é:
+    \begin{equation}
+        q_{ext,trip} = \varepsilon \sigma T_{rad,trip}^4 - \frac{P_{rej}}{A_{rad}} = 0{,}88 \cdot 5{,}67037 \times 10^{-8} \cdot (333{,}15)^4 - \frac{41983}{92{,}0} = 541{,}31\text{ W/m}^2
+    \end{equation}
+    Sob desapontamento angular $\delta\theta$, a face sombreada do radiador recebe incidência direta do fluxo solar $q_{inc,\odot} = \alpha_s G_{AM0} \sin|\delta\theta| = 0{,}24 \cdot 1361 \cdot \sin|\delta\theta| = 326{,}64 \cdot \sin|\delta\theta|\text{ W/m}^2$. O limiar analítico de disparo de \textit{thermal trip} decorre de:
+    \begin{equation}
+        \sin|\delta\theta_{\text{trip}}| = \frac{q_{ext,trip} - q_{ext,nom}}{\alpha_s G_{AM0}} = \frac{541{,}31 - 526{,}34}{326{,}64} = 0{,}04583 \implies |\delta\theta_{\text{trip}}| = 2{,}62^\circ
+        \label{eq:adcs_limiar_analitico}
+    \end{equation}
+    Portanto, qualquer anomalia no ADCS que induza erro de atitude $|\delta\theta| \ge 2{,}62^\circ$ por mais de $30\text{ s}$ força o desligamento imediato das unidades de processamento de alta densidade para prevenir instabilidade por fuga térmica.
+    
+    \item \textbf{Envelope Altimétrico e Limites de Órbita ($500\text{ km}$ a $1231\text{ km}$):} A variação da altitude altera drasticamente a carga térmica planetária e o ambiente de radiação ionizante:
+    \begin{itemize}[leftmargin=*]
+        \item \textit{Piso Térmico ($h = 500\text{ km}$):} A proximidade com a Terra eleva o fluxo infravermelho e albedo incidente para $q_{ext} = 97{,}95\text{ W/m}^2$, reduzindo a capacidade de rejeição a $55^\circ\text{C}$ para $36{,}46\text{ kW}$ ($< 41{,}98\text{ kW}$). O nó satelital é forçado a operar com \textit{throttling} permanente para $f_{clk} \le 1{,}52\text{ GHz}$ ($P_{IT} \le 35{,}8\text{ kW}$) e corte de eclipse para $P_{IT,ecl} \le 6{,}5\text{ kW}$, evitando o colapso do BESS ($BAT\text{-}F01$).
+        \item \textit{Teto de Radiação ($h = 1231\text{ km}$):} Embora o fluxo térmico planetário decresça para $34{,}5\text{ W/m}^2$, o veículo penetra no cinturão interno de Van Allen, onde a fluência de prótons e elétrons supera $1{,}2 \times 10^{14}\text{ e}^-/\text{cm}^2/\text{ano}$. A retenção fotovoltaica em 10 anos cai para $72{,}7\%$ ($P_{pv} \approx 37{,}4\text{ kW}$), gerando déficit crônico de $12{,}6\text{ kW}$ que inviabiliza o regime nominal de processamento de IA.
+    \end{itemize}
+    
+    \item \textbf{Degradação da Interface Térmica (TIM) e Dry-Out Capilar:} Na cadeia condutiva die-evaporador ($R_{12}$), a perda de adesão ou desgaseificação de TIM ($R_{12} > 3 \times R_{12,nom} = 0{,}15\text{ K/W}$) impõe $\Delta T > 25^\circ\text{C}$ na interface local, forçando o DVFS ao piso de $1{,}0\text{ GHz}$ sob pena de quebra dielétrica ($ET\text{-}F01$). No evaporador bifásico, o esgotamento do filme líquido (\textit{dry-out}) eleva $R_{34}$ para $> 10 \times R_{34,nom}$, gerando salto térmico desestabilizador no nó LHP.
+\end{enumerate}
+
+A Tabela~\ref{tab:fmeca_limiares_sistemicos} sintetiza a Matriz FMECA de Limiares Analíticos e Ações Autônomas de Contingência Térmico-Energética.
+
+\begin{table}[!ht]
+\centering
+\small
+\renewcommand{\arraystretch}{0.85}
+\caption{Matriz FMECA: limiares analíticos de estresse, modos de falha e ações autônomas de mitigação.}
+\label{tab:fmeca_limiares_sistemicos}
+\resizebox{0.95\textwidth}{!}{%
+\begin{tabular}{lp{3.5cm}cp{4.0cm}p{4.2cm}}
+\hline
+\textbf{Código} & \textbf{Modo de Falha / Gatilho} & \textbf{Limiar Crítico} & \textbf{Mecanismo Físico Subjacente} & \textbf{Ação Autônoma do Sistema (TEMS)} \\ \hline
+\textbf{ADCS-F01} & Desapontamento Solar do Radiador & $|\delta\theta| \ge 2{,}62^\circ$ & Fluxo solar incide no radiador; $q_{ext} > 541\text{ W/m}^2$; $T_{rad} \ge 60^\circ\text{C}$ & \textit{Thermal trip} para $P_{IT} = 0\text{ W}$; modo seguro; manobra de restauração pelo ADCS \\
+\textbf{ORB-F02} & Decaimento Orbital Acentuado & $h \le 500\text{ km}$ & Calor de albedo/IR da Terra excede capacidade radiativa ($P_{rej} < 36{,}5\text{ kW}$) & Throttling contínuo para $f_{clk} \le 1{,}52\text{ GHz}$; corte de eclipse para $6{,}5\text{ kW}$ \\
+\textbf{RAD-F03} & Incursão em Cinturão de Van Allen & $h \ge 1231\text{ km}$ & Fluência $> 10^{14}\text{ e}^-/\text{cm}^2/\text{ano}$; geração PV degrada para $< 37{,}4\text{ kW}$ & Redução da janela de processamento útil; suspensão de treinamento neural denso \\
+\textbf{TIM-F04} & Degradação de Interface Die-Base & $R_{12} \ge 0{,}15\text{ K/W}$ & Desgaseificação/descolamento de TIM; $\Delta T_{die} > 25^\circ\text{C}$ sob plena carga & Clamping do DVFS no piso de $1{,}0\text{ GHz}$; alerta de saúde ao agendador do cluster \\
+\textbf{LHP-F05} & Secagem Capilar (\textit{Dry-out}) & $R_{34} \ge 0{,}10\text{ K/W}$ & Bloqueio de vapor ou falta de recarga capilar no evaporador LHP & Redução escalonada de carga em degraus de 5~kW até restabelecer refluxo bifásico \\
+\textbf{BAT-F06} & Sobrecarga em Eclipse Orbital & $SoC \le 20{,}0\%$ & Demanda de IA sem recarga consome reserva crítica ($DoD > 80\%$) & Deslastro de tensores neurais; manutenção exclusiva de aviônica ($560\text{ W}$) \\
+\textbf{ET-F07}  & Curto-Circuito sob Retardo WCA & $t_{trip} \ge 100\ \mu\text{s}$ & Energia $I^2t = 2461{,}7\text{ A}^2\text{s}$ rompe limite adiabático ($1500\text{ A}^2\text{s}$) & Desarme instantâneo por SSPC; bloqueio rígido (\textit{lockout}) de religamentos \\ \hline
+\end{tabular}%
+}
+\end{table}
 
 \subsection{Síntese do Capítulo e Diretrizes de Validação Numérica}
 \label{sec:sintese_capitulo4}

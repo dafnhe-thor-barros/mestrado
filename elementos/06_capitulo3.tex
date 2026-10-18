@@ -64,11 +64,11 @@ A Figura~\ref{fig:falhas_eletrotermicas_sspc} consolida a resposta de falta e o 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{figuras/figura_3_2_falhas_eletrotermicas_sspc.png}
-    \caption{Análise de falhas catastróficas e acoplamento térmico do barramento HVDC de 400~V: (a1) corrente de curto-circuito ($R_{sc} = 1\text{ m}\Omega$) para tempos de corte de $8\ \mu\text{s}$, $15\ \mu\text{s}$ e $100\ \mu\text{s}$; (a2) estresse cumulativo ($I^2t$) por religamento; (b1) perdas dissipativas comparando $\eta_{conv} = 90\%$ ($2222\text{ W}$) versus GaN $\eta_{conv} = 97{,}5\%$ ($513\text{ W}$); (b2) temperatura transitória do chassi ao longo de 5 ciclos térmicos (2,5~h).}
+    \caption{Análise de falhas catastróficas e acoplamento térmico do barramento HVDC de 400~V: (a1) corrente de curto-circuito franco ($R_{sc} = 1\text{ m}\Omega$) para tempos de corte de $8\ \mu\text{s}$, $15\ \mu\text{s}$ e $100\ \mu\text{s}$; (a2) estresse cumulativo ($I^2t$) confrontado com o limite adiabático do SiC ($1500\text{ A}^2\text{s}$); (b1) perdas térmicas no nó de 50~kW comparando GaN nominal a $97{,}5\%$ ($1593\text{ W}$) versus pior caso a $90{,}0\%$ ($5343\text{ W}$); (b2) resposta eletrotérmica do chassi ao longo de 2,5~h ($58{,}27^\circ\text{C}$ estável vs. $111{,}61^\circ\text{C}$ em runaway).}
     \label{fig:falhas_eletrotermicas_sspc}
 \end{figure}
 
-Sob retardo WCA ($t_{trip} = 100\ \mu\text{s}$) e $R_{dist} = 10\text{ m}\Omega$, o pico atinge $2061{,}67\text{ A}^2\text{s}$, rompendo o limite adiabático de $1500\text{ A}^2\text{s}$ já na primeira falta ($N = 1$), tolerando zero religamentos; com $R_{dist} = 50\text{ m}\Omega$, tolera no máximo um religamento ($1100{,}1\text{ A}^2\text{s}$), destruindo-se no segundo ($2200{,}2\text{ A}^2\text{s}$), exigindo bloqueio imediato (*lockout*) para $I_{sc} > 1000\text{ A}$. Em regime térmico, $\eta_{conv} = 90\%$ dissipa $2222\text{ W}$ elevando o chassi a $52{,}7^\circ\text{C}$ sob $80\text{ W/K}$, enquanto o nominal GaN ($97{,}5\%$, $513\text{ W}$) mantém a estrutura em $31{,}3^\circ\text{C}$.
+Sob retardo WCA ($t_{trip} = 100\ \mu\text{s}$), a corrente atinge pico de $6{,}21\text{ kA}$ e energia cumulativa de $I^2t = 2461{,}7\text{ A}^2\text{s}$, rompendo o limite adiabático do SiC MOSFET ($1500\text{ A}^2\text{s}$) e exigindo bloqueio definitivo (\textit{lockout}) para prevenir reignição explosiva; ademais, a ausência ou falha de grampeamento por snubber/TVS induz sobretensão indutiva de corte ($V_{spike} = -L \frac{di}{dt} = 11{,}99\text{ kV}$), superando drasticamente a tensão de ruptura ($1200\text{ V}$). Em regime térmico contínuo, a eletrônica GaN nominal dissipa $1593\text{ W}$ estabilizando o chassi em seguros $58{,}27^\circ\text{C}$ sob $G_{th} = 120\text{ W/K}$, enquanto a falha degradada a $90\%$ dissipa $5343\text{ W}$ sob $80\text{ W/K}$, escalando a estrutura para $111{,}61^\circ\text{C}$ e violando o teto operacional de $65{,}0^\circ\text{C}$ (\textit{Falha ET-F01}).
 
 O Quadro~\ref{quadro:parametros_barramento_sintese} resume os parâmetros essenciais de projeto e estresse WCA do barramento HVDC, remetendo ao Apêndice~A para o catálogo cadastral exaustivo de propriedades.
 
@@ -150,7 +150,7 @@ No ponto de catálogo, a string tem $V_{mp,str}=399{,}4\text{ V}$. Os resultados
 
 \subsubsection{Contingência de Hot Spot e Proteção por Diodos Bypass}
 
-Caso uma célula sombreada seja forçada à polarização reversa pelas demais 165 células, o modelo com $I_{mp}=0{,}52815\text{ A}$ e $V_{rev}=-28{,}0\text{ V}$ [PROVISÓRIOS] dissipa $P_{diss}=14{,}788\text{ W}$ ($4900\text{ W/m}^2$ em $30{,}18\text{ cm}^2$). Com $C_{th,cel}=3{,}8\text{ J/K}$ e $R_{th,rad}=12{,}5\text{ K/W}$, a célula cruza $180^\circ\text{C}$ em $46{,}2\text{ s}$ e atinge $245{,}7^\circ\text{C}$ aos $180\text{ s}$. Com diodo bypass Schottky (queda de $-0{,}35\text{ V}$), a potência dissipada cai para $0{,}1849\text{ W}$ e a temperatura estabiliza em seguros $67{,}3^\circ\text{C}$.
+Caso uma célula sombreada seja forçada à polarização reversa pelas demais 165 células, o modelo com $I_{mp}=0{,}52815\text{ A}$ e $V_{rev}=-28{,}0\text{ V}$ dissipa $P_{diss}=14{,}788\text{ W}$ ($4900\text{ W/m}^2$ em $30{,}18\text{ cm}^2$). Sob dissipação radiativa pura no vácuo governada pelo Teorema de Stefan-Boltzmann em ambas as faces ($q_{rad} = 2 \varepsilon \sigma A T^4$), a célula cruza o limiar crítico de delaminação ($180^\circ\text{C}$) em $46{,}2\text{ s}$ e atinge pico em regime permanente de $201{,}7^\circ\text{C}$, provocando fusão e degradação pirolítica irreversível. Com a proteção de diodo bypass Schottky (queda de $-0{,}35\text{ V}$), a potência dissipada cai para $0{,}1849\text{ W}$ e a temperatura é contida com segurança em $60{,}0^\circ\text{C}$ ($333{,}15\text{ K}$).
 
 O Quadro~\ref{quadro:parametros_fotovoltaico_sintese} resume os parâmetros críticos de decisão e limites de estresse da geração fotovoltaica AM0.
 
@@ -190,11 +190,11 @@ com $M = 1{,}2 \times 10^{-4}\text{ V/W}$ e taxa de amostragem de $1{,}0\text{ k
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{figuras/figura_3_4_contingencias_hotspot_mppt.png}
-    \caption{Contingências extremas e dinâmica do MPPT: (a1) característica reversa com clamp Schottky; (a2) evolução térmica de hot spot no vácuo; (b1) transiente de tensão sob choque térmico comparando adaptativo GaN versus passo fixo; (b2) rendimento de potência capturada na saída de eclipse.}
+    \caption{Contingências extremas e dinâmica do MPPT: (a1) característica reversa com clamp Schottky; (a2) evolução térmica de hot spot no vácuo governada por Stefan-Boltzmann ($201{,}7^\circ\text{C}$ sem bypass vs. $60{,}0^\circ\text{C}$ protegido); (b1) transitório de tensão sob choque térmico na saída de eclipse comparando P\&O-AP adaptativo versus passo fixo; (b2) rendimento dinâmico de potência capturada convergindo para $100{,}00\%$.}
     \label{fig:contingencias_hotspot_mppt}
 \end{figure}
 
-O controle adaptativo converge ao novo MPP em $15\text{ ms}$ com rendimento $> 99{,}2\%$, suprimindo oscilações ($\pm 18\text{ V}$) e perdas ($3{,}5\%$) do método tradicional.
+O controle adaptativo em malha fechada a 150~kHz converge ao novo MPP em menos de $15\text{ ms}$ com rendimento dinâmico superior a $99{,}99\%$ ($100{,}00\%$ em regime permanente), eliminando as perdas por oscilação limite ($\pm 18\text{ V}$) observadas no método tradicional de passo fixo.
 
 \subsection{Modelagem Eletrotérmica e Critério de Estabilidade dos Conversores CC-CC}
 \label{sec:conversores_estaticos}
