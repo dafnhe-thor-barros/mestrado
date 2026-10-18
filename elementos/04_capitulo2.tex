@@ -7,7 +7,7 @@ O desenvolvimento de um ambiente computacional integrado para o gerenciamento t�
 
 \subsection{Ambiente Espacial e Condições de Contorno de Centros de Dados Orbitais}
 
-A transferência de infraestruturas massivas de processamento de inteligência artificial da superfície terrestre para plataformas orbitais fundamenta-se nas características singulares do ambiente exoatmosférico. Em solo, a radiação solar sofre expressiva atenuação, dispersão de Rayleigh e absorção por vapor de água, dióxido de carbono e ozônio, sendo tipicamente normalizada pelo padrão terrestre AM1.5 com irradiância média de pico de $1000\text{ W/m}^2$ (PIGNATON et al., 2023, p. 6484). Ademais, a alternância entre dia e noite e a cobertura de nuvens impõem intermitência severa e baixo fator de capacidade a usinas fotovoltaicas em solo.
+A transferência de infraestruturas massivas de processamento de inteligência artificial da superfície terrestre para plataformas orbitais fundamenta-se nas características singulares do ambiente exoatmosférico. Em solo, a radiação solar sofre expressiva atenuação, dispersão de Rayleigh e absorção por vapor de água, dióxido de carbono e ozônio, sendo tipicamente normalizada pelo padrão terrestre AM1.5 com irradiância média de pico de $1000\text{ W/m}^2$ (PIGNATON et al., 2021, p. 2). Ademais, a alternância entre dia e noite e a cobertura de nuvens impõem intermitência severa e baixo fator de capacidade a usinas fotovoltaicas em solo.
 
 No espaço exterior, acima da atmosfera terrestre, a densidade de fluxo de radiação solar direta é governada pela constante solar extraterrestre sob o espectro AM0 (\textit{Air Mass Zero}), cujo valor médio nominal padronizado é dado por:
 \begin{equation}
@@ -29,7 +29,7 @@ Outro aspecto estrutural determinante consiste na arquitetura da plataforma espa
 \subsubsection{Arquitetura de Cluster e Trade-Off Técnico-Econômico de Escala}
 \label{sec:tradeoff_custo_escala}
 
-A determinação da potência unitária de cada nó satelital ($P_{no}$) que compõe a constelação de escala megawatt ($P_{total} = 1{,}0\text{ MW}$ útil de processamento) constitui um problema clássico de otimização multivariada de engenharia de sistemas espaciais (WERTZ; EVERETT; PUSCHELL, 2011, p. 780). Para conferir tolerância a falhas por radiação e manutenção orbital sem interrupção de serviço, adota-se um fator de contingência e redundância de $10\%$ sobre a capacidade instalada total ($1{,}1\text{ MW}$ no início de vida).
+A determinação da potência unitária de cada nó satelital ($P_{no}$) que compõe a constelação em escala megawatt ($P_{bruta,cluster} = 1{,}0\text{ MW}$ de geração bruta agregada, viabilizando $P_{IT,cluster} = 800\text{ kW}$ úteis de processamento neural distribuído em 20 satélites operacionais de $P_{no} = 50\text{ kW}$ com $P_{IT,no} = 40\text{ kW}$ por veículo) constitui um problema clássico de otimização multivariada de engenharia de sistemas espaciais (WERTZ; EVERETT; PUSCHELL, 2011, p. 780). Para conferir tolerância a falhas por radiação e manutenção orbital sem interrupção de serviço, adota-se um fator de contingência e redundância de $10\%$ sobre a capacidade instalada total ($1{,}1\text{ MW}$ brutos em início de vida com 2 nós sobressalentes em órbita).
 
 O custo total de ciclo de vida (\textit{Life-Cycle Cost} -- LCC) do segmento espacial congrega o custo de fabricação do lote de satélites ($C_{mfg}$), o custo de lançamento e inserção em órbita SSO ($C_{launch}$) e a sobrecarga operacional de rede e controle de constelação ($C_{ops}$), modelado analiticamente por:
 \begin{equation}
@@ -116,7 +116,7 @@ Assim, cada quilowatt elétrico de servidores de IA operando em regime permanent
 
 A geração primária em satélites é assegurada pelo subsistema elétrico (\textit{Electrical Power System} -- EPS), composto pelo arranjo fotovoltaico, conversores chaveados de condicionamento e distribuição e baterias de sustentação (AL HOSANI et al., 2021, p. 9125; BARBI, 2006, p. 18).
 
-Para células fotovoltaicas espaciais de alta eficiência (células de tripla junção InGaP/InGaAs/Ge com rendimento $\eta > 30\%$), a relação corrente-tensão sob o espectro AM0 é modelada pelo circuito equivalente de um diodo e cinco parâmetros (PIGNATON et al., 2023, p. 6485):
+Para células fotovoltaicas espaciais de alta eficiência (células de tripla junção InGaP/InGaAs/Ge com rendimento $\eta > 30\%$), a relação corrente-tensão sob o espectro AM0 é modelada pelo circuito equivalente de um diodo e cinco parâmetros (PIGNATON et al., 2021, p. 2):
 \begin{equation}
     I = I_{ph} - I_0 \left[ \exp\left( \frac{q (V + I R_s)}{a k_B T_{cel}} \right) - 1 \right] - \frac{V + I R_s}{R_{sh}}
     \label{eq:pv_1diodo}
@@ -242,7 +242,7 @@ Chen et al. / HotCarbon (2026) & Sistemas computacionais sustentáveis & Introdu
 \addlinespace
 Singh / arXiv (2026) & Alocação de cargas em nuvem orbital & Estruturou taxonomia e abstração semântica de cargas de IA viáveis para processamento orbital versus downlink. & Não modelou as dinâmicas físicas de transição térmica em vácuo nem a degradação de baterias. \\
 \addlinespace
-Pignaton et al. / ProPECAut (2023) & Modelagem de sistemas de energia solar & Validou modelo de 1 diodo / 5 parâmetros para módulos fotovoltaicos sob dados meteorológicos. & Desenvolvido exclusivamente para o espectro terrestre AM1.5 e resfriamento atmosférico natural. \\
+Pignaton et al. / ProPECAut (2021) & Modelagem de sistemas de energia solar & Validou modelo de 1 diodo / 5 parâmetros para módulos fotovoltaicos sob dados meteorológicos. & Desenvolvido exclusivamente para o espectro terrestre AM1.5 e resfriamento atmosférico natural. \\
 \addlinespace
 Souza, Silva e Almeida / CILAMCE (2021) & Eficiência energética em servidores (ProPECAut) & Aplicou métricas DCIM para otimizar consumo e climatização de data centers de médio porte. & Concepção estritamente terrestre baseada em condicionamento de ar convencional por convecção. \\
 \addlinespace

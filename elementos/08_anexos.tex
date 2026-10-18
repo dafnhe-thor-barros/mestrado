@@ -21,7 +21,8 @@ Este anexo reproduz os parâmetros nominais de qualificação aeroespacial da c�
 \begin{tabular}{lcc}
 \hline
 \textbf{Característica Elétrica / Física (AM0, 28°C)} & \textbf{Valor Típico} & \textbf{Unidade} \\ \hline
-Eficiência Média de Conversão (BOL) & 32,0 & \% \\
+Eficiência Média de Conversão (BOL) & 30,7 & \% \\
+Eficiência Específica no Ponto MPP Nominal & 30,05 & \% \\
 Área Ativa Padronizada & 30,18 & cm$^2$ \\
 Tensão de Circuito Aberto ($V_{oc}$) & 2,720 & V \\
 Corrente de Curto-Circuito ($I_{sc}$) & 0,538 & A \\
@@ -29,7 +30,7 @@ Densidade de Corrente de Curto-Circuito ($J_{sc}$) & 17,83 & mA/cm$^2$ \\
 Tensão no Ponto de Máxima Potência ($V_{mp}$) & 2,410 & V \\
 Corrente no Ponto de Máxima Potência ($I_{mp}$) & 0,512 & A \\
 Densidade de Corrente no MPP ($J_{mp}$) & 16,96 & mA/cm$^2$ \\
-Potência Máxima de Saída por Célula ($P_{mp}$) & 1,234 & W \\
+Potência Máxima de Saída por Célula ($P_{mp} = V_{mp} I_{mp}$) & 1,234 & W \\
 Coeficiente Térmico de Tensão de Circuito Aberto ($dV_{oc}/dT$) & $-6,2$ & mV/K \\
 Coeficiente Térmico de Corrente de Curto-Circuito ($dI_{sc}/dT$) & $+0,32$ & mA/K \\
 Espessura Típica do Substrato de Germânio & 140 & $\mu$m \\
@@ -43,25 +44,25 @@ Tensão de Ruptura Reversa Típica ($V_{break}$) & $-25\text{ a }-30$ & V \\
 % ------------------------------------------------------------------------------
 % ANEXO B
 % ------------------------------------------------------------------------------
-\subsection*{ANEXO B -- Diretrizes e Limiares da Norma NASA-HDBK-4007A}
-\addcontentsline{toc}{subsection}{ANEXO B -- Diretrizes e Limiares da Norma NASA-HDBK-4007A}
+\subsection*{ANEXO B -- Diretrizes e Boas Práticas do Manual NASA-HDBK-4007A}
+\addcontentsline{toc}{subsection}{ANEXO B -- Diretrizes e Boas Práticas do Manual NASA-HDBK-4007A}
 
-A norma técnica NASA-HDBK-4007A (\textit{Design and Mitigation Guidelines for High-Voltage Spacecraft Systems}, publicada em fevereiro de 2026) estabelece as diretrizes mandatárias de projeto elétrico, espaçamento dielétrico e mitigação de descargas por efeito corona e arcos no vácuo para espaçonaves com barramentos de alta tensão ($> 100\text{ VDC}$).
+O manual técnico de engenharia NASA-HDBK-4007A (\textit{Spacecraft High-Voltage Paschen and Corona Design Handbook}, 145 páginas, aprovado pela NASA em fevereiro de 2026) consolida as diretrizes de projeto e lições aprendidas para prevenção e mitigação de descargas por efeito corona, arcos de plasma no vácuo e quebra dielétrica em espaçonaves operando com barramentos de alta tensão ($V_{bus} > 100\text{ VDC}$). Embora não constitua uma norma de cumprimento mandatório genérico, o documento é adotado pelas missões da NASA e parceiros internacionais como o guia de referência para qualificação de subsistemas de potência HVDC.
 
 \begin{table}[htbp]
 \centering
-\caption{Limiares e critérios de projeto da NASA-HDBK-4007A aplicáveis a barramentos de 400~V.}
+\caption{Diretrizes de mitigação e critérios de projeto do manual NASA-HDBK-4007A para barramentos de 400~V.}
 \label{tab:anexo_nasa_hdbk_4007a}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{p{5.5cm}cp{7.0cm}}
 \hline
-\textbf{Fenômeno / Requisito} & \textbf{Limiar de Norma} & \textbf{Diretriz de Mitigação Obrigatória} \\ \hline
-Tensão Mínima de Ignição de Arco no Vácuo & 70~V & Barramentos $\ge 100\text{ V}$ exigem supressão ativa de arco e isolamento reforçado. \\
-Energia Crítica para Perfuração de Chassi & 50~J & A energia acumulada do arco ($E_{arc}$) deve ser mantida inferior a 5~J por disparo. \\
-Espaçamento Dielétrico no Vácuo (Arco Secundário) & $> 0,8\text{ mm}$ a 400~V & Separação mínima entre condutores expostos ao plasma orbital para evitar sustentação de arco. \\
-Isolamento com Película de Kapton/Silicone & $\ge 2\text{ camadas}$ & Encapsulamento de conexões e chicotes para evitar descarga superficial (\textit{flashover}). \\
-Desgaseificação de Materiais (\textit{Outgassing}) & CVCM $< 0,1\%$ & Materiais de isolamento devem cumprir TML $< 1,0\%$ para prevenir atmosfera local ionizável. \\
-Proteção de Strings Fotovoltaicas & Fusível / SSPC & Segmentação em blocos para impedir que correntes de retorno de strings alimentem o ponto de defeito. \\
+\textbf{Fenômeno / Requisito} & \textbf{Recomendação de Projeto} & \textbf{Diretriz de Mitigação no Satélite (ProPECAut/IFES)} \\ \hline
+Tensão Crítica de Limiar de Paschen no Vácuo & $\ge 70\text{ a }100\text{ V}$ & Barramentos de 400~V operam acima do limiar mínimo de Paschen, exigindo isolamento sólido reforçado e supressão ativa de arco. \\
+Controle de Energia de Arco e Danos & $E_{arc} < 5\text{ J}$ & Abertura ultrarrápida pelo interruptor SSPC em menos de $15\ \mu\text{s}$ para restringir a energia dissipada no curto-circuito. \\
+Distâncias de Isolamento Dielétrico (Creepage/Clearance) & $> 0{,}8\text{ mm}$ a 400~V & Separação mínima entre trilhas e condutores não isolados expostos ao vácuo e plasma espacial na placa de circuito impresso. \\
+Isolamento com Película de Kapton/Silicone & $\ge 2\text{ camadas}$ & Encapsulamento de chicotes, barramentos e conexões crimpadas para evitar descargas superficiais (\textit{flashover}). \\
+Desgaseificação de Materiais (\textit{Outgassing}) & CVCM $< 0{,}1\%$ & Materiais isolantes e fitas térmicas devem atender a TML $< 1{,}0\%$ para evitar a formação de atmosfera local ionizável. \\
+Proteção contra Corrente Reversa de Strings & Diodos / SSPC & Segmentação de strings com diodos de bloqueio e chaves estáticas de estado sólido para isolar células sombreadas. \\
 \hline
 \end{tabular}%
 }

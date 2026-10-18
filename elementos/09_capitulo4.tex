@@ -226,11 +226,11 @@ No domínio computacional, a potência elétrica entregue aos módulos de proces
 
 A taxa total de calor interno confinado ($Q_{int,total}$) que deve ser extraída pela rede térmica condutiva e rejeitada para o espaço profundo é univocamente formulada por:
 \begin{align}
-    Q_{int,total}(t) &= \underbrace{P_{IT}(t)}_{\text{IA (40 kW)}} + \underbrace{P_{loss,GaN}(t)}_{\text{GaN (0,5 a 2,2 kW)}} + \underbrace{Q_{OISL}(t)}_{\text{Laser (343 W)}} \nonumber \\
-    &\quad + \underbrace{P_{loss,BESS}(t)}_{\text{Joule BESS (35 a 120 W)}} + \underbrace{P_{aux,th}(t)}_{\text{Bombas/Aviônica (450 W)}}
+    Q_{int,total}(t) &= \underbrace{P_{IT}(t)}_{\text{IA (40.000 W)}} + \underbrace{P_{loss,GaN}(t)}_{\text{GaN (1.025 a 4.444 W)}} + \underbrace{Q_{OISL}(t)}_{\text{Laser (343 W)}} \nonumber \\
+    &\quad + \underbrace{P_{loss,BESS}(t)}_{\text{Joule BESS (65 a 120 W)}} + \underbrace{P_{aux,th}(t)}_{\text{Bombas/Aviônica (450 W)}}
     \label{eq:balanco_termico_global_no}
 \end{align}
-totalizando $Q_{int,total} \approx 41{,}4\text{ kW}$ em regime nominal eficiente ($\eta_{conv} = 97{,}5\%$), e atingindo $Q_{int,total} \approx 45{,}3\text{ kW}$ no envelope de estresse degradado WCH ($\eta_{conv} = 90{,}0\%$), estabelecendo a base analítica estrita para o dimensionamento dos radiadores e do sistema LHP na Seção~\ref{sec:rede_nodal_termica}.
+totalizando com exatidão $Q_{int,nom} = 40000 + 1025 + 343 + 65 + 450 = 41.883\text{ W} \approx 41{,}9\text{ kW}$ em regime nominal de cruzeiro permanente ($\eta_{conv} = 97{,}5\%$), e atingindo $Q_{int,WCH} = 40000 + 4444 + 343 + 120 + 450 = 45.357\text{ W} \approx 45{,}4\text{ kW}$ no envelope de pior caso degradado EOL ($\eta_{conv} = 90{,}0\%$). Essa formulação unifica estritamente o livro-razão de calor com o balanço de potência do indicador $PUE_{orbital}$ (Seção~\ref{sec:confiabilidade_fadiga_pue}), em que a potência elétrica total consumida no barramento ($41.983\text{ W}$) deduzida da potência eletro-óptica emitida no feixe laser dos 4 terminais OISL ($4 \times 110\text{ W} \times 0{,}22 \approx 97\text{ W}$ que escapam do veículo sob a forma de fótons) resulta exatamente na carga térmica líquida interna que onera o circuito de resfriamento ($41.983 - 97 = 41.886\text{ W} \approx 41{,}9\text{ kW}$).
 
 \subsection{Rede Térmica Nodal Acoplada de Parâmetros Concentrados no Vácuo}
 \label{sec:rede_nodal_termica}
@@ -239,7 +239,7 @@ A ausência completa de matéria gasosa no ambiente de vácuo orbital impede os 
 
 A arquitetura do nó computacional de $50\text{ kW}$ é discretizada em cinco nós térmicos fundamentais acoplados, abrangendo desde a junção microscópica semicondutora até as superfícies exteriores de emissão radiativa:
 \begin{enumerate}[label=\textbf{Nó \arabic*:},leftmargin=*]
-    \item \textbf{Junção do Die Semicondutor de IA ($T_1 \equiv T_j$):} Representa a camada ativa de transistores FinFET/GAA sub-7~nm onde ocorre a dissipação por comutação e correntes de fuga ($P_{chip}$). Apresenta capacitância térmica extremamente reduzida ($C_1 = 85{,}0\text{ J/K}$ por die individual de $50\text{ g}$ de silício), tornando a sua dinâmica ultra-rápida, com constantes de tempo térmicas inferiores a $1\text{ segundo}$.
+    \item \textbf{Junção do Die Semicondutor de IA ($T_1 \equiv T_j$):} Representa a camada ativa de transistores FinFET/GAA sub-7~nm onde ocorre a dissipação por comutação e correntes de fuga ($P_{chip}$). Apresenta capacitância térmica extremamente reduzida ($C_1 = 85{,}0\text{ J/K}$ por encapsulamento individual multi-die CoWoS, compreendendo $50\text{ g}$ de silício com $c_p = 712\text{ J/(kg}\cdot\text{K)}$ somados à massa do interposer de silício, microesferas de solda e camada de passivação orgânica), tornando a sua dinâmica ultra-rápida, com constantes de tempo térmicas inferiores a $1\text{ segundo}$.
     
     \item \textbf{Interface Térmica Primária (TIM1) e Espalhador de Calor Integrado ($T_2 \equiv T_{sp}$):} Representa a camada de Material de Interface Térmica (\textit{Thermal Interface Material} -- TIM1) acoplada ao espalhador de calor (\textit{heat spreader}) de alta condutividade térmica, composto por câmara de vapor (\textit{vapor chamber}) com substrato de cobre isento de oxigênio (Cu-OFHC) ou diamante sintético dopado. Possui capacitância térmica intermediária ($C_2 = 420{,}0\text{ J/K}$) e resistência de condução $R_{12} = 0{,}035\text{ K/W}$, atuando no amortecimento de transientes térmicos de alta frequência.
     
@@ -452,7 +452,7 @@ A Tabela~\ref{tab:dimensionamento_radiador_comparativo} sintetiza o dimensioname
 \begin{tabular}{lcccc}
 \hline
 \textbf{Parâmetro de Dimensionamento Radiativo} & \textbf{SSO Dawn-Dusk (700 km)} & \textbf{LEO Convencional (500 km)} & \textbf{GEO (35.786 km)} & \textbf{Classificação Epistêmica} \\ \hline
-Dissipação Térmica Interna Requerida ($Q_{int,nom}$) & $41{,}40\text{ kW}$ ($41.400\text{ W}$) & $41{,}40\text{ kW}$ & $41{,}40\text{ kW}$ & \textbf{[VERIFICÁVEL]} Eq.~(\ref{eq:balanco_termico_global_no}) \\
+Dissipação Térmica Interna Requerida ($Q_{int,nom}$) & $41{,}89\text{ kW}$ ($41.886\text{ W}$) & $41{,}89\text{ kW}$ & $41{,}89\text{ kW}$ & \textbf{[VERIFICÁVEL]} Eq.~(\ref{eq:balanco_termico_global_no}) \\
 Temperatura Média de Operação do Radiador ($T_{rad}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & \textbf{[PROVISÓRIO]} Ponto nominal de projeto \\
 Temperatura Efetiva de Sumidouro ($T_{sink}$) & $107{,}2\text{ K}$ & $174{,}6\text{ K}$ & $35{,}8\text{ K}$ & \textbf{[CALCULADO]} Eq.~(\ref{eq:temperatura_sink_exata}) \\
 Emissância Bruta Stefan-Boltzmann ($q_{emit}$) & $510{,}9\text{ W/m}^2$ & $505{,}2\text{ W/m}^2$ & $511{,}6\text{ W/m}^2$ & \textbf{[CALCULADO]} $\varepsilon \sigma (T_{rad}^4 - T_{sink}^4)$ \\
@@ -462,14 +462,14 @@ Fluxo Infravermelho Terrestre Absorvido ($q_{ir,abs}$) & $6{,}5\text{ W/m}^2$ & 
 Fluxo Parasita Total Médio ($q_{parasita}$) & $10{,}3\text{ W/m}^2$ & $147{,}8\text{ W/m}^2$ & $0{,}8\text{ W/m}^2$ & \textbf{[VERIFICÁVEL]} Somatório ambiental \\
 Eficiência de Aleta de APG Compósito ($\eta_{fin}$) & $0{,}945$ & $0{,}945$ & $0{,}945$ & \textbf{[CALCULADO]} Eq.~(\ref{eq:eficiencia_aleta_apg_rigorosa}) com margem \\
 Capacidade Líquida Específica de Rejeição ($q_{net,rej}$) & $472{,}5\text{ W/m}^2$ & $329{,}6\text{ W/m}^2$ & $482{,}7\text{ W/m}^2$ & \textbf{[CALCULADO]} $q_{emit} \eta_{fin} - q_{parasita}$ \\ \hline
-\textbf{Área Radiativa Efetiva Ativa Necessária ($A_{rad,eff}$)} & $\mathbf{87{,}6\text{ m}^2}$ & $\mathbf{125{,}6\text{ m}^2}$ & $\mathbf{85{,}8\text{ m}^2}$ & \textbf{[CALCULADO]} $A_{rad} = Q_{int} / q_{net,rej}$ \\
-Área Física do Painel Bifacial Desdobrável ($A_{painel}$) & $43{,}8\text{ m}^2$ & $62{,}8\text{ m}^2$ & $42{,}9\text{ m}^2$ & \textbf{[CALCULADO]} Duas faces ativas \\
-\textbf{Área Radiativa Total do Cluster (20 Nós / 1 MW)} & $\mathbf{1752{,}0\text{ m}^2}$ & $\mathbf{2512{,}0\text{ m}^2}$ & $\mathbf{1716{,}0\text{ m}^2}$ & \textbf{[PROVISÓRIO]} Constelação agregada \\ \hline
+\textbf{Área Radiativa Efetiva Ativa Necessária ($A_{rad,eff}$)} & $\mathbf{88{,}6\text{ m}^2}$ & $\mathbf{127{,}1\text{ m}^2}$ & $\mathbf{86{,}8\text{ m}^2}$ & \textbf{[CALCULADO]} $A_{rad} = Q_{int} / q_{net,rej}$ \\
+Área Física do Painel Bifacial Desdobrável ($A_{painel}$) & $44{,}3\text{ m}^2$ & $63{,}5\text{ m}^2$ & $43{,}4\text{ m}^2$ & \textbf{[CALCULADO]} Duas faces ativas \\
+\textbf{Área Radiativa Total do Cluster (20 Nós / 1 MW)} & $\mathbf{1772{,}0\text{ m}^2}$ & $\mathbf{2542{,}0\text{ m}^2}$ & $\mathbf{1736{,}0\text{ m}^2}$ & \textbf{[PROVISÓRIO]} Constelação agregada \\ \hline
 \end{tabular}%
 }
 \end{table}
 
-A comparação quantitativa comprova a superioridade termodinâmica da órbita heliossíncrona *Dawn-Dusk*: em virtude da orientação permanente anti-solar e do baixo fator de visão com o Nadir ($\phi \approx 90^\circ$), o fluxo parasita ambiental absorvido restringe-se a apenas $10{,}3\text{ W/m}^2$. Em contrapartida, em LEO convencional (500 km), os intensos fluxos de albedo e infravermelho terrestre degradam a capacidade de rejeição térmica em $29{,}1\%$, exigindo uma área adicional de radiadores de $+35{,}8\text{ m}^2$ por satélite ($+40{,}9\%$), impondo penalidades severas de massa de lançamento e momento de inércia para o sistema de controle de atitude.
+A comparação quantitativa comprova a superioridade termodinâmica da órbita heliossíncrona *Dawn-Dusk*: em virtude da orientação permanente anti-solar e do baixo fator de visão com o Nadir ($\phi \approx 90^\circ$), o fluxo parasita ambiental absorvido restringe-se a apenas $10{,}3\text{ W/m}^2$. Em contrapartida, em LEO convencional (500 km), os intensos fluxos de albedo e infravermelho terrestre degradam a capacidade de rejeição térmica em $30{,}2\%$, exigindo uma área adicional de radiadores de $+38{,}5\text{ m}^2$ por satélite ($+43{,}5\%$), impondo penalidades severas de massa de lançamento e momento de inércia para o sistema de controle de atitude.
 
 A síntese visual comparativa dos fluxos ambientais, da sensibilidade a erros de atitude e do balanço de área radiativa entre os três regimes é apresentada na Figura~\ref{fig:fluxos_orbitais_comparativos}.
 
