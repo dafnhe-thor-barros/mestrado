@@ -85,12 +85,14 @@ fprintf('1. I_0,ref calculado analiticamente: %.4e A (a_eq = %.2f)\n', I_0_ref, 
 N_s = 166;
 
 % Strings em paralelo:
-% Opcao nominal estrita de 50 kW uteis: N_p_no = 237 -> 39.342 celulas (49.99 kW BOL, 118.7 m^2)
-% Opcao adotada com margem de cabeamento/mismatch (2.94% ~ 3%): N_p_no = 244 -> 40.504 celulas (51.47 kW BOL instalados, 122.2 m^2)
+% Opcao nominal ideal de 50 kW no MPP: N_p_no = 237 -> 39.342 celulas (49.999 kW, sem perdas de conversao)
+% Opcao instalada: N_p_no = 244 -> 40.504 celulas (51.470 kW BOL no MPP, 122.24 m^2).
+% A margem so entrega 50 kW no barramento se o rendimento agregado array->barramento for >= 97.145%;
+% esse rendimento nao foi modelado nem medido e a potencia util nao e declarada como demonstrada.
 N_p_no = 244;                  % Strings em paralelo por no satelital [MARGEM INSTALADA DE 3%]
 N_total_no = N_s * N_p_no;     % 40.504 celulas ativas por satelite [CALCULADO]
 A_total_no = N_total_no * A_cel; % Area ativa do no = 122.24 m^2 [CALCULADO]
-P_nom_BOL_no = N_total_no * P_mp_ref; % 51.47 kW instalados BOL (para ~50 kW uteis no barramento) [CALCULADO]
+P_nom_BOL_no = N_total_no * P_mp_ref; % 51.47 kW BOL no MPP do arranjo, antes de perdas de conversao [CALCULADO]
 
 % Constelacao Agregada (20 nos ativos):
 N_nos = 20;
@@ -224,19 +226,21 @@ fprintf('   -> Figura 3.5 salva com sucesso.\n\n');
 fprintf('4. Gerando Figura 3.6: Degradacao por radiacao e fatores ambientais...\n');
 t_anos = linspace(0, 10, 100);
 
-Phi_x = 1.0e14;
-% Calibracao semi-empirica ajustada a tabela ECSS (ECSS-E-ST-20-08C) do datasheet XTJ Prime:
-% Na fluencia de joelho Phi_x = 5x10^14 e-/cm^2 (1 MeV), P/P0 = 0.89 * 0.99 = 0.8811 (88.1%).
-% Com 1 - C_d * log10(1 + 5) = 0.8811 -> C_d = 0.1189 / 0.77815 = 0.1528.
-% NOTA EPISTEMICA: O ajuste foi calibrado pontualmente na tabela ECSS no ponto 5x10^14 e-/cm^2,
-% constituindo modelo semi-empirico pontual e nao validacao experimental da curva completa.
-C_d   = 0.1528; % Calibrado a tabela ECSS da Spectrolab [PROVISORIO / AJUSTE PONTUAL]
+Phi_x = 1.0e14; % Escala escolhida para o ajuste [PROVISORIO]
+% Ajuste pontual do modelo parametrico ao dado de eficiencia_mp=0.90 do datasheet XTJ Prime,
+% tabela de retencao sob o padrao europeu ECSS, em Phi=5e14 e-/cm^2 (1 MeV).
+% Phi_x=1e14 e-/cm^2 e uma escala escolhida para o modelo, nao um parametro medido.
+eta_mp_ret_ECSS_5e14 = 0.90; % Dado direto da tabela Spectrolab [VERIFICAVEL]
+C_d = (1.0 - eta_mp_ret_ECSS_5e14) / log10(1.0 + 5.0); % ~= 0.12851 [PROVISORIO / AJUSTE PONTUAL]
+% Este ajuste de um ponto nao valida a forma logaritmica entre pontos nem substitui modelo de ambiente orbital.
 
-rate_500km  = 1.4e13;
-rate_700km  = 2.5e13;
-rate_1000km = 5.8e13;
+% Taxas de fluencia ilustrativas [PROVISORIAS]: nao derivadas de AE9/AP9, SPENVIS,
+% espectro orbital ou espessura de blindagem nesta simulacao.
+rate_500km  = 1.4e13; % [e-/cm^2/ano]
+rate_700km  = 2.5e13; % [e-/cm^2/ano]
+rate_1000km = 5.8e13; % [e-/cm^2/ano]
 
-loss_env_10y = 0.052; % 5.2% optica e erosao [PROVISORIO]
+loss_env_10y = 0.052; % 5.2% optica e erosao [PROVISORIO; sem ensaio ou fonte de calibracao]
 
 fig6 = figure(2, 'position', [50, 50, 1000, 450]);
 
@@ -462,9 +466,10 @@ fprintf('   -> Figura 3.8 salva com sucesso.\n\n');
 fprintf('=== RESUMO EXECUTIVO DOS ENSAIOS DE ESTRESSE E PONTOS DE FALHA (ITEM 3.2) ===\n');
 fprintf('1. Compatibilidade com 400V: Strings de Ns = 166 celulas geram Vmp = 399.4 V a 28 C (BOL).\n');
 fprintf('   A frio (-150 C), Voc atinge 617.0 V (extrapolacao analitica linear [PROVISORIO]). Exige conversor Buck com V_in,max >= 650 V.\n');
-fprintf('2. Potencia e Area: 40.504 celulas (No: Np_no=244 strings, margem de 2.94%%) ocupam 122.2 m^2, gerando 51.47 kW BOL instalados (~50 kW uteis).\n');
-fprintf('   Constelacao (20 nos: Np_const=4880): 810.080 celulas, 2.444,8 m^2, gerando 1.029 MW BOL instalados (1.0 MW agregados).\n');
-fprintf('3. Degradacao em 10 Anos (700 km): Perda DDD de %.1f%% somada a perdas ambientais resulta em retencao de %.1f%% (Perda total %.1f%%).\n', ...
+fprintf('2. Potencia e Area: 40.504 celulas (No: Np_no=244 strings, margem de 2.94%%) ocupam 122.24 m^2 e geram %.2f kW BOL no MPP antes das perdas de conversao.\n', P_nom_BOL_no/1e3);
+fprintf('   Para entregar 50 kW no barramento, o rendimento agregado array->barramento deve ser >= %.3f%% (nao modelado/medido).\n', 100*50e3/P_nom_BOL_no);
+fprintf('   Constelacao (20 nos: Np_const=4880): 810.080 celulas, 2.444,8 m^2, 1.029 MW BOL no MPP antes de perdas; meta de 1.0 MW no barramento nao demonstrada.\n');
+    fprintf('3. Degradacao em 10 Anos (700 km): Perda DDD de %.2f%%; com perda ambiental assumida, retencao condicional de %.2f%% (perda total %.2f%%).\n', ...
         (1.0 - f_ddd_700(end))*100, p_rel_700(end), perda_700);
 fprintf('4. Ponto de Falha de Hot Spot: Sem diodo de bypass, a celula dissipa calor severo (%.2f W, T > 230 C);\n', P_diss_nobypass);
 fprintf('   Com diodo Schottky, o clamp em -0.35 V limita a dissipacao a %.3f W e temperatura a 67 C.\n', P_diss_bypass);

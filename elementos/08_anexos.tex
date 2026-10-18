@@ -12,35 +12,35 @@
 \subsection*{ANEXO A -- Especificações Técnicas de Qualificação da Célula Spectrolab XTJ Prime}
 \addcontentsline{toc}{subsection}{ANEXO A -- Especificações Técnicas de Qualificação da Célula Spectrolab XTJ Prime}
 
-Este anexo reproduz os parâmetros nominais de qualificação aeroespacial da célula solar de tripla junção InGaP/InGaAs/Ge modelo XTJ Prime fabricada pela Spectrolab (uma subsidiária da The Boeing Company), sob espectro solar extraterrestre AM0 ($1361\text{ W/m}^2$, $28^\circ\text{C}$):
+Este anexo resume dados publicados pela Spectrolab para a célula solar de tripla junção XTJ Prime sob AM0 ($135{,}3\text{ mW/cm}^2=1353\text{ W/m}^2$, $28^\circ\text{C}$). O fabricante informa múltiplas geometrias; a área de $30{,}18\text{ cm}^2$ adotada no modelo não é apresentada aqui como dimensão universal de catálogo. Valores calculados a partir dessa área são identificados como tais.
 
-\begin{table}[htbp]
+\begin{table}[!ht]
 \centering
+\small
+\renewcommand{\arraystretch}{0.85}
 \caption{Extrato da folha de dados técnicos de qualificação espacial da célula Spectrolab XTJ Prime.}
 \label{tab:anexo_datasheet_spectrolab}
 \begin{tabular}{lcc}
 \hline
 \textbf{Característica Elétrica / Física (AM0, 28°C)} & \textbf{Valor Típico} & \textbf{Unidade} \\ \hline
-Eficiência Média de Conversão (BOL) & 30,7 & \% \\
-Eficiência Específica no Ponto MPP Nominal & 30,05 & \% \\
-Área Ativa Padronizada & 30,18 & cm$^2$ \\
+Eficiência MPP BOL declarada & 30,7 & \% \\
 Tensão de Circuito Aberto ($V_{oc}$) & 2,720 & V \\
-Corrente de Curto-Circuito ($I_{sc}$) & 0,538 & A \\
-Densidade de Corrente de Curto-Circuito ($J_{sc}$) & 17,83 & mA/cm$^2$ \\
-Tensão no Ponto de Máxima Potência ($V_{mp}$) & 2,410 & V \\
-Corrente no Ponto de Máxima Potência ($I_{mp}$) & 0,512 & A \\
-Densidade de Corrente no MPP ($J_{mp}$) & 16,96 & mA/cm$^2$ \\
-Potência Máxima de Saída por Célula ($P_{mp} = V_{mp} I_{mp}$) & 1,234 & W \\
-Coeficiente Térmico de Tensão de Circuito Aberto ($dV_{oc}/dT$) & $-6,2$ & mV/K \\
-Coeficiente Térmico de Corrente de Curto-Circuito ($dI_{sc}/dT$) & $+0,32$ & mA/K \\
+Densidade de Corrente de Curto-Circuito ($J_{sc}$) & 18,0 & mA/cm$^2$ \\
+Tensão no Ponto de Máxima Potência ($V_{mp}$) & 2,406 & V \\
+Densidade de Corrente no MPP ($J_{mp}$) & 17,5 & mA/cm$^2$ \\
+Coeficiente Térmico de Tensão de Circuito Aberto ($dV_{oc}/dT$) & $-5,60$ & mV/K \\
+Coeficiente Térmico de Densidade de Corrente ($dJ_{sc}/dT$) & $+10,0$ & $\mu$A/(cm$^2$ K) \\
+Coeficiente Térmico de Tensão MPP ($dV_{mp}/dT$) & $-6,30$ & mV/K \\
+Coeficiente Térmico de Densidade de Corrente MPP ($dJ_{mp}/dT$) & $+5,0$ & $\mu$A/(cm$^2$ K) \\
 Espessura Típica do Substrato de Germânio & 140 & $\mu$m \\
 Densidade Mássica Superficial da Célula com Coverglass & 84 & mg/cm$^2$ \\
 Tensão de Ruptura Reversa Típica ($V_{break}$) & $-25\text{ a }-30$ & V \\
 \hline
 \end{tabular}
+\par\smallskip\noindent\textit{Nota:} Para a área adotada de $30{,}18\text{ cm}^2$, os dados $V_{mp}$ e $J_{mp}$ implicam $I_{mp}=0{,}52815\text{ A}$ e $P_{mp}=1{,}27073\text{ W}$ [CALCULADO]. Esses valores arredondados não reproduzem exatamente os $30{,}7\%$ de eficiência declarados no datasheet; a discrepância não foi recalibrada.
 \end{table}
 
-\newpage
+\vspace{0.8cm}
 % ------------------------------------------------------------------------------
 % ANEXO B
 % ------------------------------------------------------------------------------
@@ -49,11 +49,13 @@ Tensão de Ruptura Reversa Típica ($V_{break}$) & $-25\text{ a }-30$ & V \\
 
 O manual técnico de engenharia NASA-HDBK-4007A (\textit{Spacecraft High-Voltage Paschen and Corona Design Handbook}, 145 páginas, aprovado pela NASA em fevereiro de 2026) consolida as diretrizes de projeto e lições aprendidas para prevenção e mitigação de descargas por efeito corona, arcos de plasma no vácuo e quebra dielétrica em espaçonaves operando com barramentos de alta tensão ($V_{bus} > 100\text{ VDC}$). Embora não constitua uma norma de cumprimento mandatório genérico, o documento é adotado pelas missões da NASA e parceiros internacionais como o guia de referência para qualificação de subsistemas de potência HVDC.
 
-\begin{table}[htbp]
+\begin{table}[!ht]
 \centering
+\small
+\renewcommand{\arraystretch}{0.85}
 \caption{Diretrizes de mitigação e critérios de projeto do manual NASA-HDBK-4007A para barramentos de 400~V.}
 \label{tab:anexo_nasa_hdbk_4007a}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.95\textwidth}{!}{%
 \begin{tabular}{p{5.5cm}cp{7.0cm}}
 \hline
 \textbf{Fenômeno / Requisito} & \textbf{Recomendação de Projeto} & \textbf{Diretriz de Mitigação no Satélite (ProPECAut/IFES)} \\ \hline

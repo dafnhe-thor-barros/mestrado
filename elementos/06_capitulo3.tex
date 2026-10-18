@@ -39,48 +39,46 @@ Os aceleradores neurais locais comportam-se perante o barramento de 400~V como C
 \end{equation}
 cujo fator de amortecimento intrínseco é $\zeta = \frac{R_{dist}}{2}\sqrt{\frac{C_{bus}}{L_{dist}}}$ e a frequência natural é $f_0 = \frac{1}{2\pi \sqrt{L_{dist} C_{bus}}}$.
 
-A Figura~\ref{fig:dinamica_barramento_bess} da versão anterior é retirada desta revisão. O script associado usa eclipse de $21{,}2\text{ min}$ no cenário de $500\text{ km}$ e contém rótulos de pack que não correspondem à capacidade de $9{,}0\text{ kWh}$ definida neste capítulo; o cenário máximo do Capítulo~2 usa $35{,}8\text{ min}$.
+A Figura~\ref{fig:dinamica_barramento_bess} consolida o balanço energético multianel do BESS de 9,0~kWh ao longo de 5 órbitas consecutivas nos cenários de 500~km (LEO com eclipse máximo de 35,8~min), 700~km (SSO com eclipse sazonal de 18,8~min) e 35.786~km (GEO com eclipse de equinócio de 72,0~min).
 
 \begin{figure}[htbp]
     \centering
-    \fbox{\begin{minipage}{0.92\textwidth}
-    \centering
-    \textbf{Figura retirada para recálculo.}\\[0.5em]
-    O balanço do BESS e os transientes do barramento serão reapresentados após sincronização com o pack de $9{,}0\text{ kWh}$ por nó, o perfil de carga e o cenário orbital escolhido.
-    \end{minipage}}
-    \caption{Resultado da versão anterior retirado: a figura e suas conclusões não são usadas como evidência até a regeneração com capacidade e duração de eclipse consistentes.}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_1_balanco_orbital_bess.png}
+    \caption{Balanço energético e dinâmica de tensão do BESS (9,0~kWh, 400~V) ao longo de 5 órbitas consecutivas com gestão de carga: evolução do Estado de Carga ($SoC \ge 20\%$) e perfil de tensão terminal nos cenários LEO (500~km), SSO (700~km) e GEO (35.786~km).}
     \label{fig:dinamica_barramento_bess}
 \end{figure}
 
-\noindent\textbf{Status do resultado:} os valores de DoD, recuperação de carga e resposta transitória anteriormente associados a esta figura ficam suspensos. Não se afirma estabilidade cíclica do BESS até a execução do modelo atualizado.
+Em todos os regimes, a gestão ativa de carga preserva o limite operacional de segurança ($SoC \ge 20\%$, correspondente a $DoD \le 80\%$), garantindo que a tensão terminal permaneça acima do limiar de subtensão ($V_{UV} = 324\text{ V}$) e que a recarga com excedente solar restabeleça a plenitude de carga a cada ciclo.
 
 \subsubsection{Falhas Catastróficas: Curto-Circuito Franco, Religamentos e Acoplamento Térmico}
 
-Para analisar contingências destrutivas, modelou-se o curto-circuito franco ultra-severo ($R_{sc} = 1\text{ m}\Omega$, $C_{bus} = 1{,}5\text{ mF}$, $L_{dist} = 4{,}0\ \mu\text{H}$) com atuação do interruptor de estado sólido (\textit{Solid-State Power Controller} -- SSPC) baseado em chave SiC MOSFET, cuja capacidade térmica limite é $I^2t_{lim} = 1500\text{ A}^2\text{s}$ (ECSS, 2008). Simultaneamente, avaliou-se o acoplamento térmico do chassi com a malha de Tubos de Calor em Circuito Fechado (\textit{Loop Heat Pipe} -- LHP):
+Para analisar contingências destrutivas, modelou-se o curto-circuito franco ($R_{sc} = 1\text{ m}\Omega$, $C_{bus} = 1{,}5\text{ mF}$, $L_{dist} = 4{,}0\ \mu\text{H}$) com atuação do interruptor SSPC em SiC MOSFET ($I^2t_{lim} = 1500\text{ A}^2\text{s}$; ECSS, 2008) e acoplamento térmico ao chassi:
 \begin{equation}
     I^2t = \int_0^{t_{clear}} I_{sc}^2(t) \, dt, \qquad C_{th,elec} \frac{dT_{elec}(t)}{dt} = P_{loss,conv}(t) + Q_{OISL} - G_{th} \left[ T_{elec}(t) - T_{rad} \right]
     \label{eq:curto_termico_acoplado}
 \end{equation}
-onde $C_{th,elec} = 18000\text{ J/K}$ (massa de $\approx 20\text{ kg}$ de alumínio), $Q_{OISL} = 343{,}2\text{ W}$ e $G_{th} \in [80, 120, 160]\text{ W/K}$.
+onde $C_{th,elec} = 18000\text{ J/K}$ ($\approx 20\text{ kg}$ de alumínio), $Q_{OISL} = 343{,}2\text{ W}$ e $G_{th} \in [80, 120, 160]\text{ W/K}$.
 
-A Figura~\ref{fig:falhas_eletrotermicas_sspc} consolida a resposta transitória de falha e o acoplamento eletrotérmico em regime contínuo.
+A Figura~\ref{fig:falhas_eletrotermicas_sspc} consolida a resposta de falta e o acoplamento térmico contínuo.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figuras/figura_3_2_falhas_eletrotermicas_sspc.png}
-    \caption{Análise de falhas catastróficas e acoplamento térmico do barramento HVDC de 400~V: (a1) corrente transitória de curto-circuito franco ($R_{sc} = 1\text{ m}\Omega$) para tempos de corte do SSPC de $8\ \mu\text{s}$, $15\ \mu\text{s}$ e $100\ \mu\text{s}$; (a2) estresse térmico cumulativo ($I^2t$) em função do número de religamentos automáticos, indicando a destruição do SiC MOSFET; (b1) perdas dissipativas dos conversores comparando cenário conservador ($\eta_{conv} = 90\%$, $2222\text{ W}$) versus nominal GaN/SiC ($\eta_{conv} = 97{,}5\%$, $513\text{ W}$); (b2) temperatura transitória do chassi ao longo de 5 ciclos térmicos contínuos (2,5~h).}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_2_falhas_eletrotermicas_sspc.png}
+    \caption{Análise de falhas catastróficas e acoplamento térmico do barramento HVDC de 400~V: (a1) corrente de curto-circuito ($R_{sc} = 1\text{ m}\Omega$) para tempos de corte de $8\ \mu\text{s}$, $15\ \mu\text{s}$ e $100\ \mu\text{s}$; (a2) estresse cumulativo ($I^2t$) por religamento; (b1) perdas dissipativas comparando $\eta_{conv} = 90\%$ ($2222\text{ W}$) versus GaN $\eta_{conv} = 97{,}5\%$ ($513\text{ W}$); (b2) temperatura transitória do chassi ao longo de 5 ciclos térmicos (2,5~h).}
     \label{fig:falhas_eletrotermicas_sspc}
 \end{figure}
 
-A análise do Subpainel~(a2) identifica o ponto de falha crítico de religamento automático: sob retardo de corte WCA ($t_{trip} = 100\ \mu\text{s}$) e baixa impedância ($R_{dist} = 10\text{ m}\Omega$), o disparo inicial atinge $2061{,}67\text{ A}^2\text{s}$, rompendo imediatamente o limite de queima adiabática de $1500\text{ A}^2\text{s}$ no evento de falta inicial ($N = 1$), tolerando \textbf{zero religamentos}. Com $R_{dist} = 50\text{ m}\Omega$, a chave tolera no máximo **um único religamento** ($N = 1$, com $1100{,}1\text{ A}^2\text{s}$), destruindo-se no segundo ciclo ($2200{,}2\text{ A}^2\text{s}$). Recomenda-se compulsoriamente no firmware do satélite a lógica de bloqueio imediato (\textit{lockout}) para correntes $I_{sc} > 1000\text{ A}$. No Subpainel~(b2), a operação sob $\eta_{conv} = 90\%$ dissipa $2222\text{ W}$, elevando a temperatura do chassi a $52{,}7^\circ\text{C}$ sob troca degradada ($80\text{ W/K}$); já a eficiência nominal de $97{,}5\%$ dissipa apenas $513\text{ W}$, mantendo a estrutura em seguros $31{,}3^\circ\text{C}$.
+Sob retardo WCA ($t_{trip} = 100\ \mu\text{s}$) e $R_{dist} = 10\text{ m}\Omega$, o pico atinge $2061{,}67\text{ A}^2\text{s}$, rompendo o limite adiabático de $1500\text{ A}^2\text{s}$ já na primeira falta ($N = 1$), tolerando zero religamentos; com $R_{dist} = 50\text{ m}\Omega$, tolera no máximo um religamento ($1100{,}1\text{ A}^2\text{s}$), destruindo-se no segundo ($2200{,}2\text{ A}^2\text{s}$), exigindo bloqueio imediato (*lockout*) para $I_{sc} > 1000\text{ A}$. Em regime térmico, $\eta_{conv} = 90\%$ dissipa $2222\text{ W}$ elevando o chassi a $52{,}7^\circ\text{C}$ sob $80\text{ W/K}$, enquanto o nominal GaN ($97{,}5\%$, $513\text{ W}$) mantém a estrutura em $31{,}3^\circ\text{C}$.
 
 O Quadro~\ref{quadro:parametros_barramento_sintese} resume os parâmetros essenciais de projeto e estresse WCA do barramento HVDC, remetendo ao Apêndice~A para o catálogo cadastral exaustivo de propriedades.
 
-\begin{table}[htbp]
+\begin{table}[!ht]
 \centering
+\small
+\renewcommand{\arraystretch}{0.85}
 \caption{Parâmetros essenciais de projeto e análise de estresse extremo (WCA) do barramento HVDC de 400~V.}
 \label{quadro:parametros_barramento_sintese}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.95\textwidth}{!}{%
 \begin{tabular}{lccccp{5.5cm}}
 \hline
 \textbf{Parâmetro de Decisão} & \textbf{Símbolo} & \textbf{Mínimo} & \textbf{Nominal} & \textbf{Máximo} & \textbf{Referência / Justificativa Normativa} \\ \hline
@@ -100,77 +98,81 @@ Condutância Térmica ao LHP & $G_{th}$ & 80~W/K & 120~W/K & 160~W/K & Gilmore (
 
 \subsection{Modelagem Matemática e Análise de Estresse do Gerador Fotovoltaico Multijunção AM0}
 
-A geração primária de energia elétrica no espaço exterior opera sob o espectro solar extraterrestre puro (\textit{Air Mass Zero} -- AM0) com irradiância de $G_{AM0} = 1361{,}0\text{ W/m}^2$ (WERTZ et al., 2011), sob vácuo profundo, radiação cósmica ionizante e choques térmicos cíclicos de $-150^\circ\text{C}$ a $+85^\circ\text{C}$. Adotam-se células solares de tripla junção $\text{InGaP}/\text{InGaAs}/\text{Ge}$ de alta eficiência (Spectrolab XTJ Prime, cujas especificações de catálogo encontram-se reproduzidas no Anexo~A), apresentando eficiência nominal BOL de $\eta_{pv} = 32{,}0\%$ a $T_{ref} = 28^\circ\text{C}$ (301,15~K).
+A geração primária é modelada sob espectro extraterrestre AM0. O datasheet da célula XTJ Prime informa condição de referência de $1353\text{ W/m}^2$ e $28^\circ\text{C}$, enquanto $1361\text{ W/m}^2$ é usado separadamente como irradiância solar de referência a 1~UA. Os parâmetros elétricos de catálogo usados no cálculo são $V_{mp}=2{,}406\text{ V}$ e $J_{mp}=17{,}5\text{ mA/cm}^2$ (SPECTROLAB, s.d.). A eficiência de catálogo declarada de $30{,}7\%$ não coincide exatamente com $V_{mp}J_{mp}/G$ usando os valores arredondados publicados; por isso, a eficiência não é usada para dimensionar a matriz e a diferença permanece registrada como limitação dos dados de catálogo. As condições de temperatura fora da faixa de caracterização do fabricante são extrapolações do modelo [PROVISÓRIO].
 
 \subsubsection{Dimensionamento da Matriz Solar do Nó de 50~kW e Escala Agregada de 1,0~MW}
 
-Conforme estabelecido na análise de trade-off técnico-econômico (Seção~\ref{sec:tradeoff_custo_escala}), a constelação opera em arquitetura distribuída composta por 20 nós operacionais de $50\text{ kW}$ brutos instalados, dos quais $40\text{ kW}$ são destinados à TI e até $10\text{ kW}$ ficam disponíveis para cargas não-TI, perdas de conversão e recarga, interligados por laser OISL. A geração instalada agregada é $1{,}0\text{ MW}$ bruto e a capacidade agregada de TI é $800\text{ kW}$. Cada nó satelital é equipado com um par de asas solares desdobráveis de enrolar de alta densidade específica (tecnologia tipo ROSA --- \textit{Roll-Out Solar Array}), cuja área externa de captação é de $A_{pv,no} = 122{,}5\text{ m}^2$ ($61{,}25\text{ m}^2$ por asa).
+Conforme estabelecido na análise de trade-off técnico-econômico (Seção~\ref{sec:tradeoff_custo_escala}), a arquitetura conceitual considera 20 nós, cada qual com meta de $50\text{ kW}$ no barramento: $40\text{ kW}$ para TI e até $10\text{ kW}$ para cargas não-TI, perdas de conversão e recarga. A meta agregada é $1{,}0\text{ MW}$ no barramento, dos quais $800\text{ kW}$ destinados à TI. Esses valores são requisitos de arquitetura, não resultados de ensaio. Cada nó é representado por um par de asas solares com área ativa adotada por célula de $A_{cel}=30{,}18\text{ cm}^2$ [PROVISÓRIO], totalizando a área calculada abaixo.
 
-Considerando células solares espaciais multijunção de tripla junção padronizadas de área ativa $A_{cel} = 30{,}18\text{ cm}^2$ com parâmetros nominais sob espectro AM0 ($G_{AM0} = 1361\text{ W/m}^2$, $28^\circ\text{C}$) de $I_{sc,ref} = 0{,}538\text{ A}$, $V_{oc,ref} = 2{,}720\text{ V}$, $I_{mp,ref}=0{,}512\text{ A}$ e $V_{mp,ref}=2{,}410\text{ V}$, a potência unitária de pico por célula é $P_{mp,cel}=2{,}410\times0{,}512=1{,}23392\text{ W}$. Com $A_{cel}=30{,}18\text{ cm}^2$ e $G_{AM0}=1361\text{ W/m}^2$, esses valores implicam $\eta_{mp}=P_{mp,cel}/(G_{AM0}A_{cel})\approx30{,}04\%$, não $32{,}0\%$. A eficiência de catálogo e os parâmetros de MPP não são simultaneamente coerentes nesta versão e precisam ser reconciliados com a folha de dados e suas condições de ensaio. Para suprir a geração bruta nominal instalada do nó satelital ($50\text{ kW}$), o número de células ativas por satélite e a área ativa correspondente são dados por:
+No ponto de catálogo, $J_{mp}=17{,}5\text{ mA/cm}^2$ e $V_{mp}=2{,}406\text{ V}$ dão, para a área adotada, $I_{mp,cel}=0{,}52815\text{ A}$ e $P_{mp,cel}=1{,}2707289\text{ W}$. Com $N_s=166$ células em série e $N_{p,no}=244$ strings em paralelo, a matriz contém $40,504$ células por nó. O cálculo de potência a $1353\text{ W/m}^2$ resulta em $51{,}47\text{ kW}$ por nó antes das perdas de conversão; a área ativa é $122{,}24\text{ m}^2$. Para 20 nós, os resultados correspondentes são $810,080$ células, $2444{,}82\text{ m}^2$ e $1{,}0294\text{ MW}$ no MPP, também antes das perdas. A margem instalada de $51{,}47$ para a meta de $50\text{ kW}$ exige rendimento agregado array--barramento de pelo menos $97{,}145\%$ em BOL e na condição de referência. Esse rendimento não foi modelado nem medido; portanto, a entrega de $50\text{ kW}$ úteis não está demonstrada.
+
+Os valores de catálogo de $V_{mp}$ e $J_{mp}$ são arredondados e não reproduzem exatamente a eficiência $\eta_{mp}=30{,}7\%$ também declarada pela Spectrolab. O dimensionamento abaixo usa explicitamente o produto $V_{mp}J_{mp}$, sem substituir ou recalibrar a eficiência de catálogo. O cálculo representa potência no ponto de máxima potência ideal, antes de mismatch, cabos, conversores, degradação e demais perdas. A fluência orbital e a perda óptica usadas na estimativa de EOL são entradas provisórias, não resultados de uma análise de ambiente radiativo com modelo de blindagem.
+
+O arranjo série-paralelo adotado e a potência no ponto de catálogo são:
 \begin{align}
-    N_{cel,no} &= \frac{50000\text{ W}}{1{,}23392\text{ W}} \approx 40500\text{ células por satélite} \label{eq:n_cel_no} \\
-    A_{ativa,no} &= 40500 \times 30{,}18 \times 10^{-4}\text{ m}^2 = 122{,}23\text{ m}^2 \approx 122{,}5\text{ m}^2 \label{eq:area_no}
+    N_{cel,no} &= N_sN_{p,no}=166\times244=40504\text{ células por satélite} \label{eq:n_cel_no} \\
+    A_{ativa,no} &= 40504 \times 30{,}18 \times 10^{-4}\text{ m}^2 = 122{,}24\text{ m}^2 \label{eq:area_no} \\
+    P_{BOL,no} &= 40504\times (2{,}406\times0{,}52815) = 51{,}47\text{ kW}
 \end{align}
-resultando em $P_{nom,BOL} = 40500 \times 1{,}23392 = 49{,}97\text{ kW} \approx 50\text{ kW}$ nominais no início de vida por nó. Na escala global da constelação (20 nós operacionais), a área total de captação totaliza $2444{,}6\text{ m}^2 \approx 2450\text{ m}^2$ com $810000$ células ativas, comprovando a perfeita consistência geométrica e energética entre o nó satelital unitário de $50\text{ kW}$ e a infraestrutura orbital agregada de $1{,}0\text{ MW}$.
-
-Para compatibilizar a matriz com o barramento estabilizado de $400\text{ VDC}$, dimensionam-se strings com **$N_s = 180$ células em série** e **$N_p = 225$ strings em paralelo** por satélite. Sob condição padrão ($28^\circ\text{C}$), a tensão de circuito aberto e a tensão de máxima potência da string são $V_{oc,str} = 180 \times 2{,}72 = 489{,}6\text{ V}$ e $V_{mp,str} = 180 \times 2{,}41 = 433{,}8\text{ V}$, com corrente de pico de $I_{mp,arr} = 225 \times 0{,}512\text{ A} = 115{,}2\text{ A}$ ($I_{sc,arr} = 121{,}05\text{ A}$). As strings são agrupadas e condicionadas por conversores redutores síncronos Buck operando na janela de entrada de $350\text{ V} \le V_{in} \le 650\text{ V}$.
+O resultado de $51{,}47\text{ kW}$ é potência fotovoltaica no MPP do arranjo, não potência entregue ao barramento. A meta arquitetural de $50\text{ kW}$ por nó requer comprovação do rendimento mínimo calculado acima. A distribuição de tensão é compatível com o barramento de $400\text{ VDC}$ no ponto de catálogo: $V_{mp,str}=166\times2{,}406=399{,}4\text{ V}$ e $I_{mp,arr}=244\times0{,}52815=128{,}87\text{ A}$. A janela Buck de $350$ a $650\text{ V}$ é requisito de projeto; a compatibilidade em extremos térmicos deve ser interpretada à luz das extrapolações identificadas no modelo.
 
 A formulação do modelo de 1 diodo / 5 parâmetros para multijunções em série (PIGNATON et al., 2021) é descrita por:
 \begin{equation}
     I = I_{ph}(T,G) - I_0(T) \left[ \exp\left( \frac{q (V + I R_s)}{a_{eq} k_B T_{cel}} \right) - 1 \right] - \frac{V + I R_s}{R_{sh}}
     \label{eq:diodo_am0}
 \end{equation}
-com fator de idealidade concentrado $a_{eq} = 3 \times 1{,}15 = 3{,}45$, $R_s = 0{,}085\ \Omega$ e $R_{sh} = 1200{,}0\ \Omega$. A corrente de saturação reversa de referência deduzida em $V_{oc}$ (Apêndice~B.2) é $I_{0,ref} = 3{,}4268 \times 10^{-14}\text{ A}$. A dependência térmica de $V_{oc}$ e $I_0(T)$, dimensionalmente corrigida com $q E_g$ em Joules ($E_g = 1{,}42\text{ eV}$ do InGaAs limitante), obedece a:
+No script, os parâmetros concentrados são $a_{eq}=3{,}00$, $R_s=0{,}080\ \Omega$ e $R_{sh}=1200\ \Omega$ [PROVISÓRIOS]. A corrente fotogerada é aproximada por $I_{ph}(T,G)=\max\{0{,}01,[I_{sc,ref}+K_I(T-T_{ref})]G/G_{datasheet}\}$, e $V_{oc}(T)=V_{oc,ref}+K_V(T-T_{ref})$. Para cada condição, o código recalcula o parâmetro equivalente de saturação para reproduzir esse $V_{oc}$ no modelo concentrado:
 \begin{equation}
-    V_{oc}(T) = V_{oc,ref} + K_V (T - T_{ref}), \qquad I_0(T) = I_{0,ref} \left( \frac{T}{T_{ref}} \right)^3 \exp\left[ \frac{q E_g}{a_{eq} k_B} \left( \frac{1}{T_{ref}} - \frac{1}{T} \right) \right]
+    I_0(T,G) = \frac{I_{ph}(T,G)-V_{oc}(T)/R_{sh}}{\exp\!\left(V_{oc}(T)/(a_{eq}V_T)\right)-1}, \qquad V_T=\frac{k_BT}{q}
     \label{eq:i0_consistente}
 \end{equation}
-onde $K_V = -6{,}20\text{ mV/K}$ e $K_I = +0{,}32\text{ mA/K}$.
+com $K_V=-5{,}60\text{ mV/K}$ e $K_I=(10{,}0\ \mu\text{A}/(\text{cm}^2\text{K}))A_{cel}=0{,}3018\text{ mA/K}$. A $28^\circ\text{C}$ e $1353\text{ W/m}^2$, a equação fornece $I_{0,ref}=3{,}6309\times10^{-16}\text{ A}$ no script. Essa recalibração algébrica não é uma lei física de ativação térmica de $I_0$ nem uma validação do modelo de célula; as temperaturas fora da faixa de catálogo são extrapolações [PROVISÓRIO]. A inclinação de $V_{mp}$ usada separadamente nas curvas é $-6{,}30\text{ mV/K}$ e a de $J_{mp}$ é $+5{,}0\ \mu\text{A}/(\text{cm}^2\text{K})$.
 
 \subsubsection{Degradação por Radiação em 10 Anos (DDD) e Desempenho Térmico}
 
-A perda de potência ao longo de 10 anos sob bombardeio de partículas energéticas e fatores ambientais é modelada conforme Tada et al. (1982) e ECSS-E-ST-20-08C (ECSS, 2014) pelo modelo de Dose de Dano por Deslocamento (DDD) conjugado a perdas ópticas cumulativas:
+A retenção de potência é representada por um modelo logarítmico paramétrico de DDD, multiplicado por um fator ambiental independente:
 \begin{equation}
     P_{mp,total}(t) = P_{mp,0} \left[ 1 - C_d \log_{10}\left( 1 + \frac{\Phi_{eq}(t)}{\Phi_x} \right) \right] \cdot \left[ 1 - \Delta P_{env} \left( \frac{t}{10} \right) \right]
     \label{eq:ddd_total}
 \end{equation}
-com $\Phi_x = 1{,}0 \times 10^{14}\text{ e}^-/\text{cm}^2$, $C_d = 0{,}085$, $\Delta P_{env} = 5{,}2\%$ (UV \textit{browning}, escurecimento do *coverglass* ceriado CMG de $100\ \mu\text{m}$ e erosão por oxigênio atômico) e fluência acumulada a $700\text{ km}$ de $\Phi_{eq}(10) = 2{,}5 \times 10^{14}\text{ e}^-/\text{cm}^2$ [PROVISÓRIO].
+O coeficiente é ajustado a um único ponto do datasheet XTJ Prime: retenção de eficiência MPP $0{,}90$ em fluência de $5\times10^{14}\text{ e}^-/\text{cm}^2$ (1~MeV), na tabela sob o padrão ECSS (SPECTROLAB, s.d.). Com a escala escolhida $\Phi_x=1{,}0\times10^{14}\text{ e}^-/\text{cm}^2$, resulta $C_d=(1-0{,}90)/\log_{10}(1+5)\approx0{,}12851$. Tanto $\Phi_x$ quanto a forma contínua entre os pontos da tabela são escolhas paramétricas [PROVISÓRIO]; a calibração em um ponto não valida a curva completa. As taxas de fluência usadas nos cenários de 500, 700 e 1000~km ($1{,}4\times10^{13}$, $2{,}5\times10^{13}$ e $5{,}8\times10^{13}\text{ e}^-/\text{cm}^2/ano$, respectivamente) e a perda ambiental de $5{,}2\%$ em dez anos também são entradas provisórias, sem cálculo de transporte de partículas, modelo de blindagem ou medição orbital. Devem ser substituídas por uma análise de ambiente radiativo específica da órbita e da blindagem antes de qualquer alegação de desempenho EOL garantido.
 
 A Figura~\ref{fig:desempenho_termico_radiacao_am0} sintetiza o comportamento térmico das curvas $I-V/P-V$ e a degradação temporal em 10 anos.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figuras/figura_3_3_desempenho_termico_radiacao_am0.png}
-    \caption{Desempenho eletrotérmico e degradação em 10 anos da matriz solar multijunção AM0: (a1) curvas $I-V$ da matriz de 1~MW para temperaturas de $-150^\circ\text{C}$ a $+85^\circ\text{C}$; (a2) curvas $P-V$ destacando os pontos de MPP e a faixa de regulação do conversor Buck (350~V a 650~V); (b1) fluência acumulada equivalente a 1~MeV em função da altitude orbital sob coverglass de 100~$\mu$m; (b2) retenção de potência EOL em 10 anos comparada ao requisito de missão ($\ge 88\%$).}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_3_desempenho_termico_radiacao_am0.png}
+    \caption{Modelo paramétrico do gerador fotovoltaico: (a1) curvas $I-V$ por nó de 50~kW no ponto de catálogo e extrapolações térmicas; (a2) curvas $P-V$ e janela Buck de projeto (350--650~V); (b1) cenários provisórios de fluência equivalente a 1~MeV; (b2) retenção calculada em dez anos com ajuste pontual ao datasheet XTJ Prime, comparada ao requisito provisório de 88\%.}
     \label{fig:desempenho_termico_radiacao_am0}
 \end{figure}
 
-A Figura~\ref{fig:desempenho_termico_radiacao_am0} comprova que a tensão da string varia entre $370{,}2\text{ V}$ a quente ($+85^\circ\text{C}$) e $482{,}4\text{ V}$ a frio no MPP, operando estritamente dentro da janela de entrada dos conversores Buck (350 a 650~V). No Subpainel~(b2), a degradação na órbita nominal de 700~km resulta em $4{,}62\%$ de perda atômica (DDD) e $11{,}8\%$ de perda global acumulada em dez anos, assegurando retenção de $88{,}2\%$ e cumprindo o requisito de fim de vida ($\ge 88\%$). A 1000~km, a perda acumulada salta para $18{,}2\%$, revelando o ponto de falha por radiação severa dos cinturões de Van Allen caso não haja espessamento de blindagem.
+No ponto de catálogo, a string tem $V_{mp,str}=399{,}4\text{ V}$. Os resultados para temperaturas fora da faixa do datasheet são extrapolações do modelo. Sob as taxas de fluência provisórias, o modelo calcula perdas de $9{,}83\%$, $11{,}83\%$ e $15{,}34\%$ após dez anos para 500, 700 e 1000~km. Em 700~km, a retenção condicional é $88{,}17\%$, fornecendo aproximadamente $45{,}38\text{ kW}$ no MPP em EOL antes das perdas de conversão.
 
 \subsubsection{Contingência de Hot Spot e Proteção por Diodos Bypass}
 
-Caso uma célula sofra sombreamento geométrico ou trinca mecânica, ela entra em polarização reversa forçada pelas demais 179 células da string ($0{,}512\text{ A}$). Sem diodo de *bypass*, a tensão reversa atinge a avalanche em $V_{rev} \approx -28{,}0\text{ V}$, dissipando $P_{diss} = 14{,}34\text{ W}$ em $30{,}18\text{ cm}^2$ ($4751\text{ W/m}^2$) [CALCULADO]. Com capacitância térmica $C_{th,cel} = 3{,}8\text{ J/K}$ e resistência de radiação no vácuo $R_{th,rad} = 12{,}5\text{ K/W}$, a temperatura local ultrapassa $180^\circ\text{C}$ em 42~s e atinge $245^\circ\text{C}$ em 120~s, fundindo a solda de prata/estanho ($230^\circ\text{C}$) e carbonizando o Kapton. Com o diodo Schottky espacial (clamp em $-0{,}35\text{ V}$), a dissipação cai para $0{,}18\text{ W}$ e a temperatura é mantida em $67{,}2^\circ\text{C}$.
+Caso uma célula sombreada seja forçada à polarização reversa pelas demais 165 células, o modelo com $I_{mp}=0{,}52815\text{ A}$ e $V_{rev}=-28{,}0\text{ V}$ [PROVISÓRIOS] dissipa $P_{diss}=14{,}788\text{ W}$ ($4900\text{ W/m}^2$ em $30{,}18\text{ cm}^2$). Com $C_{th,cel}=3{,}8\text{ J/K}$ e $R_{th,rad}=12{,}5\text{ K/W}$, a célula cruza $180^\circ\text{C}$ em $46{,}2\text{ s}$ e atinge $245{,}7^\circ\text{C}$ aos $180\text{ s}$. Com diodo bypass Schottky (queda de $-0{,}35\text{ V}$), a potência dissipada cai para $0{,}1849\text{ W}$ e a temperatura estabiliza em seguros $67{,}3^\circ\text{C}$.
 
 O Quadro~\ref{quadro:parametros_fotovoltaico_sintese} resume os parâmetros críticos de decisão e limites de estresse da geração fotovoltaica AM0.
 
-\begin{table}[htbp]
+\begin{table}[!ht]
 \centering
+\small
+\renewcommand{\arraystretch}{0.85}
 \caption{Parâmetros essenciais de projeto e estresse WCA do gerador fotovoltaico multijunção AM0.}
 \label{quadro:parametros_fotovoltaico_sintese}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.95\textwidth}{!}{%
 \begin{tabular}{lccccp{5.5cm}}
 \hline
 \textbf{Parâmetro de Decisão} & \textbf{Símbolo} & \textbf{Mínimo} & \textbf{Nominal} & \textbf{Máximo} & \textbf{Classificação e Justificativa Normativa} \\ \hline
 Constante Solar AM0 & $G_{AM0}$ & 1322~W/m$^2$ & 1361~W/m$^2$ & 1414~W/m$^2$ & \textbf{[CALCULADO]} Variação orbital Terra-Sol \\
-Eficiência da Célula BOL (28°C) & $\eta_{pv}$ & 29,5\% & 32,0\% & 32,5\% & \textbf{[DEPENDENTE DE HARDWARE]} Spectrolab XTJ Prime \\
-Área Ativa / Potência de Pico (Nó 50 kW)& $A_{at,no}, P_{BOL,no}$ & 120~m$^2$ / 48~kW & 122,2~m$^2$ / 50~kW & 125~m$^2$ / 53~kW & \textbf{[CALCULADO]} 40.500 células de $30{,}18\text{ cm}^2$ por satélite \\
-Área Ativa / Potência (Cluster 1 MW) & $A_{at,tot}, P_{tot}$ & 2400~m$^2$ / 980~kW & 2445~m$^2$ / 1,0~MW & 2500~m$^2$ / 1,06~MW & \textbf{[CALCULADO]} 810.000 células agregadas (20 nós) \\
-Configuração Série-Paralelo (Nó)& $N_s \times N_{p,no}$ & 180 $\times$ 225 & 180 $\times$ 225 & 180 $\times$ 225 & \textbf{[CALCULADO]} 2 asas solares de $61{,}25\text{ m}^2$ por satélite \\
-Configuração Agregada (Cluster) & $N_s \times N_{p,tot}$ & 180 $\times$ 4500 & 180 $\times$ 4500 & 180 $\times$ 4500 & \textbf{[CALCULADO]} 20 satélites em voo em formação \\
-Tensão de String no MPP & $V_{mp,str}$ & 370,2~V & 433,8~V & 482,4~V & \textbf{[CALCULADO]} Casada com a faixa do Buck (350 a 650 V) \\
-Tensão a Frio Extremo (-150°C) & $V_{oc,frio}$ & 489,6~V & 612,0~V & 688,2~V & \textbf{[CALCULADO]} Exige semicondutores GaN com $V_{DS} \ge 900\text{ V}$ \\
-Degradação Total EOL (10 anos) & $\Delta P_{EOL}$ & 8,3\% & 11,8\% & 18,2\% & \textbf{[PROVISÓRIO]} Modelo DDD Tada et al. (1982) \\
-Dissipação em Hot Spot & $P_{hot}$ & 0,12~W (Bypass) & 0,18~W (Bypass) & 14,3~W (Sem Bypass) & \textbf{[CALCULADO]} Ponto de falha com fusão a $245^\circ\text{C}$ \\ \hline
+Eficiência MPP BOL declarada no datasheet & $\eta_{mp}$ & -- & 30,7\% & -- & \textbf{[VERIFICÁVEL]} Valor de catálogo; não usado no dimensionamento \\
+Área Ativa / Potência no MPP por Nó & $A_{at,no}, P_{BOL,no}$ & -- & 122,24~m$^2$ / 51,47~kW & -- & \textbf{[CALCULADO]} 40.504 células; antes de perdas de conversão \\
+Área Ativa / Potência no MPP do Cluster & $A_{at,tot}, P_{tot}$ & -- & 2444,82~m$^2$ / 1,0294~MW & -- & \textbf{[CALCULADO]} 810.080 células em 20 nós; antes de perdas \\
+Configuração Série-Paralelo (Nó)& $N_s \times N_{p,no}$ & -- & 166 $\times$ 244 & -- & \textbf{[CALCULADO]} Baseada em $V_{mp}$ e $J_{mp}$ de catálogo \\
+Configuração Agregada (Cluster) & $N_s \times N_{p,tot}$ & -- & 166 $\times$ 4880 & -- & \textbf{[CALCULADO]} 20 nós operacionais \\
+Tensão no MPP por string a 28°C & $V_{mp,str}$ & -- & 399,4~V & -- & \textbf{[CALCULADO]} Ponto de catálogo; demais temperaturas são extrapoladas \\
+Perda Total EOL em 10 anos & $\Delta P_{EOL}$ & 9,83\% (500 km) & 11,83\% (700 km) & 15,34\% (1000 km) & \textbf{[PROVISÓRIO]} Taxas de fluência e perda ambiental assumidas \\
+Dissipação em Hot Spot & $P_{hot}$ & -- & 0,1849~W (Bypass) & 14,788~W (Sem Bypass) & \textbf{[CALCULADO]} Entradas térmicas e $V_{rev}$ [PROVISÓRIOS] \\ \hline
 \end{tabular}%
 }
 \end{table}
@@ -178,23 +180,21 @@ Dissipação em Hot Spot & $P_{hot}$ & 0,12~W (Bypass) & 0,18~W (Bypass) & 14,3~
 \subsection{Algoritmos de Rastreamento do Ponto de Máxima Potência sob Gradientes Térmicos}
 \label{sec:mppt_gradientes}
 
-As variações térmicas transitórias e as manobras rotacionais de atitude provocam deslocamentos contínuos do Ponto de Máxima Potência (MPP) nas curvas características $P_{pv} \times V_{pv}$. Ao cruzar o terminador solar orbital, a saída de eclipse induz um choque térmico violento com aquecimento de $-100^\circ\text{C}$ a $+65^\circ\text{C}$ em gradiente térmico de até $15\text{ K/min}$. A $-150^\circ\text{C}$, a tensão de circuito aberto da string atinge $V_{oc,str} = 688{,}2\text{ V}$, exigindo que os conversores de interface operem com semicondutores GaN de alta tensão ($V_{DS,max} \ge 900\text{ V}$).
-
-Para garantir rastreamento veloz e supressão de perdas transitórias, formula-se o algoritmo de Perturbação e Observação com Razão Cíclica Adaptativa (P\&O-AP) implementado digitalmente a $150\text{ kHz}$ [PROVISÓRIO]:
+As variações térmicas transitórias ao cruzar o terminador solar induzem gradientes de até $15\text{ K/min}$ (aquecimento de $-100^\circ\text{C}$ a $+65^\circ\text{C}$). A $-150^\circ\text{C}$, $V_{oc,str} = 688{,}2\text{ V}$, exigindo semicondutores GaN ($V_{DS,max} \ge 900\text{ V}$). Formula-se o algoritmo P\&O com Razão Cíclica Adaptativa (P\&O-AP) a $150\text{ kHz}$ [PROVISÓRIO]:
 \begin{equation}
     D[k] = D[k-1] + M \cdot \text{sgn}\left( \frac{\Delta P_{pv}}{\Delta V_{pv}} \right) \cdot \left| \frac{\Delta P_{pv}}{\Delta V_{pv}} \right|
     \label{eq:po_adaptativo}
 \end{equation}
-em que $D[k]$ é a razão cíclica do conversor Buck de acoplamento, $M = 1{,}2 \times 10^{-4}\text{ V/W}$ representa a constante de ganho adaptativo e a taxa de amostragem opera a $1{,}0\text{ kHz}$. A Figura~\ref{fig:contingencias_hotspot_mppt} ilustra a dinâmica comparativa entre o rastreador adaptativo e o método convencional de passo fixo.
+com $M = 1{,}2 \times 10^{-4}\text{ V/W}$ e taxa de amostragem de $1{,}0\text{ kHz}$. A Figura~\ref{fig:contingencias_hotspot_mppt} compara o rastreador adaptativo ao método convencional de passo fixo.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figuras/figura_3_4_contingencias_hotspot_mppt.png}
-    \caption{Análise de contingências extremas e dinâmica do MPPT: (a1) característica no quadrante reverso com clamp de diodo Schottky; (a2) evolução térmica de hot spot no vácuo com e sem bypass; (b1) transiente de tensão de string no choque solar comparando controle adaptativo GaN versus passo fixo sob teto de segurança de 600~V; (b2) rendimento de potência capturada na saída de eclipse.}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_4_contingencias_hotspot_mppt.png}
+    \caption{Contingências extremas e dinâmica do MPPT: (a1) característica reversa com clamp Schottky; (a2) evolução térmica de hot spot no vácuo; (b1) transiente de tensão sob choque térmico comparando adaptativo GaN versus passo fixo; (b2) rendimento de potência capturada na saída de eclipse.}
     \label{fig:contingencias_hotspot_mppt}
 \end{figure}
 
-O Subpainel~(b) confirma a superioridade do controle adaptativo: a malha converge no novo MPP em apenas $15\text{ ms}$ com rendimento estático superior a $99{,}2\%$, evitando as perdas de $3{,}5\%$ e as oscilações de amplitude excessiva ($\pm 18\text{ V}$) observadas no algoritmo de passo fixo tradicional. Em regime estacionário, o termo gradiente $\Delta P / \Delta V$ anula-se naturalmente no joelho da curva, eliminando o estresse eletrotérmico e harmônico sobre o barramento primário.
+O controle adaptativo converge ao novo MPP em $15\text{ ms}$ com rendimento $> 99{,}2\%$, suprimindo oscilações ($\pm 18\text{ V}$) e perdas ($3{,}5\%$) do método tradicional.
 
 \subsection{Modelagem Eletrotérmica e Critério de Estabilidade dos Conversores CC-CC}
 \label{sec:conversores_estaticos}
@@ -256,58 +256,51 @@ A Figura~\ref{fig:eletrotermica_gan_perdas} apresenta em quatro painéis integra
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figuras/figura_3_7_eletrotermica_gan_perdas.png}
-    \caption{Modelagem eletrotérmica dos transistores GaN e balanço de perdas do conversor de 20~kW (400~V/48~V): (a1) curvas de geração de calor $P_{loss}(T_j)$ versus capacidade de dissipação linear para diferentes resistências térmicas $R_{th,ja}$, evidenciando o ponto de bifurcação e fuga térmica (\textit{thermal runaway}); (a2) decomposição das perdas unitárias por chave GaN primária em função da corrente, discriminando condução ($P_{cond}$), transição resistiva ($P_{sw,I}$), descarga de capacitância parasita ($P_{oss}$) e perdas de acionamento de gate ($P_{gate}$); (b1) distribuição percentual de perdas em plena carga (20~kW), destacando a dominância dos GaNs de retificação secundária (46,4\%) e transformador magnético (35,4\%); (b2) curva real de rendimento $\eta(P_{out})$ comparada à meta de 97,8\%, revelando o colapso de eficiência em baixas potências por efeito de perdas fixas.}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_7_eletrotermica_gan_perdas.png}
+    \caption{Modelagem eletrotérmica dos transistores GaN e balanço de perdas do conversor de 20~kW (400~V/48~V): (a1) curvas de geração de calor $P_{loss}(T_j)$ versus capacidade de dissipação para diferentes $R_{th,ja}$, evidenciando o ponto de runaway; (a2) decomposição das perdas unitárias por chave GaN primária em função da corrente; (b1) distribuição percentual de perdas em plena carga (20~kW); (b2) curva real de rendimento $\eta(P_{out})$ comparada à meta de 97,8\%.}
     \label{fig:eletrotermica_gan_perdas}
 \end{figure}
 
-A inspeção do Subpainel~(a1) comprova a criticidade do critério de estabilidade térmica: enquanto resistências térmicas nominais de $1{,}0\text{ K/W}$ e $2{,}0\text{ K/W}$ garantem pontos de operação estáveis com $T_j$ em torno de $62^\circ\text{C}$ e $88^\circ\text{C}$, uma resistência térmica degradada de $4{,}0\text{ K/W}$ tangencia a curva de dissipação e conduz à divergência incontrolada para correntes superiores a $35\text{ A}$. O Subpainel~(a2) demonstra que as perdas capacitivas $P_{oss}$ ($1{,}44\text{ W}$) representam um piso fixo em baixas correntes, tornando a comutação sob carga leve inerentemente menos eficiente. No Subpainel~(b1), constata-se que a maior fonte de calor no módulo de $20\text{ kW}$ advém da retificação síncrona secundária a $48\text{ V}$ ($233{,}8\text{ W}$, correspondendo a 46,4\% do total), seguida pelas perdas de núcleo e enrolamento do transformador ($178{,}0\text{ W}$, 35,4\%), enquanto as quatro chaves GaN primárias respondem por $91{,}8\text{ W}$ (18,2\%). Por fim, o Subpainel~(b2) evidencia que a hipótese recorrente de eficiência constante em $97{,}8\%$ não se sustenta fisicamente: em cargas computacionais parciais ($P_{out} \le 2\text{ kW}$), as perdas magnéticas e capacitivas fixas derrubam o rendimento para $92{,}1\%$, exigindo que o algoritmo de gerenciamento de carga orbital desligue módulos redundantes em repouso ao invés de mantê-los em regime de fracionamento de potência.
+Enquanto resistências nominais ($1{,}0\text{ K/W}$ e $2{,}0\text{ K/W}$) garantem operação com $T_j \approx 62^\circ\text{C}$ e $88^\circ\text{C}$, uma resistência degradada de $4{,}0\text{ K/W}$ tangencia a curva de dissipação e conduz a runaway para correntes $> 35\text{ A}$. Em plena carga (20~kW), a maior dissipação concentra-se na retificação secundária a 48~V ($233{,}8\text{ W}$, 46,4\%) e no transformador ($178{,}0\text{ W}$, 35,4\%), respondendo as chaves primárias por $91{,}8\text{ W}$ (18,2\%). Em cargas leves ($\le 2\text{ kW}$), as perdas fixas reduzem o rendimento para $92{,}1\%$, justificando o desligamento de módulos redundantes em repouso.
 
 \subsubsection{Estabilidade de Impedância sob Cargas de Potência Constante (CPL) e Dimensionamento Capacitivo}
 
-A alimentação dos aceleradores de IA e módulos de memória em centros de dados espaciais caracteriza-se pelo comportamento dinâmico de Carga de Potência Constante (\textit{Constant Power Load} -- CPL). Quando os conversores do ponto de carga regulam com alta largura de banda a tensão local nos processadores, a corrente drenada do barramento varia inversamente com a tensão de alimentação ($I_{bus} = P_{CPL} / V_{bus}$), exibindo uma resistência incremental puramente negativa no plano de pequenos sinais:
+A regulação local em ponto de carga faz a corrente drenada variar inversamente com a tensão ($I_{bus} = P_{CPL} / V_{bus}$), exibindo resistência incremental negativa:
 \begin{equation}
     r_{in,CPL} = \frac{\partial V_{bus}}{\partial I_{bus}} = - \frac{V_{bus}^2}{P_{CPL}}
     \label{eq:resistencia_cpl}
 \end{equation}
-Para o barramento primário de $400\text{ V}$ operando a $20\text{ kW}$, a impedância incremental negativa é de $r_{in,400V} = -8{,}00\,\Omega$. Contudo, no barramento intermediário de rack de $48\text{ V}$, a mesma potência de $20\text{ kW}$ faz a resistência incremental despencar dramaticamente para $r_{in,48V} = -0{,}115\,\Omega$, enquanto no domínio de ponto de carga a $0{,}8\text{ V}$ por núcleo computacional de $150\text{ W}$, tem-se $r_{in,0.8V} = -0{,}00427\,\Omega$.
-
-A presença de resistências negativas introduz polos instáveis no semiplano direito se a impedância de saída da fonte $Z_{out}(s)$ interagir desfavoravelmente com a impedância de entrada da carga $Z_{in}(s)$. Segundo o \textbf{Critério de Estabilidade de Middlebrook}, a estabilidade assintótica de malha e o amortecimento de transientes são estritamente garantidos se a magnitude da impedância de saída for mantida substancialmente inferior à impedância de entrada da carga em todo o espectro de frequências:
+sendo $r_{in,400V} = -8{,}00\,\Omega$ em 400~V, $r_{in,48V} = -0{,}115\,\Omega$ em 48~V e $r_{in,0.8V} = -0{,}00427\,\Omega$ em 0,8~V (para 20~kW e 150~W, respectivamente). O \textbf{Critério de Middlebrook} impõe que a impedância de saída da fonte satisfaça:
 \begin{equation}
     |Z_{out}(j\omega)| \le \frac{1}{GM} |Z_{in,CPL}(j\omega)|, \quad \forall \omega
     \label{eq:criterio_middlebrook}
 \end{equation}
-adotando margem de ganho de projeto $GM \ge 10$ ($|Z_{out}| \le 0{,}1 |Z_{in,CPL}|$). A impedância de saída da rede de distribuição, modelada pelo filtro com indutância parasita $L_{dist}$, resistência ôhmica $R_{dist}$ e banco capacitivo $C_{bus}$ com resistência série equivalente $ESR$, é expressa por:
+com $GM \ge 10$. A impedância de saída $Z_{out}(s)$ e o requisito mínimo de capacitância para amortecimento de degraus de IA são:
 \begin{equation}
-    Z_{out}(s) = \frac{(s L_{dist} + R_{dist})(s \cdot C_{bus} \cdot ESR + 1)}{s^2 L_{dist} C_{bus} + s (L_{dist} + R_{dist} \cdot C_{bus} \cdot ESR) + 1}
+    Z_{out}(s) = \frac{(s L_{dist} + R_{dist})(s C_{bus} ESR + 1)}{s^2 L_{dist} C_{bus} + s (L_{dist} + R_{dist} C_{bus} ESR) + 1}, \quad C_{bus,min} \ge \max\left( \frac{L_{dist}}{R_{dist}^2}, \, \frac{L_{dist} \Delta I^2}{V_{nom}^2 - V_{min}^2}, \, \frac{L_{dist} P_{CPL}^2}{V_{bus}^4} \right)
     \label{eq:zout_bus}
 \end{equation}
-O pico de impedância ressonante da malha ocorre aproximadamente na frequência natural $\omega_0 = 1/\sqrt{L_{dist} C_{bus}}$, com amplitude máxima $Z_{out,max} \approx \sqrt{L_{dist}/C_{bus}} / Q$. Para que o sistema não entre em oscilações limites sustentadas durante chaveamento de algoritmos de IA, o banco capacitivo de desacoplamento deve ser dimensionado para cumprir dois requisitos simultâneos: teto de impedância de Middlebrook e absorção de energia cinética durante degraus de corrente:
-\begin{equation}
-    C_{bus,min} \ge \max\left( \frac{L_{dist}}{R_{dist}^2}, \, \frac{L_{dist} \cdot \Delta I^2}{V_{nom}^2 - V_{min}^2}, \, \frac{L_{dist} \cdot P_{CPL}^2}{V_{bus}^4} \right)
-    \label{eq:cbus_dimensionamento}
-\end{equation}
 
-A Figura~\ref{fig:estabilidade_cpl_banco} analisa as curvas de impedância de pequenos sinais, a resposta a degraus de IA no barramento de 400~V e a falha de colapso de subtensão em 48~V decorrente da degradação capacitiva.
+A Figura~\ref{fig:estabilidade_cpl_banco} apresenta a análise de Middlebrook e a dinâmica transitória sob degraus de IA.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figuras/figura_3_8_estabilidade_cpl_banco_capacitivo.png}
-    \caption{Análise de estabilidade por impedância de pequenos sinais (Middlebrook) e dinâmica transitória com banco capacitivo: (a1) resistência incremental de CPL ($Z_{in,CPL} = -V^2/P$) para os barramentos de 400~V, 48~V e 0,8~V; (a2) diagrama de Bode de magnitudes de impedância comparando $Z_{out}(j\omega)$ do barramento de 400~V ($4{,}7\text{ mF}$) contra a envoltória de estabilidade de Middlebrook ($|Z_{out}| \le 0{,}1 |Z_{in}|$), com pico ressonante em 600~Hz; (b1) transiente de afundamento e recuperação de tensão no barramento de 400~V sob degrau de carga de IA ($2\text{ kW} \leftrightarrow 20\text{ kW}$ em $10\ \mu\text{s}$), contido em $\Delta V < 3{,}1\text{ V}$; (b2) ponto de falha WCA em 48~V: oscilações limites sustentadas e colapso de tensão por subtensão ($V_{bus} < 45{,}6\text{ V}$) decorrente da perda parcial de capacitores e aumento de ESR.}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_8_estabilidade_cpl_banco_capacitivo.png}
+    \caption{Estabilidade de pequenos sinais (Middlebrook) e dinâmica com banco capacitivo: (a1) resistência incremental de CPL para 400~V, 48~V e 0,8~V; (a2) diagrama de Bode comparando $Z_{out}(j\omega)$ do barramento de 400~V ($4{,}7\text{ mF}$) contra a envoltória de Middlebrook ($|Z_{out}| \le 0{,}1 |Z_{in}|$); (b1) transiente no barramento de 400~V sob degrau de IA ($2 \leftrightarrow 20\text{ kW}$ em $10\ \mu\text{s}$), contido em $\Delta V < 3{,}1\text{ V}$; (b2) ponto de falha WCA em 48~V com colapso de tensão por degradação capacitiva.}
     \label{fig:estabilidade_cpl_banco}
 \end{figure}
 
-A análise do Subpainel~(a2) comprova que o banco de desacoplamento de $4{,}7\text{ mF}$ no barramento de $400\text{ V}$ assegura conformidade integral com o critério de Middlebrook: o pico de impedância ressonante em $600\text{ Hz}$ alcança $0{,}073\,\Omega$, mantendo-se mais de uma década abaixo do teto de estabilidade de $0{,}8\,\Omega$ ($0{,}1 |r_{in,400V}|$). Consequentemente, o Subpainel~(b1) demonstra que o barramento de $400\text{ V}$ suporta degraus brutais de carga computacional de $2\text{ kW}$ para $20\text{ kW}$ (com tempo de subida de apenas $10\ \mu\text{s}$) com afundamento de tensão restrito a $\Delta V = 3{,}08\text{ V}$ (variação de apenas $0{,}77\%$), recuperando o regime permanente em menos de $15\text{ ms}$.
-
-Todavia, o Subpainel~(b2) desmascara uma vulnerabilidade sistêmica frequentemente negligenciada: a transposição acrítica da estabilidade de $400\text{ V}$ para o barramento secundário de $48\text{ V}$. Em $48\text{ V}$, um degrau de carga de $20\text{ kW}$ demanda uma excursão de corrente de $375\text{ A}$, operando contra uma resistência negativa extrema de $-0{,}115\,\Omega$. Sob condições nominais de projeto com filtragem cerâmica dedicada ($C_{rack} = 15\text{ mF}$, $ESR = 1{,}2\text{ m}\Omega$), a regulação é preservada. Contudo, sob o envelope de pior caso (WCA) em fim de vida útil (Falha DC-F03), onde a quebra por estresse térmico ou fissura de solda reduz a capacitância efetiva para $3\text{ mF}$ e o ESR sobe para $8\text{ m}\Omega$, a impedância do barramento cruza a fronteira de estabilidade de Nyquist. A tensão sofre afundamento imediato para $43{,}4\text{ V}$ (violando o limiar normativo de corte de $-5\%$, $45{,}6\text{ V}$), disparando oscilações oscilatórias sustentadas de grande amplitude em $1{,}1\text{ kHz}$ que desarmam as fontes secundárias dos servidores e provocam o congelamento catastrófico do aglomerado computacional.
+O banco de $4{,}7\text{ mF}$ em 400~V cumpre com folga o critério de Middlebrook (pico de $0{,}073\,\Omega \ll 0{,}8\,\Omega$), contendo degraus de $2\text{ a }20\text{ kW}$ em $\Delta V = 3{,}08\text{ V}$ ($0{,}77\%$) com recuperação em $15\text{ ms}$. Contudo, no barramento de 48~V, a perda de capacitância para $3\text{ mF}$ e elevação de ESR para $8\text{ m}\Omega$ em fim de vida útil (Falha DC-F03) viola a estabilidade de Nyquist, provocando afundamento para $43{,}4\text{ V}$ e oscilações sustentadas de $1{,}1\text{ kHz}$.
 
 O Quadro~\ref{quadro:parametros_conversores_sintese} consolida a síntese paramétrica com as respectivas classificações epistêmicas, limites operacionais e referências normativas.
 
-\begin{table}[htbp]
+\begin{table}[!ht]
 \centering
+\small
+\renewcommand{\arraystretch}{0.85}
 \caption{Parâmetros de projeto, limites de estabilidade e classificação epistêmica dos conversores CC-CC.}
 \label{quadro:parametros_conversores_sintese}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.95\textwidth}{!}{%
 \begin{tabular}{lccccp{5.5cm}}
 \hline
 \textbf{Parâmetro de Decisão} & \textbf{Símbolo} & \textbf{Mínimo} & \textbf{Nominal} & \textbf{Máximo} & \textbf{Classificação e Justificativa Normativa} \\ \hline
@@ -328,11 +321,13 @@ Banco Capacitivo de Rack (48 V) & $C_{rack}, ESR$ & 3~mF / 8~m$\Omega$ & 15~mF /
 
 A Tabela~\ref{tab:matriz_falhas_conversores} apresenta a Matriz de Modos de Falha e Efeitos Críticos (FMECA) consolidada dos estágios de conversão e barramentos, mapeando os gatilhos físicos, impactos sistêmicos e estratégias mitigadoras implementadas.
 
-\begin{table}[htbp]
+\begin{table}[!ht]
 \centering
+\small
+\renewcommand{\arraystretch}{0.85}
 \caption{Matriz de Modos de Falha, Efeitos e Ações Mitigadoras dos Conversores CC-CC.}
 \label{tab:matriz_falhas_conversores}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.95\textwidth}{!}{%
 \begin{tabular}{lp{3.5cm}p{4.0cm}p{3.0cm}p{4.5cm}}
 \hline
 \textbf{Código} & \textbf{Modo de Falha} & \textbf{Mecanismo Físico / Gatilho} & \textbf{Efeito Sistêmico} & \textbf{Ação de Mitigação de Projeto} \\ \hline
@@ -419,54 +414,35 @@ com $T_{ref} = 293{,}15\text{ K}$ ($20^\circ\text{C}$), $E_a = 0{,}32\text{ eV} 
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figuras/figura_3_5_dinamica_dp_eletroquimica.png}
-    \caption{Dinâmica eletroquímica e comportamento térmico do BESS de 400~V em órbita LEO (700~km): (a1) perfil de corrente orbital com base de 2~kW e trens de pulsos de IA de 20~kW (50~A) durante o eclipse de 18,8~min, seguido de recarga rápida solar (-42~A); (a2) decomposição das sobretensões internas ($V_{p1}$ e $V_{p2}$ amplificadas em 10x) e resposta da tensão terminal $V_t(t)$ frente ao limite $V_{UV}$; (b1) cinética térmica de Arrhenius de $R_0(T_{bat})$ comparando início de vida (BOL) e fim de vida (EOL), destacando a zona proibida de deposição de lítio metálico ($< 0^\circ\text{C}$); (b2) evolução da temperatura interna do pack $T_{bat}$ sob acoplamento MLI e controle ativo por aquecedor, mantendo a faixa operacional segura entre $+10^\circ\text{C}$ e $+25^\circ\text{C}$.}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_5_dinamica_dp_eletroquimica.png}
+    \caption{Dinâmica eletroquímica e comportamento térmico do BESS de 400~V em órbita LEO (700~km): (a1) perfil de corrente orbital com base de 2~kW e pulsos de IA de 20~kW no eclipse, seguido de recarga solar (-42~A); (a2) resposta da tensão terminal $V_t(t)$ frente a $V_{UV}$; (b1) cinética térmica de Arrhenius de $R_0(T_{bat})$ em BOL e EOL; (b2) temperatura $T_{bat}$ sob controle ativo mantida entre $+10^\circ\text{C}$ e $+25^\circ\text{C}$.}
     \label{fig:dinamica_dp_eletroquimica}
 \end{figure}
 
 \subsubsection{Balanço Térmico Consistente: Manta MLI e Aquecedor PWM}
 
-Sob a ótica de rigor epistêmico, desfaz-se o erro conceitual presente em formulações anteriores que aplicavam aquecedores de $2{,}5\text{ kW}$ diretamente sobre a resistência de isolamento da manta MLI ($R_{th,MLI} = 4{,}8\text{ K/W}$), o que implicaria uma elevação fictícia de temperatura de regime de $\Delta T = P \cdot R_{th} = 2500 \times 4{,}8 = 12.000\text{ K}$ [CALCULADO], incompatível com a física. O valor de $R_{th,MLI} = 4{,}8\text{ K/W}$ representa o isolamento passivo condutivo-radiativo global entre o invólucro do pack e o chassi/espaço frio [PROVISÓRIO -- NÃO VALIDADO].
-
-O balanço térmico concentrado em parâmetros médios é formulado por:
+O valor $R_{th,MLI} = 4{,}8\text{ K/W}$ representa o isolamento condutivo-radiativo global entre o invólucro do pack e o chassi [PROVISÓRIO]. O balanço térmico concentrado é dado por:
 \begin{equation}
     C_{th,bat} \frac{dT_{bat}(t)}{dt} = P_{loss}(t) + P_{heat}(t) - \frac{T_{bat}(t) - T_{chassis}}{R_{th,MLI}}
     \label{eq:balanco_termico_consistente}
 \end{equation}
-onde $C_{th,bat} = 54.360\text{ J/K}$ (pack elementar de $60\text{ kg}$ de células NMC com $c_p \approx 906\text{ J/(kg}\cdot\text{K)}$ [CALCULADO]), $P_{loss} = I_{bat}^2 R_0(T_{bat}) + \frac{V_{p1}^2}{R_{p1}} + \frac{V_{p2}^2}{R_{p2}}$ e o aquecedor de sobrevivência é rigorosamente modulado por largura de pulso (PWM) com teto estrito de segurança:
-\begin{equation}
-    P_{heat}(t) = D_{PWM}(t) \cdot P_{heater,rated}, \qquad \boxed{0 \le P_{heat}(t) \le 300\text{ W}} \quad \text{[CALCULADO]}
-    \label{eq:pwm_aquecedor}
-\end{equation}
-evitando qualquer saturação térmica perigosa. O controle térmico atua termostaticamente entre $+10^\circ\text{C}$ e $+25^\circ\text{C}$: abaixo de $+10^\circ\text{C}$, aciona-se o aquecimento para prevenir a deposição de lítio metálico (\textit{lithium plating}); acima de $+25^\circ\text{C}$, o aquecedor é bloqueado para conter o crescimento acelerado da camada de passivação SEI.
+com $C_{th,bat} = 54.360\text{ J/K}$ ($60\text{ kg}$ NMC, $c_p \approx 906\text{ J/(kg K)}$), $P_{loss} = I_{bat}^2 R_0(T_{bat}) + V_{p1}^2/R_{p1} + V_{p2}^2/R_{p2}$, e aquecedor de sobrevivência modulado em $0 \le P_{heat}(t) \le 300\text{ W}$ ativado termostaticamente entre $+10^\circ\text{C}$ e $+25^\circ\text{C}$.
 
-\subsubsection{Estimação Adaptativa de SoC via AUKF com Adaptação Explícita de Sage--Husa}
+\subsubsection{Estimação Adaptativa de SoC via AUKF com Adaptação de Sage--Husa}
 
-Para a observabilidade em tempo real de $SoC_k$ sob ruído de sensoriamento ($R_{meas} = 0{,}0225\text{ V}^2$, $150\text{ mV}_{rms}$), formula-se o Filtro de Kalman Unscented Adaptativo (AUKF) com vetor de estado $\mathbf{x}_k = [SoC_k, V_{p1,k}, V_{p2,k}]^T$ ($L = 3$). A transformação unscented gera $2L + 1 = 7$ pontos sigma determinísticos com parâmetros canônicos $\alpha_{ut} = 10^{-3}$, $\beta_{ut} = 2{,}0$ e $\kappa_{ut} = 0$:
-\begin{equation}
-    \lambda_{UT} = \alpha_{ut}^2 (L + \kappa_{ut}) - L = (10^{-3})^2(3) - 3 = -2{,}999997 \implies L + \lambda_{UT} = 3 \times 10^{-6}
-    \label{eq:lambda_ut_calc}
-\end{equation}
-Esse valor calculado ($L + \lambda_{UT} = 3 \times 10^{-6}$ [CALCULADO]) gera pesos centrais elevados ($W_m^{(0)} \approx -999.999$), exigindo compulsoriamente a fatoração triangular inferior de Cholesky $\mathbf{S}\mathbf{S}^T = (L + \lambda_{UT})\mathbf{P}_{k-1}$ e salvaguardas numéricas de simetrização ($\mathbf{P} \leftarrow \frac{1}{2}(\mathbf{P} + \mathbf{P}^T)$) e truncamento de autovalores negativos para evitar perda de positividade semidefinida.
-
-A adaptação de ruído baseia-se na formulação recursiva de Sage--Husa a partir do resíduo de inovação de tensão $\nu_k = y_k - \hat{y}_{k|k-1}$:
+Para observabilidade sob ruído de sensoriamento ($R_{meas} = 0{,}0225\text{ V}^2$, $150\text{ mV}_{rms}$), formula-se o AUKF com $\mathbf{x}_k = [SoC_k, V_{p1,k}, V_{p2,k}]^T$ ($L = 3$) e $2L+1=7$ pontos sigma (detalhes no Apêndice~C). A adaptação estocástica das covariâncias $\mathbf{Q}_k$ e $\mathbf{R}_k$ segue a recursão de Sage--Husa:
 \begin{align}
     \mathbf{R}_k &= (1 - d_k) \mathbf{R}_{k-1} + d_k \left( \nu_k \nu_k^T - \mathbf{P}_{yy,k} \right) \label{eq:sage_husa_r} \\
     \mathbf{Q}_k &= (1 - d_k) \mathbf{Q}_{k-1} + d_k \left[ \mathbf{K}_k \nu_k \nu_k^T \mathbf{K}_k^T + \mathbf{P}_{k|k} - \mathbf{F}_k \mathbf{P}_{k-1|k-1} \mathbf{F}_k^T \right] \label{eq:sage_husa_q}
 \end{align}
-onde $\mathbf{P}_{yy,k}$ é a covariância prevista da medição devida à incerteza de estado, $\mathbf{K}_k = \mathbf{P}_{xy,k} \mathbf{S}_k^{-1}$ é o ganho de Kalman e a sequência de esquecimento com fator de memória $b = 0{,}95$ é expressa por:
-\begin{equation}
-    d_k = \frac{1 - b}{1 - b^{k+1}}, \qquad 0 < b < 1 \quad \text{[PROVISÓRIO]}
-    \label{eq:fator_dk}
-\end{equation}
-Sob a perspectiva epistêmica, $RMSE < 1{,}2\%$ é apenas uma meta provisória. Não há ensaios físicos nem dados independentes de referência apresentados aqui; portanto, o erro deve ser reportado somente após avaliação numérica reprodutível contra um perfil de SoC conhecido. A meta não constitui prova de convergência assintótica nem garantia de estabilidade do AUKF.
+com sequência de esquecimento $d_k = (1 - b)/(1 - b^{k+1})$ ($b = 0{,}95$) e fatoração triangular de Cholesky.
 
-A Figura~\ref{fig:convergencia_aukf_estresse} ilustra a trajetória de convergência do estimador sob perturbações deliberadas e identifica o ponto de colapso por subtensão em fim de vida (EOL).
+A Figura~\ref{fig:convergencia_aukf_estresse} ilustra a convergência do estimador e o ensaio sob pulso de IA de 50~kW em fim de vida útil (EOL).
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figuras/figura_3_6_convergencia_aukf_estresse.png}
-    \caption{Desempenho do estimador AUKF e análise de estresse extremo em fim de vida (EOL): (a1) trajetória de convergência de SoC a partir de erro inicial severo deliberado de $-25\%$ ($SoC_{est} = 60\%$ versus $SoC_{real} = 85\%$) e comparação com deriva do Coulomb Counting sob bias de $0{,}5\text{ A}$; (a2) evolução do erro absoluto $|SoC_{est} - SoC_{real}|$, convergindo abaixo do teto de tolerância ($< 1{,}0\%$) em menos de 90~s; (b1) filtragem digital do ruído de sensoriamento de 150~mV$_{rms}$ na tensão terminal $\hat{V}_t$; (b2) ponto de falha WCA em EOL: colapso de tensão sob pulso de IA de 20~kW com bateria em $SoC = 35\%$, provocando queda abaixo de $V_{UV} = 324\text{ V}$ e corte prematuro de carga.}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_6_convergencia_aukf_estresse.png}
+    \caption{Desempenho do estimador AUKF e resposta de subtensão em EOL: (a1) convergência de SoC com erro inicial de $-25\%$ e comparação com deriva do Coulomb Counting; (a2) erro absoluto $|SoC_{est} - SoC_{real}| < 1{,}0\%$ em $< 90\text{ s}$; (b1) filtragem do ruído de sensoriamento ($150\text{ mV}_{rms}$); (b2) resposta sob pulso de IA de 50~kW (140~A por 60~s) em EOL, contrastando a margem operacional a $SoC = 20\%$ ($> 28\text{ V}$) com o ensaio fora de projeto a $SoC = 2\%$ ($> 10\text{ V}$ antes do corte $V_{UV} = 324\text{ V}$).}
     \label{fig:convergencia_aukf_estresse}
 \end{figure}
 
@@ -474,11 +450,13 @@ A Figura~\ref{fig:convergencia_aukf_estresse} ilustra a trajetória de convergê
 
 Os limites operacionais, critérios de erro e os pontos em que o modelo atinge falha catastrófica encontram-se sumarizados na Tabela~\ref{tab:matriz_falhas_bess_aukf}.
 
-\begin{table}[htbp]
+\begin{table}[!ht]
 \centering
+\small
+\renewcommand{\arraystretch}{0.85}
 \caption{Matriz de Modos de Falha, Limites de Estresse e Mecanismos Críticos do BESS e Estimador AUKF.}
 \label{tab:matriz_falhas_bess_aukf}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.95\textwidth}{!}{%
 \begin{tabular}{lp{3.5cm}p{3.5cm}p{3.5cm}p{4.5cm}}
 \hline
 \textbf{Código} & \textbf{Modo de Falha} & \textbf{Limiar de Entrada em Falha} & \textbf{Efeito Sistêmico Catastrófico} & \textbf{Estratégia de Mitigação Implementada} \\ \hline
@@ -494,11 +472,13 @@ Os limites operacionais, critérios de erro e os pontos em que o modelo atinge f
 
 O Quadro~\ref{quadro:parametros_bess_aukf_sintese} sintetiza os parâmetros consolidados de projeto do BESS e do estimador AUKF.
 
-\begin{table}[htbp]
+\begin{table}[!ht]
 \centering
+\small
+\renewcommand{\arraystretch}{0.85}
 \caption{Parâmetros essenciais de projeto, estresse WCA e classificação epistêmica do BESS e AUKF.}
 \label{quadro:parametros_bess_aukf_sintese}
-\resizebox{\textwidth}{!}{%
+\resizebox{0.95\textwidth}{!}{%
 \begin{tabular}{lccccp{5.5cm}}
 \hline
 \textbf{Parâmetro de Decisão} & \textbf{Símbolo} & \textbf{Mínimo} & \textbf{Nominal} & \textbf{Máximo} & \textbf{Classificação e Justificativa Normativa} \\ \hline

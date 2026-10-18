@@ -119,12 +119,14 @@ xlim([0, 750]); ylim([0, 75]);
 
 % Subpainel (b1): Fluencia de Radiacao Acumulada
 t_anos = linspace(0, 10, 100);
-Phi_x = 1.0e14;
-% Calibracao semi-empirica ajustada a tabela ECSS (ECSS-E-ST-20-08C) do datasheet XTJ Prime:
-% Na fluencia de joelho Phi = 5x10^14 e-/cm^2 (1 MeV), P/P0 = 0.89 * 0.99 = 0.8811 (88.1%).
-% Com 1 - C_d * log10(1 + 5) = 0.8811 -> C_d = 0.1528.
-% NOTA EPISTEMICA: Ajuste pontual semi-empirico baseado na tabela ECSS da Spectrolab.
-C_d = 0.1528; % [PROVISORIO / AJUSTE PONTUAL]
+Phi_x = 1.0e14; % Escala escolhida para o ajuste [PROVISORIO]
+% Ajuste pontual do modelo parametrico ao dado de eficiencia_mp=0.90 do datasheet XTJ Prime,
+% tabela de retencao sob o padrao europeu ECSS, em Phi=5e14 e-/cm^2 (1 MeV).
+% Phi_x=1e14 e-/cm^2 e uma escala escolhida para o modelo, nao um parametro medido.
+eta_mp_ret_ECSS_5e14 = 0.90; % Dado direto da tabela Spectrolab [VERIFICAVEL]
+C_d = (1.0 - eta_mp_ret_ECSS_5e14) / log10(1.0 + 5.0); % ~= 0.12851 [PROVISORIO / AJUSTE PONTUAL]
+% Este ajuste de um ponto nao valida a forma logaritmica entre pontos nem substitui modelo de ambiente orbital.
+% Taxas de fluencia ilustrativas [PROVISORIAS], sem modelo de ambiente orbital ou blindagem.
 phi_500 = 1.4e13 * t_anos; phi_700 = 2.5e13 * t_anos; phi_1000 = 5.8e13 * t_anos;
 
 subplot(2, 2, 3);

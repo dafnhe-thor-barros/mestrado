@@ -101,147 +101,58 @@ Assim, $50\text{ kW}$ é o \textbf{ponto de projeto adotado} por compatibilidade
 
 Conquanto a disponibilidade solar seja abundante em órbitas heliossíncronas ou geoestacionárias, a operação contínua de semicondutores de alto desempenho esbarra em um limite termodinâmico intransponível: a transferência de calor em confinamento a vácuo (MESEGUER; PÉREZ-GRANDE; SANZ-ANDRÉS, 2012, p. 45).
 
-Em data centers convencionais em terra, o calor gerado pelos circuitos integrados é extraído por condução até trocadores de calor e transferido para o ar ou água por convecção forçada monofásica ou bifásica (BARROSO; HÖLZLE; RANGANATHAN, 2019, p. 68). No vácuo orbital (pressão residual $P < 10^{-6}\text{ Pa}$), inexiste qualquer meio fluido contínuo para propiciar convecção ou condução externa. Consequentemente, \textbf{todo o calor gerado internamente pela carga útil computacional deve ser conduzido estruturalmente até a carcaça da plataforma e rejeitado para o espaço profundo estritamente por meio de radiação térmica superficial} (CHEN et al., 2026, p. 2).
+Em data centers convencionais em terra, o calor gerado pelos circuitos integrados é extraído por condução até trocadores de calor e transferido para o ar ou água por convecção forçada monofásica ou bifásica (BARROSO; HÖLZLE; RANGANATHAN, 2019, p. 68). No vácuo orbital (pressão residual $P < 10^{-6}\text{ Pa}$), inexiste qualquer meio fluido contínuo para propiciar convecção ou condução externa. Consequentemente, \textbf{todo o calor gerado internamente pela carga útil computacional deve ser conduzido estruturalmente até a carcaça da plataforma e rejeitado para o espaço profundo estritamente por meio de radiação térmica superficial} (CHEN et al., 2026, p. 2), conforme regido pela Lei de Stefan-Boltzmann ($q_{rad} = \varepsilon \sigma A_{rad} [T_{rad}^4 - T_{space}^4]$).
 
-A taxa de rejeição radiativa é matematicamente descrita pela Lei de Stefan-Boltzmann:
-\begin{equation}
-    q_{rad}(t) = \varepsilon \sigma A_{rad} \left[ T_{rad}(t)^4 - T_{space}^4 \right]
-    \label{eq:stefan_boltzmann}
-\end{equation}
-em que:
-\begin{itemize}
-    \item $\varepsilon$ é a emissividade no infravermelho da cobertura óptica do radiador ($0 < \varepsilon \le 1$, tipicamente $\approx 0{,}85$ a $0{,}92$ para tintas térmicas brancas e filmes OSR -- \textit{Optical Solar Reflectors});
-    \item $\sigma = 5{,}670 \times 10^{-8}\text{ W/m}^2\text{K}^4$ é a constante universal de Stefan-Boltzmann;
-    \item $A_{rad}$ representa a área efetiva superficial de rejeição radiativa orientada para o espaço profundo ($\text{m}^2$);
-    \item $T_{rad}(t)$ é a temperatura absoluta da superfície externa do radiador em Kelvin (K);
-    \item $T_{space} \approx 3\text{ K}$ é a temperatura efetiva da radiação cósmica de fundo do espaço profundo.
-\end{itemize}
-
-O circuito elétrico equivalente de parâmetros concentrados (\textit{lumped thermal model}) que modela o nó de silício do acelerador de IA (GPU/TPU) e o radiador é expresso pelo sistema de equações diferenciais acopladas:
-\begin{align}
-    C_{j} \frac{dT_{j}(t)}{dt} &= P_{chip}(t) - \frac{T_{j}(t) - T_{rad}(t)}{R_{th,j-rad}} \label{eq:nodal_chip}\\
-    C_{rad} \frac{dT_{rad}(t)}{dt} &= \frac{T_{j}(t) - T_{rad}(t)}{R_{th,j-rad}} - \varepsilon \sigma A_{rad} \left[ T_{rad}(t)^4 - T_{space}^4 \right] \label{eq:nodal_rad}
-\end{align}
-onde $T_j(t)$ é a temperatura da junção do semicondutor, $C_j$ e $C_{rad}$ são as capacitâncias térmicas do chip e da placa do radiador ($\text{J/K}$), $R_{th,j-rad}$ é a resistência térmica condutiva interfacial ($\text{K/W}$), e $P_{chip}(t)$ representa a potência elétrica instantânea dissipada pelo processador durante o cálculo das redes neurais.
-
-A Equação~(\ref{eq:stefan_boltzmann}) expõe a severidade do gargalo: para que a junção de silício mantenha integridade dielétrica e física, a temperatura máxima é limitada a $T_j \le 85^\circ\text{C}$ ($358{,}15\text{ K}$). Admitindo uma queda condutiva de $15^\circ\text{C}$ na interface interna, a temperatura máxima do radiador não excede $T_{rad} \approx 70^\circ\text{C}$ ($343{,}15\text{ K}$). Aplicando a Lei de Stefan-Boltzmann sob essas condições ideais:
-\begin{equation}
-    \frac{q_{rad}}{A_{rad}} \approx 0{,}90 \cdot \left(5{,}670 \times 10^{-8}\right) \cdot \left( 343{,}15^4 - 3^4 \right) \approx 708\text{ W/m}^2
-\end{equation}
-
-Assim, cada quilowatt elétrico de servidores de IA operando em regime permanente exige uma área radiativa desobstruída superior a $1{,}41\text{ m}^2$. Em um rack orbital consumindo de 5~kW a 20~kW, radiadores fixos demandariam dezenas de metros quadrados de painéis desdobráveis de altíssimo custo e peso de lançamento (CHEN et al., 2026, p. 3). Se as cargas computacionais forem despachadas sem sensibilidade térmica, o calor acumulado satura rapidamente a capacitância térmica $C_j$, deflagrando estrangulamento térmico por corte abrupto (\textit{thermal shutdown}) ou colapso irreversível dos chips de IA.
+Para que a junção de silício mantenha integridade dielétrica e física, a temperatura máxima admissível é tipicamente limitada a $T_j \le 85^\circ\text{C}$ ($358{,}15\text{ K}$). Admitindo uma queda condutiva de $15^\circ\text{C}$ na interface interna até o radiador ($T_{rad} \approx 70^\circ\text{C}$), a taxa máxima de rejeição radiativa para o espaço profundo ($T_{space} \approx 3\text{ K}$) com emissividade $\varepsilon \approx 0{,}90$ limita-se a aproximadamente $708\text{ W/m}^2$. Assim, cada quilowatt elétrico de servidores de IA operando em regime permanente exige uma área radiativa desobstruída superior a $1{,}41\text{ m}^2$. Em um rack orbital consumindo dezenas de quilowatts, radiadores fixos demandariam áreas proibitivas de painéis desdobráveis de altíssimo custo e peso de lançamento (CHEN et al., 2026, p. 3). Se as cargas computacionais forem despachadas sem sensibilidade térmica, o calor acumulado satura rapidamente a capacitância térmica local dos processadores, deflagrando estrangulamento térmico por corte abrupto (\textit{thermal shutdown}) ou colapso irreversível dos semicondutores. A modelagem detalhada da rede térmica nodal de múltiplos nós e os acoplamentos radiativos são desenvolvidos analiticamente no Capítulo~4.
 
 \subsection{Subsistema Fotovoltaico Espacial e Conversão Estática de Potência}
 
 A geração primária em satélites é assegurada pelo subsistema elétrico (\textit{Electrical Power System} -- EPS), composto pelo arranjo fotovoltaico, conversores chaveados de condicionamento e distribuição e baterias de sustentação (AL HOSANI et al., 2021, p. 9125; BARBI, 2006, p. 18).
 
-Para células fotovoltaicas espaciais de alta eficiência (células de tripla junção InGaP/InGaAs/Ge com rendimento $\eta > 30\%$), a relação corrente-tensão sob o espectro AM0 é modelada pelo circuito equivalente de um diodo e cinco parâmetros (PIGNATON et al., 2021, p. 2):
-\begin{equation}
-    I = I_{ph} - I_0 \left[ \exp\left( \frac{q (V + I R_s)}{a k_B T_{cel}} \right) - 1 \right] - \frac{V + I R_s}{R_{sh}}
-    \label{eq:pv_1diodo}
-\end{equation}
-em que $I_{ph}$ é a fotocorrente gerada pela incidência solar AM0, $I_0$ é a corrente de saturação reversa do diodo, $q = 1{,}602 \times 10^{-19}\text{ C}$ é a carga elementar, $k_B = 1{,}381 \times 10^{-23}\text{ J/K}$ é a constante de Boltzmann, $a$ é o fator de idealidade da junção, $T_{cel}$ é a temperatura das células em Kelvin, e $R_s$ e $R_{sh}$ representam as resistências série e paralelo (shunt), respectivamente.
+Para células fotovoltaicas espaciais de alta eficiência (células de tripla junção InGaP/InGaAs/Ge com rendimento $\eta > 30\%$), a relação corrente-tensão sob o espectro AM0 é modelada pelo circuito equivalente de um diodo e cinco parâmetros com dependência térmica e de irradiância. Para garantir que a matriz solar opere continuamente em seu Ponto de Máxima Potência (MPP) frente às flutuações de temperatura causadas por manobras de atitude e variações transitórias, conversores CC-CC integrados executam algoritmos avançados de rastreamento (\textit{Maximum Power Point Tracking} -- MPPT) (ABAGERO et al., 2025, p. 2; SHOBHA; USHA; KUMAR, 2023, p. 69).
 
-A dependência térmica e de irradiância é expressa por:
-\begin{align}
-    I_{ph} &= \left( I_{ph,ref} + K_I \Delta T \right) \frac{G_{AM0}}{G_{ref}} \\
-    I_0 &= I_{0,ref} \left( \frac{T_{cel}}{T_{ref}} \right)^3 \exp\left[ \frac{q E_g}{a k_B} \left( \frac{1}{T_{ref}} - \frac{1}{T_{cel}} \right) \right]
-\end{align}
-sendo $K_I$ o coeficiente de temperatura da corrente e $E_g$ o \textit{bandgap} do semicondutor.
+No estágio de distribuição de potência do satélite, adota-se um barramento primário de alta tensão em corrente contínua (HVDC de $400\text{ VDC}$), dimensionado para minimizar as perdas ôhmicas de condução e a massa de condutores sem atingir os limiares de descarga parcial e efeito corona no vácuo espacial estipulados pela norma NASA-HDBK-4007A (NASA, 2026, p. 40). Esse barramento primário é rebaixado para os níveis intermediários de rack ($48\text{ VDC}$) e subsequentemente para as tensões sub-1~V demandadas pelos aceleradores de inteligência artificial ($0{,}8\text{ VDC}$) por meio de conversores CC-CC modulares de alta densidade baseados em nitreto de gálio (GaN) com retificação síncrona (BARBI, 2006, p. 65; SARFI; BEIK, 2024).
 
-Para garantir que a matriz solar opere continuamente em seu Ponto de Máxima Potência (MPP) frente às flutuações de temperatura causadas por manobras de atitude e variações transitórias, conversores DC-DC integrados executam algoritmos avançados de rastreamento (\textit{Maximum Power Point Tracking} -- MPPT), incluindo arquiteturas baseadas em aprendizado profundo e técnicas adaptativas (ABAGERO et al., 2025, p. 2; SHOBHA; USHA; KUMAR, 2023, p. 69). 
-
-No estágio de distribuição de potência do satélite, o barramento primário de alta tensão em corrente contínua (HVDC de $400\text{ VDC}$), dimensionado para minimizar drasticamente as perdas ôhmicas de condução e a massa de condutores sem atingir os limiares de descarga parcial e efeito corona no vácuo espacial estipulados pela norma NASA-HDBK-4007A (NASA, 2026, p. 40), deve ser rebaixado para os níveis intermediários de distribuição de rack ($48\text{ VDC}$) e subsequentemente para as tensões sub-1~V demandadas pelos núcleos de processamento paralelo dos aceleradores de inteligência artificial ($0{,}8\text{ VDC}$). Essa conversão em múltiplos estágios é executada por conversores DC-DC modulares de alta densidade baseados em semicondutores de nitreto de gálio (GaN) com retificação síncrona (BARBI, 2006, p. 65; SARFI; BEIK, 2024).
-
-As perdas de potência internas dissipadas nesses conversores são descritas analiticamente por:
-\begin{equation}
-    P_{loss,conv} = P_{cond} + P_{sw} + P_{core} = I_{rms}^2 R_{on} + \frac{1}{2} V_{in} I_{out} (t_r + t_f) f_{sw} + P_{core}
-    \label{eq:perdas_conversores}
-\end{equation}
-onde $R_{on}$ é a resistência de condução dos transistores GaN/MOSFET, $t_r$ e $t_f$ são os tempos de subida e descida de chaveamento, $f_{sw}$ é a frequência de comutação e $P_{core}$ são as perdas magnéticas nos indutores de filtro. Como esses conversores operam confinados na carcaça do rack, $P_{loss,conv}$ atua como uma fonte secundária de aquecimento que onera diretamente o balanço térmico interno, exigindo eficiências superiores a 95\% ($\eta_{conv} > 0{,}95$).
-
-Adicionalmente, em uma arquitetura modular de múltiplos satélites cooperantes em cluster, o subsistema de potência elétrica deve suprir a infraestrutura de intercomunicação óptica inter-satélite (\textit{Optical Inter-Satellite Links} -- OISL). Cada terminal laser consome tipicamente entre $60\text{ W}$ e $150\text{ W}$ de potência elétrica contínua para alimentação dos diodos de bombeamento e dos espelhos de direcionamento fino (\textit{Fast Steering Mirrors} -- FSM). Com rendimento eletro-óptico situado entre $20\%$ e $30\%$ ($\eta_{eo} \approx 0{,}20$ a $0{,}30$), cerca de $70\%$ a $80\%$ da energia consumida pelos módulos OISL é convertida em calor residual interno ($P_{th,OISL} = (1 - \eta_{eo}) P_{OISL}$), que se soma às perdas dos conversores e dos chips de IA. Assim, o balanço de potência do barramento DC é formulado como:
-\begin{equation}
-    P_{total}(t) = P_{IA}(t) + P_{OISL}(t) + P_{aux}(t) + P_{loss,conv}(t)
-    \label{eq:balanco_potencia_total}
-\end{equation}
-onde $P_{aux}$ agrega o consumo dos computadores de bordo (OBC), telemetria e bombas térmicas.
+Adicionalmente, em uma arquitetura modular de múltiplos satélites cooperantes em cluster, o subsistema elétrico deve suprir a infraestrutura de intercomunicação óptica inter-satélite (\textit{Optical Inter-Satellite Links} -- OISL). Cada terminal laser consome tipicamente entre $60\text{ W}$ e $150\text{ W}$ de potência elétrica contínua, dos quais cerca de $70\%$ a $80\%$ são convertidos em calor residual interno devido ao rendimento eletro-óptico limitado ($\eta_{eo} \approx 0{,}20$ a $0{,}30$), onerando o balanço térmico do veículo. A formulação analítica do circuito de 1 diodo, o cálculo de perdas em semicondutores GaN e o balanço do barramento de 400~V são detalhados no Capítulo~3.
 
 \subsection{Tecnologia Central: Sistema de Gerenciamento Térmico-Energético (TEMS)}
 
-A tecnologia central investigada no nível de mestrado consiste no \textbf{Sistema de Gerenciamento Térmico-Energético (\textit{Thermal-Energy Management System} -- TEMS)}. Diferentemente de sistemas terrestres — onde a climatização independe da lógica de software e opera de maneira desacoplada via chillers de expansão —, no vácuo espacial o software de processamento e a rejeição física de calor formam um sistema dinâmico intrinsecamente acoplado (CHEN et al., 2026, p. 4; SINGH, 2026, p. 2).
+A tecnologia central investigada no nível de mestrado consiste no \textbf{Sistema de Gerenciamento Térmico-Energético (\textit{Thermal-Energy Management System} -- TEMS)}. Diferentemente de sistemas terrestres — onde a climatização independe da lógica de software e opera de maneira desacoplada via chillers —, no vácuo espacial o software de processamento e a rejeição física de calor formam um sistema dinâmico intrinsecamente acoplado (CHEN et al., 2026, p. 4; SINGH, 2026, p. 2).
 
 O TEMS orquestra duas variáveis de controle primárias em tempo real:
 \begin{enumerate}
-    \item \textbf{Modulação Dinâmica de Tensão e Frequência (\textit{Dynamic Voltage and Frequency Scaling} -- DVFS):} Ajuste da frequência de relógio $f_{clk}$ e da tensão de núcleo $V_{core}$ de cada GPU/TPU de IA. A potência dinâmica dissipada pelo chip segue a relação cúbica:
-    \begin{equation}
-        P_{dyn} = \alpha C_{eff} V_{core}^2 f_{clk}
-    \end{equation}
-    onde $\alpha$ é o fator de atividade e $C_{eff}$ é a capacitância efetiva de chaveamento lógico. A redução preventiva de $f_{clk}$ mitiga quadraticamente a taxa de injeção de calor $P_{chip}$ no nó térmico da Equação~(\ref{eq:nodal_chip}).
+    \item \textbf{Modulação Dinâmica de Tensão e Frequência (\textit{Dynamic Voltage and Frequency Scaling} -- DVFS):} Ajuste da frequência de relógio $f_{clk}$ e da tensão de núcleo $V_{core}$ de cada GPU/TPU de IA, explorando a relação cúbica da potência dinâmica ($P_{dyn} \propto V_{core}^2 f_{clk}$) para conter preventivamente a injeção de calor nos nós semicondutores.
     \item \textbf{Escalonamento Térmico-Consciente de Tarefas de IA (\textit{Thermal-Aware Workload Scheduling}):} Alocação e sequenciamento de lotes de treinamento e inferência de redes neurais profundas entre diferentes nós computacionais do rack orbital.
 \end{enumerate}
 
-O problema de controle ótimo formulado no TEMS é expresso como a minimização da função custo multiobjetivo em horizonte deslizante:
-\begin{equation}
-\begin{split}
-    \min_{\mathbf{u}[k]} J = \sum_{k=0}^{N-1} \Big\{ & w_1 \left[ T_{j}[k] - T_{ref} \right]^2 + w_2 \Phi_{penalidade}(T_{j}[k] - T_{max}) \\
-    & + w_3 P_{loss,conv}[k] - w_4 \Psi_{throughput}[k] \Big\}
-\end{split}
-\label{eq:funcao_custo_tems}
-\end{equation}
-sujeito às restrições de estado e controle:
-\begin{align}
-    T_{j}[k] &\le T_{max} = 85^\circ\text{C}, \quad \forall k \\
-    P_{total}[k] &\le P_{mpp}[k] + P_{bat,max}[k] \\
-    \mathbf{u}[k] &\in \left\{ f_{min} \le f_{clk} \le f_{max}, \, \text{Modo}_{k} \in \{\text{Idle}, \text{Inferência}, \text{Treinamento}, \text{Downlink}\} \right\}
-\end{align}
-sendo $w_1, w_2, w_3, w_4$ fatores de ponderação, $\Phi_{penalidade}$ uma função barreira para violação de limites térmicos e $\Psi_{throughput}$ a vazão líquida de operações de ponto flutuante (FLOPs) executadas por unidade de tempo.
-
-O algoritmo do TEMS opera sob uma Máquina de Estados Finitos com transições supervisionadas, garantindo que nenhum nó atinja saturação térmica enquanto mantém a máxima eficiência de uso de energia equivalente orbital ($PUE_{orbital} \rightarrow 1{,}05$). Essa formulação apoia-se e expande o arcabouço de Co-Design 4D em malha fechada introduzido pelo autor em Barros e Fernandes (2026a), no qual o controle preditivo econômico não-linear (4D-NMPC) de ordem reduzida (ROM) acopla estritamente o balanço térmico de semicondutores, a estabilização do barramento elétrico, o controle de atitude (ADCS) e a vazão de dados com compressão semântica em banda Ka.
+Essa orquestração é estruturada através de Controle Preditivo Baseado em Modelo Não Linear (NMPC), formulado como um problema de otimização dinâmica em horizonte deslizante sujeito aos limites rígidos de temperatura de junção ($T_j \le 85^\circ\text{C}$), restrições de potência disponível e metas de vazão computacional ($PUE_{orbital} \rightarrow 1{,}05$). A dedução e a implementação computacional do algoritmo NMPC acoplado à rede térmica são desenvolvidas no Capítulo~4.
 
 \subsection{Tecnologia Complementar: Estimativa de Estado de Carga (SoC) via Filtro de Kalman Adaptativo}
 
-Embora a órbita heliossíncrona SSO \textit{dawn-dusk} proporcione insolação direta contínua, bancos de baterias eletroquímicas de íons de lítio (ou polímero de lítio) são componentes indispensáveis para: (i) sustentação do barramento durante manobras orbitais em que os painéis perdem temporariamente a visada solar; (ii) filtragem de picos transitórios de corrente ($\text{kA}/\mu\text{s}$) exigidos por disparos de nós de processamento neural; e (iii) redundância vital de segurança operacional (NASA, 2026, p. 40; CAPPELLETTI; BATTISTINI; MALPHRUS, 2020, p. 112).
+Embora a órbita heliossíncrona SSO \textit{dawn-dusk} proporcione insolação direta contínua, bancos de baterias eletroquímicas de íons de lítio são componentes indispensáveis para: (i) sustentação do barramento durante manobras orbitais em que os painéis perdem temporariamente a visada solar; (ii) filtragem de picos transitórios de corrente ($\text{kA}/\mu\text{s}$) exigidos por rajadas computacionais; e (iii) redundância vital de segurança operacional (NASA, 2026, p. 40; CAPPELLETTI; BATTISTINI; MALPHRUS, 2020, p. 112).
 
 \subsubsection{Envelope Térmico e Limites Físico-Químicos do Banco de Baterias Espacial}
 
-Diferentemente da carcaça e dos painéis solares externos — que no vácuo oscilam amplamente entre $-150^\circ\text{C}$ e $+120^\circ\text{C}$ —, as células de bateria de lítio operam estritamente confinadas no interior do chassi, protegidas por mantas isolantes de múltiplas camadas (\textit{Multi-Layer Insulation} -- MLI) e aquecedores elétricos resistivos de sobrevivência (\textit{patch heaters}) regulados por termostato (conforme as diretrizes da NASA SP-8005 e ECSS-E-ST-20-40C). Esse isolamento garante que o banco opere em uma faixa nominal estreita de $+10^\circ\text{C}$ a $+25^\circ\text{C}$, com limites extremos de contingência e qualificação de $-20^\circ\text{C}$ a $+50^\circ\text{C}$.
+Diferentemente da carcaça e dos painéis solares externos — que no vácuo oscilam amplamente entre $-150^\circ\text{C}$ e $+120^\circ\text{C}$ —, as células de bateria de lítio operam estritamente confinadas no interior do chassi, protegidas por mantas isolantes de múltiplas camadas (\textit{Multi-Layer Insulation} -- MLI) e aquecedores elétricos resistivos regulados por termostato (NASA SP-8005 e ECSS-E-ST-20-40C). Esse isolamento garante que o banco opere em uma faixa nominal estreita de $+10^\circ\text{C}$ a $+25^\circ\text{C}$, com limites extremos de contingência de $-20^\circ\text{C}$ a $+50^\circ\text{C}$.
 
 Essa restrição térmica decorre de limitações físico-químicas severas:
 \begin{enumerate}
-    \item \textbf{Carga sob Temperaturas Negativas ($T < 0^\circ\text{C}$):} A cinética de difusão do lítio nos sítios intersticiais do ânodo de grafite torna-se excessivamente lenta frente à corrente aplicada, deflagrando o fenômeno de deposição metálica de lítio (\textit{lithium plating}). Essa deposição forma dendritos que perfuram o separador polimérico, provocando curto-circuito interno irreversível e falha catastrófica da missão.
-    \item \textbf{Operação em Temperaturas Elevadas ($T > 45^\circ\text{C}$):} Ocorre a degradação acelerada do eletrólito líquido, espessamento da camada de passivação de interface (\textit{Solid Electrolyte Interphase} -- SEI) e perda de lítio reciclável, podendo culminar em escape térmico (\textit{thermal runaway}).
+    \item \textbf{Carga sob Temperaturas Negativas ($T < 0^\circ\text{C}$):} A cinética lenta de difusão do lítio no ânodo de grafite deflagra a deposição metálica de lítio (\textit{lithium plating}), gerando dendritos que provocam curto-circuito interno e falha catastrófica da missão.
+    \item \textbf{Operação em Temperaturas Elevadas ($T > 45^\circ\text{C}$):} Degradação acelerada do eletrólito líquido, espessamento da camada de passivação de interface (SEI) e risco de escape térmico (\textit{thermal runaway}).
 \end{enumerate}
-
-Mesmo dentro do envelope de controle interno ($+5^\circ\text{C}$ a $+35^\circ\text{C}$), a resistência ôhmica interna $R_0(T)$ exibe forte dependência de temperatura, governada pela cinética da Equação de Arrhenius:
-\begin{equation}
-    R_0(T) = R_{0,ref} \exp\left[ \frac{E_a}{k_B} \left( \frac{1}{T_{bat}} - \frac{1}{T_{ref}} \right) \right]
-\end{equation}
-onde $E_a$ é a energia de ativação eletroquímica. Uma redução térmica de $+25^\circ\text{C}$ para $0^\circ\text{C}$ triplica a resistência interna, alterando drasticamente a curva terminal $V_t$ e induzindo erros severos em modelos de parâmetros fixos.
+Ademais, mesmo dentro do envelope nominal, a resistência interna $R_0(T)$ exibe forte dependência térmica de Arrhenius, triplicando de $+25^\circ\text{C}$ para $0^\circ\text{C}$ e exigindo compensação dinâmica online.
 
 \subsubsection{Justificativa do Algoritmo AUKF frente ao Estado da Arte}
 
 A literatura científica recente apresenta quatro grandes famílias para estimativa de Estado de Carga (SoC):
 \begin{enumerate}
     \item \textbf{Métodos Empíricos (Contagem de Coulomb e Tabela OCV):} Sofrem de desvio cumulativo (\textit{drift}) por ruído de sensores de corrente e exigem longos períodos de repouso (1~h a 4~h) para relaxação da tensão de circuito aberto, inviáveis em servidores de operação ininterrupta.
-    \item \textbf{Modelos Eletroquímicos de Primeiros Princípios (P2D e SPM):} Modelam as equações diferenciais parciais de difusão de Fick e cinética de Butler-Volmer. Conquanto apresentem máxima fidelidade físico-química, sua discretização espacial demanda centenas de variáveis de estado, tornando a execução em tempo real inviável para processadores espaciais de baixo consumo tolerantes a radiação (e.g., arquiteturas RAD750 a 133~MHz).
-    \item \textbf{Redes Neurais e Aprendizado Profundo Puro (LSTM, GRU, Transformers):} Conquanto alcancem elevada precisão em ensaios terrestres padronizados, comportam-se como caixas-pretas estatísticas. Diante de condições operacionais orbitais inéditas (degradação por radiação cósmica pesada ou variações térmicas anômalas), tais modelos podem divergir bruscamente ou prever valores espúrios ($SoC > 100\%$), colocando em risco o suprimento de energia do satélite.
-    \item \textbf{Filtros Gaussianos Não Lineares Adaptativos (AUKF):} O Filtro de Kalman Unscented propaga $2L+1$ pontos sigma determinísticos através da não linearidade da curva $V_{oc}(SoC)$, capturando a média e a covariância com precisão de 3ª ordem sem requerer cálculo de derivadas Jacobianas (ao contrário do EKF, que trunca a série de Taylor em 1ª ordem e diverge sob degraus de corrente $\text{kA}/\mu\text{s}$). A incorporação de fator de esquecimento adaptativo $\lambda_k \ge 1$ (AUKF) confere prioridade às medições recentes e recalibra online as matrizes de covariância frente à deriva de $R_0(T)$ (FENG et al., 2022, p. 44522).
+    \item \textbf{Modelos Eletroquímicos de Primeiros Princípios (P2D e SPM):} Apresentam máxima fidelidade físico-química, mas sua discretização espacial demanda centenas de variáveis de estado, inviabilizando a execução em tempo real em processadores espaciais tolerantes a radiação (e.g., RAD750 a 133~MHz).
+    \item \textbf{Redes Neurais e Aprendizado Profundo Puro (LSTM, GRU, Transformers):} Comportam-se como caixas-pretas estatísticas que podem divergir bruscamente ou prever valores espúrios diante de anomalias espaciais inéditas, arriscando o suprimento de energia do satélite.
+    \item \textbf{Filtros Gaussianos Não Lineares Adaptativos (AUKF):} O Filtro de Kalman Unscented propaga $2L+1$ pontos sigma determinísticos através da não linearidade da curva $V_{oc}(SoC)$, capturando a média e a covariância com precisão de 3ª ordem sem cálculo de derivadas Jacobianas. A incorporação de fator de esquecimento adaptativo recalibra online as matrizes de covariância frente à deriva térmica e ao envelhecimento (FENG et al., 2022, p. 44522).
 \end{enumerate}
 
-Dessa forma, o **AUKF com modelo de circuito equivalente de Thévenin de 2ª ordem térmico-dependente (Dual Polarization)** estabelece o equilíbrio ótimo entre precisão analítica ($RMSE < 1{,}5\%$), estabilidade assintótica garantida pela Teoria de Lyapunov e tempo de execução na escala de microssegundos em hardware de bordo espacial.
-
-O modelo elétrico equivalente de 2ª ordem adotado é expresso por:
-\begin{align}
-    V_t(t) &= V_{oc}(SoC) - I_L(t) R_0(T) - V_{p1}(t) - V_{p2}(t) \\
-    \frac{dV_{p1}(t)}{dt} &= -\frac{1}{R_{p1} C_{p1}} V_{p1}(t) + \frac{1}{C_{p1}} I_L(t) \\
-    \frac{dV_{p2}(t)}{dt} &= -\frac{1}{R_{p2} C_{p2}} V_{p2}(t) + \frac{1}{C_{p2}} I_L(t)
-\end{align}
-onde os pares $R_{p1}C_{p1}$ e $R_{p2}C_{p2}$ capturam a dinâmica de transferência de carga e a relaxação lenta de difusão de estado sólido. A equação de propagação com fator de esquecimento $\lambda_k \ge 1$ segue:
-\begin{equation}
-    \mathbf{P}_{k|k-1} = \lambda_k \sum_{i=0}^{2L} W_i^{(c)} \left[ \boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1} \right] \left[ \boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1} \right]^T + \mathbf{Q}_k
-\end{equation}
-Esse sinal de SoC alimenta continuamente o escalonador do TEMS para autorizar ou adiar ciclos pesados de treinamento neural.
+Dessa forma, o **AUKF acoplado ao modelo de circuito equivalente de 2ª ordem (Dual Polarization)** estabelece o equilíbrio ótimo entre precisão analítica ($RMSE < 1{,}5\%$), estabilidade assintótica e baixo custo computacional em hardware embarcado. O desenvolvimento completo das equações de estado, covariância e adaptação de Sage-Husa é detalhado na Seção~3.5.
 
 \subsection{Síntese do Estado da Arte e Análise Comparativa da Literatura}
 

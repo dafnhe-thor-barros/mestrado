@@ -36,6 +36,13 @@
 \RequirePackage{tabularx}
 \RequirePackage{array}
 \RequirePackage{multirow}
+\RequirePackage{caption}
+\captionsetup{font={small,stretch=1.0}}
+
+% Conforme ABNT NBR 14724, tabelas e notas usam espacamento simples
+\RequirePackage{etoolbox}
+\AtBeginEnvironment{table}{\singlespacing}
+\AtBeginEnvironment{figure}{\singlespacing}
 
 % --- LISTAS E ENUMERAÇÕES ---
 \RequirePackage{enumitem}

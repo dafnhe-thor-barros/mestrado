@@ -30,30 +30,39 @@
 * **Modelo Comparativo de 2 Diodos (Recombinação de Junção):**
   $$I_{pv} = I_{ph} - I_{01} \left[ \exp\left( \frac{q (V_{pv} + I_{pv} R_s)}{a_1 k_B T_{cel}} \right) - 1 \right] - I_{02} \left[ \exp\left( \frac{q (V_{pv} + I_{pv} R_s)}{a_2 k_B T_{cel}} \right) - 1 \right] - \frac{V_{pv} + I_{pv} R_s}{R_{sh}}$$
 * **Dependência Térmica e de Irradiância AM0:**
-  $$I_{ph}(T_{cel}, G_{AM0}) = \left( I_{ph,ref} + K_I (T_{cel} - T_{ref}) \right) \frac{G_{AM0}}{G_{ref}}$$
-  $$I_0(T_{cel}) = I_{0,ref} \left( \frac{T_{cel}}{T_{ref}} \right)^3 \exp\left[ \frac{q E_g}{a k_B} \left( \frac{1}{T_{ref}} - \frac{1}{T_{cel}} \right) \right]$$
+  $$I_{ph}(T_{cel}, G) = \max\left(0{,}01, [I_{sc,ref} + K_I(T_{cel}-T_{ref})]\frac{G}{G_{datasheet}}\right)$$
   $$V_{oc}(T_{cel}) = V_{oc,ref} + K_V (T_{cel} - T_{ref})$$
-* **Degradação por Radiação Cósmica (Dano por Deslocamento - DDD):**
-  $$P_{mp}(t) = P_{mp,0} \left[ 1 - C_d \log_{10}\left( 1 + \frac{\Phi_{eq}(t)}{\Phi_x} \right) \right]$$
+  $$I_0(T_{cel},G) = \frac{I_{ph}(T_{cel},G)-V_{oc}(T_{cel})/R_{sh}}{\exp[V_{oc}(T_{cel})/(a_{eq}V_T)]-1}, \quad V_T=k_BT_{cel}/q$$
+  A expressão de $I_0$ é a recalibração algébrica usada por `simulacao_3_2_gerador_fotovoltaico_am0.m` para reproduzir o $V_{oc}(T)$ escolhido; não é uma lei física de temperatura validada independentemente.
+* **Degradação por Radiação (ajuste paramétrico DDD):**
+  $$P_{mp,total}(t) = P_{mp,0} \left[ 1 - C_d \log_{10}\left( 1 + \frac{\Phi_{eq}(t)}{\Phi_x} \right) \right]\left[1-\Delta P_{env}(t/10)\right]$$
+  O coeficiente $C_d$ é ajustado a um único ponto de retenção do datasheet Spectrolab XTJ Prime (padrão ECSS); $Phi_x$, as taxas de fluência orbitais e a perda ambiental são premissas provisórias. Esse ajuste pontual não valida a forma da curva entre pontos nem substitui a análise do ambiente radiativo e da blindagem.
 
 #### 1.2 Catálogo de Parâmetros do Painel Solar
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $G_{AM0}$ | Constante Solar Extraterrestre | $1361{,}0$ | $\text{W/m}^2$ | Wertz et al. (2011), padrão extraterrestre |
-| $\eta_{pv}$ | Rendimento nominal da célula (BOL) | $32{,}0$ | $\%$ | Células InGaP/InGaAs/Ge (Spectrolab XTJ Prime) |
-| $V_{mp,cel}$ | Tensão de máxima potência por célula | $2{,}41$ | $\text{V}$ | Datasheet de qualificação espacial AM0 |
-| $I_{mp,cel}$ | Corrente de máxima potência por célula | $0{,}512$ | $\text{A}$ | Área padrão $30{,}18\text{ cm}^2$ |
-| $V_{oc,cel}$ | Tensão de circuito aberto por célula | $2{,}72$ | $\text{V}$ | Medido a $T_{ref} = 28^\circ\text{C}$ (301,15 K) |
-| $I_{sc,cel}$ | Corrente de curto-circuito por célula | $0{,}538$ | $\text{A}$ | Medido a $T_{ref} = 28^\circ\text{C}$ |
-| $K_V$ | Coeficiente térmico de tensão ($dV_{oc}/dT$) | $-6{,}2$ | $\text{mV/K}$ | Coeficiente negativo crítico para o MPPT |
-| $K_I$ | Coeficiente térmico de corrente ($dI_{sc}/dT$) | $+0{,}32$ | $\text{mA/K}$ | Variação positiva ligeira com a temperatura |
-| $a$ | Fator de idealidade do diodo | $1{,}15$ | -- | Ajuste semi-empírico de multijunção |
-| $R_s$ | Resistência série equivalente por célula | $0{,}085$ | $\Omega$ | Perdas nos contatos metálicos e malha condutora |
-| $R_{sh}$ | Resistência paralelo (shunt) por célula | $1200$ | $\Omega$ | Isolamento de borda e correntes de fuga |
-| $N_{s,array}$ | Células em série por string | $350$ | -- | Tensão nominal de barramento primário $\approx 840\text{ V}$ |
-| $N_{p,array}$ | Strings em paralelo | $1200$ | -- | Potência de geração pico $\approx 1{,}0\text{ MW}$ |
-| $A_{array}$ | Área total da matriz fotovoltaica desdobrável | $2450$ | $\text{m}^2$ | Arranjo em asas solares duplas articuladas |
-| $C_d$ | Coeficiente de dano por radiação | $0{,}085$ | -- | Calibração de fluência equivalente a prótons 1 MeV |
+| $G_{AM0}$ | Irradiância solar de referência a 1 UA | $1361{,}0$ | $\text{W/m}^2$ | ASTM E490; usada como cenário do modelo |
+| $G_{datasheet}$ | Irradiância de referência do datasheet XTJ Prime | $1353{,}0$ | $\text{W/m}^2$ | Spectrolab, AM0, 28°C; https://www.spectrolab.com/photovoltaics/XTJ-Prime_Data_Sheet.pdf |
+| $\eta_{mp}$ | Eficiência MPP BOL declarada | $30{,}7$ | $\%$ | Catálogo XTJ Prime; não usada no sizing devido à discrepância com $V_{mp}J_{mp}$ arredondados |
+| $A_{cel}$ | Área ativa adotada por célula | $30{,}18$ | $\text{cm}^2$ | Premissa geométrica do modelo [PROVISÓRIA] |
+| $V_{mp,cel}$ | Tensão de máxima potência por célula | $2{,}406$ | $\text{V}$ | Datasheet Spectrolab |
+| $J_{mp,cel}$ | Densidade de corrente de MPP | $17{,}5$ | $\text{mA/cm}^2$ | Datasheet Spectrolab |
+| $I_{mp,cel}$ | Corrente de MPP por célula adotada | $0{,}52815$ | $\text{A}$ | Calculada de $J_{mp}A_{cel}$ |
+| $V_{oc,cel}$ | Tensão de circuito aberto por célula | $2{,}720$ | $\text{V}$ | Datasheet Spectrolab |
+| $J_{sc,cel}$ | Densidade de corrente de curto-circuito | $18{,}0$ | $\text{mA/cm}^2$ | Datasheet Spectrolab |
+| $K_V$ | Coeficiente térmico de $V_{oc}$ | $-5{,}60$ | $\text{mV/K}$ | Datasheet Spectrolab |
+| $K_I$ | Coeficiente térmico de $I_{sc}$ na área adotada | $+0{,}3018$ | $\text{mA/K}$ | Calculado de $dJ_{sc}/dT$ e $A_{cel}$ |
+| $a_{eq}$ | Fator de idealidade equivalente | $3{,}00$ | -- | Parâmetro concentrado [PROVISÓRIO] |
+| $R_s$ | Resistência série equivalente por célula | $0{,}080$ | $\Omega$ | Parâmetro do modelo [PROVISÓRIO] |
+| $R_{sh}$ | Resistência shunt por célula | $1200$ | $\Omega$ | Parâmetro do modelo [PROVISÓRIO] |
+| $N_{s,no},N_{p,no}$ | Série/paralelo por nó | $166,244$ | -- | Script de geração AM0; ponto de catálogo em 400 V |
+| $N_{cel,no}$ | Células ativas por nó | $40504$ | -- | $166\times244$ |
+| $P_{BOL,no}$ | Potência MPP ideal BOL por nó | $51{,}47$ | $\text{kW}$ | Antes de perdas de conversão |
+| $A_{array,cluster}$ | Área ativa total | $2444{,}82$ | $\text{m}^2$ | 20 nós; área por célula adotada |
+| $\Phi_x$ | Escala do modelo DDD | $1{,}0\times10^{14}$ | $\text{e}^-/\text{cm}^2$ | Escolha paramétrica [PROVISÓRIA] |
+| $C_d$ | Coeficiente de ajuste DDD | $0{,}12851$ | -- | Ajuste pontual à retenção ECSS $0{,}90$ a $5\times10^{14}$; forma contínua provisória |
+| $\Phi_x$ | Escala do ajuste DDD | $1{,}0\times10^{14}$ | $\text{e}^-/\text{cm}^2$ | Escolha paramétrica [PROVISÓRIA] |
+| $\Delta P_{env}$ | Perda ambiental em dez anos | $5{,}2$ | $\%$ | Premissa sem ensaio/calibração [PROVISÓRIA] |
 
 ---
 
