@@ -4,7 +4,9 @@
 \section{MODELAGEM TÉRMICA E RADIATIVA ORBITAL MULTIFÍSICA}
 \label{sec:capitulo4_modelagem_termica}
 
-A operação contínua de aceleradores de inteligência artificial em plataformas espaciais defronta-se com a ausência de matéria circundante no vácuo, inviabilizando qualquer mecanismo clássico de convecção ou condução com o ambiente externo. Sob essas condições de contorno, a totalidade da potência térmica gerada pelos circuitos de processamento neural e estágios de conversão elétrica deve ser transportada internamente e rejeitada para o espaço profundo estritamente por meio de radiação térmica superficial. Este capítulo desenvolve a modelagem matemática e física rigorosa da dinâmica orbital, dos fluxos radiativos ambientais incidentes, da rede térmica nodal de resfriamento e do sistema de controle térmico-energético ativo (TEMS) concebido para estabilizar as temperaturas operacionais da carga útil sob os cenários mais severos de estresse orbital.
+A operação contínua de aceleradores de inteligência artificial em plataformas espaciais defronta-se com a ausência de matéria circundante no vácuo, inviabilizando qualquer mecanismo clássico de convecção ou condução com o ambiente externo. Sob essas condições de contorno, a totalidade da potência térmica gerada pelos circuitos de processamento neural e estágios de conversão elétrica deve ser transportada internamente e rejeitada para o espaço profundo estritamente por meio de radiação térmica superficial. Este capítulo apresenta modelos teórico-computacionais para a dinâmica orbital, os fluxos radiativos, a rede térmica nodal e o controle TEMS. Parâmetros sem fonte ou medição são tratados como provisórios; resultados numéricos não constituem validação experimental.
+
+\noindent\textbf{Estado dos resultados quantitativos:} as figuras e valores numéricos de resposta dos Capítulos~3 e~4 foram gerados com hipóteses e limiares anteriores, inclusive início de throttling em $85^\circ\text{C}$ e corte em $105^\circ\text{C}$. Como os critérios de projeto agora são $75^\circ\text{C}$ em regime normal, throttling antes de $80^\circ\text{C}$ e corte ao atingir $85^\circ\text{C}$, esses resultados não demonstram desempenho com a especificação atual e devem ser regenerados antes de serem usados como evidência.
 
 \subsection{Dinâmica Orbital e Fluxos Radiativos Ambientais Incidentes}
 \label{sec:dinamica_orbital_fluxos}
@@ -213,10 +215,10 @@ Para preservar a integridade da 1ª Lei da Termodinâmica e evitar o erro metodo
 
 No domínio elétrico em regime permanente, a potência solar líquida gerada no barramento primário de $400\text{ V}$ é integralmente convertida em:
 \begin{equation}
-    P_{pv,net}(t) = P_{IT}(t) + P_{loss,GaN}(t) + P_{OISL}(t) + P_{aux}(t) + \frac{dE_{bat}(t)}{dt}
+    P_{pv,net}(t) + P_{bat,dis}(t) = P_{IT}(t) + P_{loss,GaN}(t) + P_{OISL,elec}(t) + P_{aux,elec}(t) + P_{bat,ch}(t)
     \label{eq:fronteira_eletrica}
 \end{equation}
-Durante os períodos de sol, a taxa de energia eletroquímica armazenada no BESS de 9~kWh ($dE_{bat}/dt \approx 9\text{ kW}$) constitui energia de ligação molecular acumulada nas células de lítio, **não se manifestando como calor**, salvo a parcela dissipativa por resistência ôhmica interna e sobretensões de polarização $P_{loss,BESS}(t) = I_{bat}^2 R_0 + V_{p1}^2/R_{p1} + V_{p2}^2/R_{p2}$.
+As potências terminais de carga e descarga são não negativas por definição. A energia química armazenada obedece a $\frac{dE_{chem}}{dt}=\eta_{ch}P_{bat,ch}-P_{bat,dis}/\eta_{dis}$. A carga é limitada pelo excedente instantâneo disponível, $0 \le P_{bat,ch} \le \max\{0,\,P_{pv,net}-P_{IT}-P_{loss,GaN}-P_{OISL,elec}-P_{aux,elec}\}$, além dos limites do BESS. Assim, não se impõe recarga fixa de $9\text{ kW}$ simultânea à carga máxima de TI. As perdas ôhmicas e de polarização $P_{loss,BESS}=I_{bat}^2R_0+V_{p1}^2/R_{p1}+V_{p2}^2/R_{p2}$ entram no balanço térmico, não como energia química armazenada.
 
 No domínio computacional, a potência elétrica entregue aos módulos de processamento neural ($P_{IT} = 40{,}0\text{ kW}$) é consumida pelas matrizes de transistores lógicos de comutação sub-1~V. Como a energia gasta no chaveamento de estados binários e cargas de capacitâncias parasitas de silício não realiza trabalho mecânico externo e os fótons emitidos são desprezíveis, **a totalidade de $P_{IT}(t)$ é convertida em calor interno residual por efeito Joule na pastilha semicondutora**:
 \begin{equation}
@@ -224,28 +226,29 @@ No domínio computacional, a potência elétrica entregue aos módulos de proces
     \label{eq:conversao_integral_it}
 \end{equation}
 
-A taxa total de calor interno confinado ($Q_{int,total}$) que deve ser extraída pela rede térmica condutiva e rejeitada para o espaço profundo é univocamente formulada por:
+A taxa de calor interno deve ser contabilizada por fluxo físico, sem confundir consumo elétrico com calor retido no veículo:
 \begin{align}
-    Q_{int,total}(t) &= \underbrace{P_{IT}(t)}_{\text{IA (40.000 W)}} + \underbrace{P_{loss,GaN}(t)}_{\text{GaN (1.025 a 4.444 W)}} + \underbrace{Q_{OISL}(t)}_{\text{Laser (343 W)}} \nonumber \\
-    &\quad + \underbrace{P_{loss,BESS}(t)}_{\text{Joule BESS (65 a 120 W)}} + \underbrace{P_{aux,th}(t)}_{\text{Bombas/Aviônica (450 W)}}
-    \label{eq:balanco_termico_global_no}
+    Q_{int,total}(t) &= P_{IT}(t) + P_{loss,GaN}(t) + Q_{OISL,heat}(t) + P_{loss,BESS}(t) + P_{aux,th}(t) \label{eq:balanco_termico_global_no} \\
+    Q_{OISL,heat}(t) &= P_{OISL,elec}(t) - P_{OISL,opt}(t)
 \end{align}
-totalizando com exatidão $Q_{int,nom} = 40000 + 1025 + 343 + 65 + 450 = 41.883\text{ W} \approx 41{,}9\text{ kW}$ em regime nominal de cruzeiro permanente ($\eta_{conv} = 97{,}5\%$), e atingindo $Q_{int,WCH} = 40000 + 4444 + 343 + 120 + 450 = 45.357\text{ W} \approx 45{,}4\text{ kW}$ no envelope de pior caso degradado EOL ($\eta_{conv} = 90{,}0\%$). Essa formulação unifica estritamente o livro-razão de calor com o balanço de potência do indicador $PUE_{orbital}$ (Seção~\ref{sec:confiabilidade_fadiga_pue}), em que a potência elétrica total consumida no barramento ($41.983\text{ W}$) deduzida da potência eletro-óptica emitida no feixe laser dos 4 terminais OISL ($4 \times 110\text{ W} \times 0{,}22 \approx 97\text{ W}$ que escapam do veículo sob a forma de fótons) resulta exatamente na carga térmica líquida interna que onera o circuito de resfriamento ($41.983 - 97 = 41.886\text{ W} \approx 41{,}9\text{ kW}$).
+A versão atual atribui $P_{aux}=560\text{ W}$ no Capítulo~3 e $P_{aux,th}=450\text{ W}$ neste capítulo, sem decomposição que permita conciliar as fronteiras. Além disso, $P_{loss,BESS}$ depende da corrente e do estado de operação. Retiram-se, portanto, os totais apresentados como exatos ($41.883\text{ W}$ e $41.886\text{ W}$); um valor nominal único só poderá ser declarado após reconciliar auxiliares, perdas de conversão, fluxo óptico que deixa o satélite e a fronteira de $P_{IT}$ em relação às perdas de VRM/PoL descritas adiante.
 
 \subsection{Rede Térmica Nodal Acoplada de Parâmetros Concentrados no Vácuo}
 \label{sec:rede_nodal_termica}
 
 A ausência completa de matéria gasosa no ambiente de vácuo orbital impede os mecanismos clássicos de troca térmica por convecção natural ou forçada com o meio externo. Dessa forma, a extração de calor gerado nos núcleos lógicos dos aceleradores neurais depende com exclusividade da condução térmica no estado sólido e da convecção bifásica forçada em circuitos termohidráulicos hermeticamente selados. Para capturar as diferentes escalas de tempo e os gradientes espaciais de temperatura com fidelidade física e baixo custo computacional para o controle em tempo real, formula-se uma rede térmica nodal multinodal de parâmetros concentrados (\textit{Lumped Parameter Thermal Network}), em conformidade com as diretrizes da norma ECSS-E-HB-31-01 Parte 1.
 
-A arquitetura do nó computacional de $50\text{ kW}$ é discretizada em cinco nós térmicos fundamentais acoplados, abrangendo desde a junção microscópica semicondutora até as superfícies exteriores de emissão radiativa:
+A arquitetura é descrita por cinco nós térmicos acoplados. As capacitâncias e resistências da Tabela~\ref{tab:parametros_rede_nodal} são apresentadas por encapsulamento/caminho; para calcular a resposta agregada do rack é necessário declarar $N_{pkg}$ e aplicar o escalonamento correspondente. O script atual assume 80 encapsulamentos, o que distribuiria $40\text{ kW}$ como $500\text{ W}$ por encapsulamento, mas esse número não está amarrado a um hardware selecionado. Até fixar essa correspondência e o escalonamento de $C_i$ e $R_{ij}$, as respostas do rack permanecem provisórias.
+
+A arquitetura do nó de $50\text{ kW}$ é discretizada em cinco nós térmicos fundamentais acoplados, da junção semicondutora às superfícies radiativas:
 \begin{enumerate}[label=\textbf{Nó \arabic*:},leftmargin=*]
-    \item \textbf{Junção do Die Semicondutor de IA ($T_1 \equiv T_j$):} Representa a camada ativa de transistores FinFET/GAA sub-7~nm onde ocorre a dissipação por comutação e correntes de fuga ($P_{chip}$). Apresenta capacitância térmica extremamente reduzida ($C_1 = 85{,}0\text{ J/K}$ por encapsulamento individual multi-die CoWoS, compreendendo $50\text{ g}$ de silício com $c_p = 712\text{ J/(kg}\cdot\text{K)}$ somados à massa do interposer de silício, microesferas de solda e camada de passivação orgânica), tornando a sua dinâmica ultra-rápida, com constantes de tempo térmicas inferiores a $1\text{ segundo}$.
+    \item \textbf{Junção do Die Semicondutor de IA ($T_1 \equiv T_j$):} representa a dissipação por comutação e fuga no die. O valor $C_1=85{,}0\text{ J/K}$ por encapsulamento é provisório: os $50\text{ g}$ de silício e $c_p=712\text{ J/(kg}\cdot\text{K)}$ informados correspondem a $35{,}6\text{ J/K}$. Os $49{,}4\text{ J/K}$ restantes dependem das massas e calores específicos do interposer, soldas e demais camadas, que não estão quantificados; portanto, não se declara essa capacitância verificada nem se infere dela uma constante de tempo.
     
     \item \textbf{Interface Térmica Primária (TIM1) e Espalhador de Calor Integrado ($T_2 \equiv T_{sp}$):} Representa a camada de Material de Interface Térmica (\textit{Thermal Interface Material} -- TIM1) acoplada ao espalhador de calor (\textit{heat spreader}) de alta condutividade térmica, composto por câmara de vapor (\textit{vapor chamber}) com substrato de cobre isento de oxigênio (Cu-OFHC) ou diamante sintético dopado. Possui capacitância térmica intermediária ($C_2 = 420{,}0\text{ J/K}$) e resistência de condução $R_{12} = 0{,}035\text{ K/W}$, atuando no amortecimento de transientes térmicos de alta frequência.
     
     \item \textbf{Interface Secundária (TIM2) e Placa Fria de Microcanais ($T_3 \equiv T_{cp}$):} Representa a placa fria (\textit{cold plate}) estruturada em alumínio aeroespacial Al 6061-T6 contendo microcanais de escoamento, acoplada mecanicamente ao espalhador através de pasta de alta condutividade TIM2 ($R_{23} = 0{,}025\text{ K/W}$). A sua capacitância térmica estrutural é $C_3 = 1100{,}0\text{ J/K}$.
     
-    \item \textbf{Circuito de Transporte Bifásico por Loop Heat Pipe / MPFL ($T_4 \equiv T_{fl}$):} Representa o fluido circulante e a linha de vapor de um Circuito Bifásico Bombeado Mecanicamente (\textit{Mechanically Pumped Fluid Loop} -- MPFL) associado a tubos de calor em circuito fechado (\textit{Loop Heat Pipes} -- LHP). Adota-se como fluido de trabalho termodinâmico a \textbf{amônia anidra de grau espacial} ($\text{NH}_3$), selecionada por seu elevado calor latente de vaporização ($h_{lv} = 1371{,}0\text{ kJ/kg}$ a $20^\circ\text{C}$), expressiva tensão superficial e elevado número de mérito térmico. A capacitância térmica efetiva do inventário de fluido no evaporador e linhas de transporte é $C_4 = 3500{,}0\text{ J/K}$.
+    \item \textbf{Transporte térmico de fluido ($T_4 \equiv T_{fl}$):} representa um subsistema ainda conceitual com duas alternativas mutuamente exclusivas: (A) LHP com circulação por pressão capilar na mecha, sem bomba mecânica; ou (B) loop bifásico mecanicamente bombeado (MPFL), com bomba, potência parasita e limites de vazão próprios. Os mecanismos não são combinados. A amônia e $C_4=3500{,}0\text{ J/K}$ são hipóteses do modelo, ainda sem dimensionamento ou validação para qualquer alternativa.
     
     \item \textbf{Painel Radiador Externo Desdobrável ($T_5 \equiv T_{rad}$):} Representa o conjunto de painéis estruturais sanduíche com facesheets de compósito de fibra de carbono de ultra-alto módulo (K13D2U) e aletas de grafite pirolítico encapsulado (APG), revestidos externamente com espelhos ópticos solares (OSR quartzo/prata). Possui a maior capacitância térmica do sistema ($C_5 = 12500{,}0\text{ J/K}$), o que lhe confere uma constante de tempo dominante de centenas de segundos, trocando calor com o espaço profundo a $T_{space} = 3{,}0\text{ K}$ por emissão radiativa não linear.
 \end{enumerate}
@@ -256,11 +259,11 @@ O balanço dinâmico de energia em cada um dos cinco nós térmicos obedece ao s
 \begin{align}
     C_1 \frac{dT_1(t)}{dt} &= P_{chip}(t) - \frac{T_1(t) - T_2(t)}{R_{12}} \label{eq:edo_no1} \\[0.2cm]
     C_2 \frac{dT_2(t)}{dt} &= \frac{T_1(t) - T_2(t)}{R_{12}} - \frac{T_2(t) - T_3(t)}{R_{23}} \label{eq:edo_no2} \\[0.2cm]
-    C_3 \frac{dT_3(t)}{dt} &= \frac{T_2(t) - T_3(t)}{R_{23}} - \dot{m}_{fl} \, c_{p,fl} \left( T_{out}(t) - T_{in}(t) \right) - \frac{T_3(t) - T_4(t)}{R_{34}} \label{eq:edo_no3} \\[0.2cm]
-    C_4 \frac{dT_4(t)}{dt} &= \dot{m}_{fl} \, c_{p,fl} \left( T_{out}(t) - T_{in}(t) \right) + \frac{T_3(t) - T_4(t)}{R_{34}} - \frac{T_4(t) - T_5(t)}{R_{45}} \label{eq:edo_no4} \\[0.2cm]
+    C_3 \frac{dT_3(t)}{dt} &= \frac{T_2(t) - T_3(t)}{R_{23}} - \dot{Q}_{34}(t) \label{eq:edo_no3} \\[0.2cm]
+    C_4 \frac{dT_4(t)}{dt} &= \dot{Q}_{34}(t) - \frac{T_4(t) - T_5(t)}{R_{45}} \label{eq:edo_no4} \\[0.2cm]
     C_5 \frac{dT_5(t)}{dt} &= \frac{T_4(t) - T_5(t)}{R_{45}} + q_{abs,rad}(t) A_{rad} - \varepsilon_{ir} \sigma A_{rad} \eta_{fin} \left( T_5^4(t) - T_{space}^4 \right) \label{eq:edo_no5}
 \end{align}
-em que $q_{abs,rad}(t)$ representa a densidade de fluxo radiativo ambiental absorvida pela face externa do radiador (Eq.~\ref{eq:triade_fluxos}), $\sigma = 5{,}67037 \times 10^{-8}\text{ W/(m}^2\text{K}^4)$ é a constante de Stefan-Boltzmann, $\eta_{fin}$ é a eficiência da aleta radiativa e $R_{jk}$ denota a resistência térmica de contato condutiva entre os nós adjacentes $j$ e $k$.
+$\dot Q_{34}$ é o único fluxo líquido de calor do nó 3 para o nó 4. Sua lei constitutiva deve ser escolhida para cada alternativa: uma relação efetiva de interface baseada em $R_{34}$ ou um balanço de entalpia $\dot m(h_{out}-h_{in})$; as duas expressões não podem ser somadas como se fossem caminhos independentes sem geometria que os justifique. A forma $\dot m c_p\Delta T$ é válida somente para escoamento monofásico com propriedades aproximadamente constantes. Para o regime bifásico, devem ser definidos pressão, qualidade e entalpias. No LHP a vazão decorre do limite capilar; no MPFL depende do modelo hidráulico e da bomba. Esses fechamentos ainda não foram demonstrados. $q_{abs,rad}$ é o fluxo radiativo absorvido; $\sigma=5{,}67037\times10^{-8}\text{ W/(m}^2\text{K}^4)$, $\eta_{fin}$ e $R_{jk}$ têm os significados usuais do modelo nodal.
 
 Na forma matricial compacta para integração numérica, o sistema é expresso por:
 \begin{equation}
@@ -279,16 +282,16 @@ A Tabela~\ref{tab:parametros_rede_nodal} consolida as grandezas termofísicas, r
 \begin{tabular}{lcccc}
 \hline
 \textbf{Elemento Térmico / Interface} & \textbf{Símbolo} & \textbf{Valor Nominal} & \textbf{Unidade} & \textbf{Classificação Epistêmica} \\ \hline
-Capacitância Térmica da Junção (por acelerador) & $C_1$ & $85{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Massa silício $50\text{ g}$, $c_p = 712\text{ J/(kg}\cdot\text{K)}$ \\
-Capacitância Térmica do Espalhador de Calor & $C_2$ & $420{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Cu-OFHC / câmara de vapor ($c_p = 385\text{ J/(kg}\cdot\text{K)}$) \\
-Capacitância Térmica da Placa Fria (Microcanais) & $C_3$ & $1100{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Alumínio 6061-T6 com galerias de fluido \\
-Capacitância Efetiva do Fluido Circulante & $C_4$ & $3500{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Inventário de amônia anidra bifásica \\
-Capacitância do Painel Radiador Composto & $C_5$ & $12500{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Estrutura sanduíche K13D2U/APG \\
+Capacitância Térmica da Junção (por encapsulamento) & $C_1$ & $85{,}0$ & $\text{J/K}$ & \textbf{[PROVISÓRIO]} Silício informado explica apenas $35{,}6\text{ J/K}$; demais massas não quantificadas \\
+Capacitância Térmica do Espalhador de Calor & $C_2$ & $420{,}0$ & $\text{J/K}$ & \textbf{[PROVISÓRIO]} Massa/arquitetura não quantificada \\
+Capacitância Térmica da Placa Fria (Microcanais) & $C_3$ & $1100{,}0$ & $\text{J/K}$ & \textbf{[PROVISÓRIO]} Massa/arquitetura não quantificada \\
+Capacitância Efetiva do Fluido Circulante & $C_4$ & $3500{,}0$ & $\text{J/K}$ & \textbf{[PROVISÓRIO]} Inventário de fluido não quantificado \\
+Capacitância do Painel Radiador Composto & $C_5$ & $12500{,}0$ & $\text{J/K}$ & \textbf{[PROVISÓRIO]} Massa/arquitetura não quantificada \\
 Resistência Condutiva Junção-Spreader (TIM1) & $R_{12}$ & $0{,}035$ & $\text{K/W}$ & \textbf{[PROVISÓRIO]} Metal líquido GaInSn espessura $30\ \mu\text{m}$ \\
 Resistência Térmica Spreader-Cold Plate (TIM2) & $R_{23}$ & $0{,}025$ & $\text{K/W}$ & \textbf{[PROVISÓRIO]} Fixação sob torque e graxa espacial de siloxano \\
-Resistência de Acoplamento Evaporador-Loop & $R_{34}$ & $0{,}015$ & $\text{K/W}$ & \textbf{[VERIFICÁVEL]} Coeficiente de ebulição em microcanais \\
-Resistência Tubos Condensadores-Radiador & $R_{45}$ & $0{,}018$ & $\text{K/W}$ & \textbf{[VERIFICÁVEL]} Brasagem por difusão de tubos de condensador \\
-Vazão Mássica de Amônia no Loop MPFL & $\dot{m}_{fl}$ & $2{,}80$ & $\text{kg/s}$ & \textbf{[DEPENDENTE DE PROJETO]} Bomba centrífuga redundante (200 W) \\
+Acoplamento evaporador-loop & $R_{34}$ & $0{,}015$ & $\text{K/W}$ & \textbf{[PROVISÓRIO]} Coeficiente/condutância efetiva sem geometria ou ensaio especificados \\
+Resistência Tubos Condensadores-Radiador & $R_{45}$ & $0{,}018$ & $\text{K/W}$ & \textbf{[PROVISÓRIO]} Geometria, área e condutância de contato não informadas \\
+Vazão Mássica no MPFL (somente alternativa bombeada) & $\dot{m}_{fl}$ & $2{,}80$ & $\text{kg/s}$ & \textbf{[PROVISÓRIO; NÃO APLICÁVEL AO LHP]} Sem cálculo hidráulico, mapa da bomba ou qualidade do escoamento \\
 Calor Latente de Vaporização da Amônia ($20^\circ\text{C}$) & $h_{lv}$ & $1371{,}0$ & $\text{kJ/kg}$ & \textbf{[VERIFICÁVEL]} NIST Chemistry WebBook \\ \hline
 \end{tabular}%
 }
@@ -452,7 +455,7 @@ A Tabela~\ref{tab:dimensionamento_radiador_comparativo} sintetiza o dimensioname
 \begin{tabular}{lcccc}
 \hline
 \textbf{Parâmetro de Dimensionamento Radiativo} & \textbf{SSO Dawn-Dusk (700 km)} & \textbf{LEO Convencional (500 km)} & \textbf{GEO (35.786 km)} & \textbf{Classificação Epistêmica} \\ \hline
-Dissipação Térmica Interna Requerida ($Q_{int,nom}$) & $41{,}89\text{ kW}$ ($41.886\text{ W}$) & $41{,}89\text{ kW}$ & $41{,}89\text{ kW}$ & \textbf{[VERIFICÁVEL]} Eq.~(\ref{eq:balanco_termico_global_no}) \\
+Dissipação Térmica Interna Requerida ($Q_{int,nom}$) & -- & -- & -- & \textbf{[EM RECONCILIAÇÃO]} Não dimensionar área com total antigo até fechar auxiliares e perdas \\
 Temperatura Média de Operação do Radiador ($T_{rad}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & \textbf{[PROVISÓRIO]} Ponto nominal de projeto \\
 Temperatura Efetiva de Sumidouro ($T_{sink}$) & $107{,}2\text{ K}$ & $174{,}6\text{ K}$ & $35{,}8\text{ K}$ & \textbf{[CALCULADO]} Eq.~(\ref{eq:temperatura_sink_exata}) \\
 Emissância Bruta Stefan-Boltzmann ($q_{emit}$) & $510{,}9\text{ W/m}^2$ & $505{,}2\text{ W/m}^2$ & $511{,}6\text{ W/m}^2$ & \textbf{[CALCULADO]} $\varepsilon \sigma (T_{rad}^4 - T_{sink}^4)$ \\
@@ -528,7 +531,7 @@ onde o produto macroscópico $\left( \alpha_{act} \cdot C_{eff} \right)$ é iden
     \item Para treinamento neural denso (matrizes densas em BF16/FP32):\\
     $(\alpha_{act} C_{eff})_{train} \approx 334{,}4\text{ nF}$ (atividade $\approx 0{,}88$);
     \item $V_{core}$ é a tensão de núcleo, modulada por DVFS entre $0{,}65\text{ V}$ e $1{,}05\text{ V}$;
-    \item $f_{clk}$ é a frequência de clock, ajustável entre $0{,}60\text{ GHz}$ e $2{,}10\text{ GHz}$.
+    \item $f_{clk}$ é a frequência de clock. Para o cenário de projeto informado, o intervalo de operação é $1{,}0$ a $1{,}8\text{ GHz}$; o setpoint de início do throttling deve ser definido abaixo de $80^\circ\text{C}$.
 \end{itemize}
 
 \subsubsection{Modelo Físico e Calibrado de Corrente de Fuga Sublimiar}
@@ -552,7 +555,7 @@ Para viabilizar a resolução computacional em tempo real na camada de controle 
     P_{leak}(T_j, V_{core}) = P_{leak,ref}(V_{core}) \cdot \exp\left[ \beta_T \left( T_j - T_{ref} \right) \right] \quad \text{[W]}
     \label{eq:potencia_fuga_calibrada_local}
 \end{equation}
-em que $P_{leak,ref}(V_{core}) = I_{leak,ref} \cdot V_{core} \cdot (V_{core} / V_{core,nom})^2$ modela a dependência com a tensão, e $\beta_T \approx 0{,}0285\text{ K}^{-1}$ é o coeficiente térmico calibrado por dados de caracterização de transistores sub-7~nm, apresentando erro residual inferior a $2{,}4\%$ no intervalo de temperatura de qualificação $T_j \in [25{,}0^\circ\text{C}, 105{,}0^\circ\text{C}]$.
+em que $P_{leak,ref}(V_{core})=I_{leak,ref}V_{core}(V_{core}/V_{core,nom})^2$ e $\beta_T$ são parâmetros de um modelo exponencial compacto. Como não são apresentados dados de caracterização, protocolo de ajuste ou fonte que permita reproduzi-lo, o valor $\beta_T=0{,}0285\text{ K}^{-1}$ e o erro residual anteriormente declarado de $2{,}4\%$ são provisórios e não constituem calibração demonstrada.
 
 \subsubsection{Dedução Analítica da Condição de Fuga Térmica (\textit{Thermal Runaway})}
 
@@ -568,14 +571,14 @@ onde $\dot{Q}_{out}(T_j) = (T_j - T_{sink}) / R_{th,j-sink}(P_{chip})$ represent
 \end{equation}
 onde $R_{th,0} \approx 0{,}093\text{ K/W}$ em regime nominal e $Q_{max,cap} \approx 52{,}0\text{ kW}$ é a capacidade máxima de transporte capilar do circuito antes do início do secamento de mecha.
 
-Em regime permanente em torno do ponto de operação $T_j^*$, tem-se $P_{chip}(T_j^*) = \dot{Q}_{out}(T_j^*)$. Perturbando o sistema por $\delta T_j(t) = T_j(t) - T_j^*$, a linearização de Taylor de primeira ordem conduz à Equação Diferencial de Lyapunov:
+Em equilíbrio, $P_{chip}(T_j^*)=\dot{Q}_{out}(T_j^*)$. Mantendo tensão e frequência fixas, uma linearização local de primeira ordem em $\delta T_j=T_j-T_j^*$ fornece a dinâmica escalar abaixo. Ela avalia estabilidade local desse modelo reduzido; não é prova de Lyapunov para a rede acoplada completa ou para o NMPC.
 \begin{equation}
-    C_1 \frac{d(\delta T_j)}{dt} = \left( \left. \frac{\partial P_{chip}}{\partial T_j} \right|_{T_j^*} - \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} \right) \delta T_j = \left( \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{T_j^*} - \frac{1}{R_{th,j-sink}} \right) \delta T_j
+    C_1 \frac{d(\delta T_j)}{dt} = \left( \left. \frac{\partial P_{chip}}{\partial T_j} \right|_{T_j^*} - \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} \right) \delta T_j
     \label{eq:lyapunov_runaway_estrito}
 \end{equation}
-Para que o ponto de equilíbrio seja assintoticamente estável no sentido de Lyapunov ($\delta T_j(t) \rightarrow 0$ para $t \rightarrow \infty$), o autovalor linear deve ser estritamente negativo, estabelecendo o \textbf{Critério Fundamental de Estabilidade Térmica}:
+A condição para estabilidade assintótica local da linearização escalar é que o coeficiente dinâmico seja negativo. Como $R_{th}$ varia com a potência transportada, a derivada da rejeição não é, em geral, $1/R_{th}$. Para a relação implícita $\dot Q_{out}=(T_j-T_{sink})/R_{th}(\dot Q_{out})$, tem-se:
 \begin{equation}
-    \boxed{\left. \frac{\partial P_{leak}(T_j)}{\partial T_j} \right|_{T_j^*} < \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} = \frac{1}{R_{th,j-sink}}} \quad \text{[VERIFICÁVEL]}
+    \boxed{\left. \frac{\partial P_{chip}}{\partial T_j} \right|_{T_j^*} < \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} = \frac{1/R_{th}}{1+\frac{(T_j^*-T_{sink})}{R_{th}^{2}}\left.\frac{dR_{th}}{d\dot Q_{out}}\right|_*}} \quad \text{[DEPENDENTE DO MODELO]}
     \label{eq:criterio_estabilidade_box}
 \end{equation}
 
@@ -594,8 +597,8 @@ Entretanto, se ocorrer um modo de falha na cadeia de refrigeração — tal como
 
 Ao contrário de descrições ingênuas que supõem a fusão física imediata do silício, a consequência prática desse fenômeno é a violação ultra-rápida do envelope seguro de temperatura, acionando em menos de $50\text{ ms}$ os mecanismos de proteção de hardware do acelerador:
 \begin{enumerate}[label=(\alph*)]
-    \item \textit{Thermal Throttling de Emergência} ao atingir $T_{alarm} = 85{,}0^\circ\text{C}$ (redução forçada de clock para $f_{min} = 0{,}6\text{ GHz}$ pelo controlador interno);
-    \item \textit{Thermal Trip (Corte Catastrófico de Alimentação)} ao atingir $T_{crit} = 105{,}0^\circ\text{C}$, desarmando os comutadores de estado sólido GaN SSPC para evitar a quebra irreversível de óxido de porta e eletromigração das interconexões metálicas de cobre.
+    \item \textit{Thermal throttling}: deve iniciar antes de $80^\circ\text{C}$ e reduzir gradualmente o clock de $1{,}8$ para $1{,}0\text{ GHz}$; o setpoint exato é parâmetro ainda não definido;
+    \item \textit{Thermal Trip} ao atingir $T_{crit}=85{,}0^\circ\text{C}$, conforme o limite de projeto para entrada em modo seguro. A implementação e o comportamento do mecanismo de corte dependem do hardware selecionado e não são demonstrados por este modelo.
 \end{enumerate}
 
 A caracterização quantitativa do co-design eletrotérmico, a validação do critério de Lyapunov e a identificação da fronteira de bifurcação de \textit{thermal runaway} são ilustradas na Figura~\ref{fig:estabilidade_runaway_lhp}.
@@ -635,13 +638,14 @@ Para eliminar arbitrariedades de parametrização e fornecer rastreabilidade fí
 \begin{tabular}{lcccc}
 \hline
 \textbf{Limiar / Parâmetro Operacional} & \textbf{Símbolo} & \textbf{Valor de Projeto} & \textbf{Classificação} & \textbf{Justificativa Física / Referência de Norma} \\ \hline
-Temperatura Alvo Nominal de Junção & $T_{target}$ & $65{,}0^\circ\text{C}$ ($338{,}15\text{ K}$) & \textbf{[PROVISÓRIO]} & Otimiza confiabilidade e eficiência energética \\
-Temperatura Limite de Início de Throttling & $T_{safe}$ & $85{,}0^\circ\text{C}$ ($358{,}15\text{ K}$) & \textbf{[PROVISÓRIO]} & Margem conservadora de $20^\circ\text{C}$ abaixo do corte \\
-Temperatura Crítica de Hardware (Thermal Trip) & $T_{crit}$ & $105{,}0^\circ\text{C}$ ($378{,}15\text{ K}$) & \textbf{[DEPENDENTE DE HARDWARE]} & Limite de qualificação FinFET/GAA JEDEC JESD22 \\
-Temperatura Máxima da Bateria BESS & $T_{bat,max}$ & $+25{,}0^\circ\text{C}$ ($298{,}15\text{ K}$) & \textbf{[VERIFICÁVEL]} & Mitiga crescimento de SEI e degradação cíclica \\
-Temperatura Mínima da Bateria BESS & $T_{bat,min}$ & $+10{,}0^\circ\text{C}$ ($283{,}15\text{ K}$) & \textbf{[VERIFICÁVEL]} & Previne deposição de lítio metálico (\textit{lithium plating}) \\
-Estado de Carga Mínimo de Sobrevivência & $SoC_{min}$ & $35{,}0\%$ & \textbf{[DEPENDENTE DE MISSÃO]} & Reserva de energia para contingências de ADCS/OISL \\
+Temperatura Alvo em Regime Normal & $T_{target}$ & $75{,}0^\circ\text{C}$ ($348{,}15\text{ K}$) & \textbf{[REQUISITO DE PROJETO]} & Limite informado para operação normal \\
+Limite para Início de Throttling & $T_{thr}<80^\circ\text{C}$ & Antes de $80^\circ\text{C}$ & \textbf{[REQUISITO DE PROJETO]} & Setpoint numérico ainda não definido \\
+Temperatura de Corte para Modo Seguro (Thermal Trip) & $T_{crit}$ & $85{,}0^\circ\text{C}$ ($358{,}15\text{ K}$) & \textbf{[REQUISITO DE PROJETO]} & Limite definido para este estudo; não é alegação de limite JEDEC \\
+Temperatura Máxima da Bateria BESS & $T_{bat,max}$ & $+35{,}0^\circ\text{C}$ ($308{,}15\text{ K}$) & \textbf{[REQUISITO DE PROJETO]} & Limite definido para este estudo \\
+Temperatura Mínima da Bateria BESS & $T_{bat,min}$ & $+10{,}0^\circ\text{C}$ ($283{,}15\text{ K}$) & \textbf{[REQUISITO DE PROJETO]} & Limite definido para este estudo \\
+Estado de Carga Mínimo & $SoC_{min}$ & $20{,}0\%$ & \textbf{[REQUISITO DE PROJETO]} & Equivale a $DoD\le80\%$ sob a mesma referência energética \\
 Taxa Máxima de Variação de Frequência & $\Delta f_{slew,max}$ & $100{,}0\text{ MHz/s}$ & \textbf{[PROVISÓRIO]} & Limita choque térmico nas esferas de solda BGA \\
+Temperatura Máxima do Radiador & $T_{rad,max}$ & $55{,}0^\circ\text{C}$ & \textbf{[REQUISITO DE PROJETO]} & Limite informado para o radiador \\
 Banda de Histerese Térmica Anti-Chattering & $\Delta T_{hyst}$ & $3{,}0^\circ\text{C}$ & \textbf{[PROVISÓRIO]} & Amortece comutações espúrias de alta frequência \\ \hline
 \end{tabular}%
 }
@@ -655,9 +659,9 @@ A lei de atuação do DVFS modula o vetor de ponto operacional $u_{fast}[k] = [f
 \begin{equation}
     f_{clk}[k] = 
     \begin{cases}
-        \max\left( f_{clk,min}, \, f_{clk}[k-1] - \Delta f_{step} \right), & \text{se } T_j[k] \ge T_{safe} \quad (85{,}0^\circ\text{C}) \\[0.2cm]
-        \min\left( f_{clk,max}, \, f_{clk}[k-1] + \Delta f_{step} \right), & \text{se } T_j[k] \le T_{safe} - \Delta T_{hyst} \quad (82{,}0^\circ\text{C}) \\[0.2cm]
-        f_{clk}[k-1], & \text{se } T_{safe} - \Delta T_{hyst} < T_j[k] < T_{safe}
+        \max\left( f_{clk,min}, \, f_{clk}[k-1] - \Delta f_{step} \right), & \text{se } T_j[k] \ge T_{thr}, \quad T_{thr}<80^\circ\text{C} \\[0.2cm]
+        \min\left( f_{clk,max}, \, f_{clk}[k-1] + \Delta f_{step} \right), & \text{se } T_j[k] \le T_{thr} - \Delta T_{hyst} \\[0.2cm]
+        f_{clk}[k-1], & \text{se } T_{thr} - \Delta T_{hyst} < T_j[k] < T_{thr}
     \end{cases}
     \label{eq:dvfs_histerese_antichattering}
 \end{equation}
@@ -672,9 +676,9 @@ A resposta do DVFS não acarreta a paralisação abrupta ou colapso a zero do pr
 
 A camada supervisória do TEMS opera a uma taxa de amostragem de $\Delta t_{ctrl} = 3{,}0\text{ s}$, formulando o problema de controle sob a metodologia de \textbf{Controle Preditivo Baseado em Modelo Não Linear} (\textit{Nonlinear Model Predictive Control} -- NMPC) com horizonte de predição de $N_p = 20$ passos ($60\text{ segundos}$ à frente) e horizonte de controle $N_u = 10$ passos.
 
-O NMPC integra explicitamente o vetor de estados físicos acoplados do satélite:
+No regime normal, o critério de sucesso é $T_j\le75^\circ\text{C}$; o throttling deve começar em um setpoint $T_{thr}<80^\circ\text{C}$ ainda a definir, e $85^\circ\text{C}$ permanece o limite de corte para modo seguro. O NMPC integra o vetor de estados físicos acoplados do satélite:
 \begin{equation}
-    \mathbf{x}[k] = \begin{bmatrix} T_1[k] & T_2[k] & T_3[k] & T_4[k] & T_5[k] & SoC[k] & V_{p1}[k] & V_{p2}[k] \end{bmatrix}^T \in \mathbb{R}^8
+    \mathbf{x}[k] = \begin{bmatrix} T_1[k] & T_2[k] & T_3[k] & T_4[k] & T_5[k] & T_{bat}[k] & SoC[k] & V_{p1}[k] & V_{p2}[k] \end{bmatrix}^T \in \mathbb{R}^9
     \label{eq:vetor_estados_nmpc}
 \end{equation}
 o vetor de variáveis de controle manipuladas:
@@ -682,7 +686,7 @@ o vetor de variáveis de controle manipuladas:
     \mathbf{u}[k] = \begin{bmatrix} f_{clk,base}[k] & V_{core,base}[k] & \dot{m}_{pump}[k] & D_{mppt}[k] & a_{sched}[k] \end{bmatrix}^T
     \label{eq:vetor_controle_nmpc_completo}
 \end{equation}
-onde $a_{sched}[k] \in [0, 1]$ representa a fração de alocação de tarefas de treinamento neural denso vs. inferência prioritária, e o vetor de perturbações orbitais conhecidas:
+onde $\dot{m}_{pump}$ é variável de atuação exclusiva da alternativa MPFL (não existe bomba mecânica na alternativa LHP), $a_{sched}[k]\in[0,1]$ representa a fração de treinamento denso vs. inferência prioritária, e o vetor de perturbações orbitais conhecidas é:
 \begin{equation}
     \mathbf{w}[k] = \begin{bmatrix} S(t_k) & F_{rad-E}(t_k) & \theta_{sun,nadir}(t_k) & G_{AM0}(t_k) \end{bmatrix}^T
     \label{eq:vetor_perturbacoes_orbitais}
@@ -700,24 +704,24 @@ A cada instante de amostragem $k$, o NMPC resolve numericamente o problema de ot
 \end{align}
 sujeito ao modelo dinâmico preditivo em espaço de estados discretizado no tempo $\mathbf{x}_{k+i+1|k} = \mathbf{f}_d(\mathbf{x}_{k+i|k}, \mathbf{u}_{k+i|k}, \mathbf{w}_{k+i|k})$ e ao conjunto de restrições operacionais rígidas:
 \begin{align}
-    T_j(k+i|k) &\le 85{,}0^\circ\text{C} \quad \text{(Restrição rígida de segurança do silício)} \label{eq:restricao_hard_tj} \\
-    10{,}0^\circ\text{C} \le T_4(k+i|k) &\le 60{,}0^\circ\text{C} \quad \text{(Faixa líquida de operação da amônia no LHP)} \label{eq:restricao_hard_lhp} \\
-    +10{,}0^\circ\text{C} \le T_{bat}(k+i|k) &\le +25{,}0^\circ\text{C} \quad \text{(Envelope de integridade eletroquímica do BESS)} \label{eq:restricao_hard_tbat} \\
-    SoC(k+i|k) &\ge 35{,}0\% \quad \text{(Reserva mandatória de contingência)} \label{eq:restricao_hard_soc} \\
-    0{,}60\text{ GHz} \le f_{clk,base} &\le 2{,}10\text{ GHz}, \quad 0{,}65\text{ V} \le V_{core,base} \le 1{,}05\text{ V} \label{eq:restricao_atuadores_dvfs} \\
-    0{,}80\text{ kg/s} \le \dot{m}_{pump} &\le 3{,}20\text{ kg/s} \quad \text{(Limites de vazão da bomba MPFL)} \label{eq:restricao_atuadores_bomba}
+    T_j(k+i|k) &\le 85{,}0^\circ\text{C} \quad \text{(Modo seguro ao atingir o limite de projeto)} \label{eq:restricao_hard_tj} \\
+    T_5(k+i|k) &\le 55{,}0^\circ\text{C} \quad \text{(Limite máximo de projeto do radiador)} \label{eq:restricao_hard_trad} \\
+    10{,}0^\circ\text{C} \le T_{bat}(k+i|k) &\le 35{,}0^\circ\text{C} \quad \text{(Limites de projeto do BESS)} \label{eq:restricao_hard_tbat} \\
+    SoC(k+i|k) &\ge 20{,}0\% \quad \text{($DoD\le80\%$ sob a mesma referência energética)} \label{eq:restricao_hard_soc} \\
+    1{,}0\text{ GHz} \le f_{clk,base} &\le 1{,}8\text{ GHz}, \quad 0{,}65\text{ V} \le V_{core,base} \le 1{,}05\text{ V} \label{eq:restricao_atuadores_dvfs} \\
+    \dot{m}_{pump} &\in \mathcal{U}_{MPFL} \quad \text{(somente MPFL; conjunto admissível da bomba)} \label{eq:restricao_atuadores_bomba}
 \end{align}
 
 A inclusão explícita do termo quadrático de regularização de controle $\|\Delta \mathbf{u}\|_{\mathbf{W}_u}^2$ na função de custo penaliza variações bruscas nos comandos dos atuadores, garantindo a supressão matemática de oscilações espúrias (*chattering*) na vazão de bombeamento e nas transições de clock.
 
 \subsubsection{Mecanismo Preditivo de Pré-Resfriamento Orbital (\textit{Orbital Precooling})}
 
-Como o horizonte de predição do NMPC ($N_p \Delta t = 60\text{ s}$) é alimentado diretamente pela propagação kepleriana dos fluxos orbitais $\mathbf{w}(t)$ e pelo agendamento da fila de tarefas computacionais, o controlador antecipa a inércia térmica do radiador e das placas frias através do mecanismo de \textbf{Pré-Resfriamento Orbital}:
-\begin{enumerate}[label=(\roman*)]
-    \item Nos $90\text{ segundos}$ que antecedem a execução de um lote maciço de treinamento neural denso ($40\text{ kW}$ úteis), o NMPC eleva preventivamente a vazão mássica da bomba MPFL para o patamar máximo ($\dot{m}_{pump} \rightarrow 3{,}2\text{ kg/s}$) enquanto mantém o clock dos nós lógicos em patamar moderado ($1{,}2\text{ GHz}$). Isso rebaixa preventivamente a temperatura da placa fria e dos espalhadores de calor para $T_{cp} \approx 42^\circ\text{C}$ ($T_{j,pre} \approx 52^\circ\text{C}$);
-    \item Ao ingressar no degrau de carga máxima, a grande inércia térmica do conjunto pré-resfriado absorve o fluxo transitório de calor, mantendo a temperatura de pico da junção estritamente abaixo de $76{,}8^\circ\text{C}$, eliminando qualquer necessidade de engasgamento reativo de emergência (\textit{throttling});
-    \item Em caso de falha de previsão ambiental ou perturbação de atitude, a camada rápida do DVFS atua autonomamente como barreira de segurança reflexiva inviolável, garantindo que mesmo sob as contingências mais severas o sistema jamais viole os limites de qualificação do hardware.
-\end{enumerate}
+O horizonte de predição declarado do NMPC é $60\text{ s}$, menor que a antecedência de $90\text{ s}$ do exemplo seguinte. Logo, o pré-resfriamento só pode decorrer de um sinal feedforward do agendador de tarefas; não é consequência do horizonte NMPC atual. A estratégia e seus resultados requerem recálculo e medição do tempo de execução antes de serem apresentados como desempenho demonstrado.
+\begin{itemize}[leftmargin=*]
+    \item O agendador de tarefas pode fornecer aviso antecipado de uma carga futura e habilitar uma estratégia de pré-resfriamento; esse sinal feedforward é distinto da previsão de 60~s do NMPC.
+    \item O atuador de vazão só existe na alternativa MPFL. Para a alternativa LHP, a estratégia de controle e o modelo de transição ainda precisam ser definidos.
+    \item Os valores anteriormente apresentados para vazão, temperaturas pré-resfriadas e pico de junção ($3{,}2\text{ kg/s}$, $42^\circ\text{C}$, $52^\circ\text{C}$ e $76{,}8^\circ\text{C}$) são retirados como resultados demonstrados até que o modelo seja fechado e as simulações sejam refeitas.
+\end{itemize}
 
 \subsection{Confiabilidade, Fadiga Térmica das Soldas BGA e Eficácia Energética Orbital}
 \label{sec:confiabilidade_fadiga_pue}

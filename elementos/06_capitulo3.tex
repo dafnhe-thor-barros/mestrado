@@ -3,7 +3,7 @@
 % ==============================================================================
 \section{MODELAGEM MATEMÁTICA DO SUBSISTEMA ELÉTRICO E DE ARMAZENAMENTO}
 
-A operação contínua e segura de centros de dados orbitais voltados ao processamento massivo de inteligência artificial requer uma infraestrutura de potência de alta densidade, capaz de conciliar potências na faixa de dezenas de quilowatts por satélite com as severas restrições de massa, volume e dissipação térmica intrínsecas ao voo espacial. Este capítulo estabelece a modelagem matemática analítica e computacional do Subsistema de Suprimento de Energia Elétrica (\textit{Electrical Power System} -- EPS), contemplando desde a distribuição primária em alta tensão até a dinâmica eletroquímica de armazenamento e a resposta a contingências operacionais sob condições de estresse extremo. As rotinas computacionais implementadas em GNU Octave encontram-se descritas no Apêndice~C.
+A operação contínua e segura de centros de dados orbitais voltados ao processamento massivo de inteligência artificial requer uma infraestrutura de potência de alta densidade, capaz de conciliar potências na faixa de dezenas de quilowatts por satélite com as severas restrições de massa, volume e dissipação térmica intrínsecas ao voo espacial. Este capítulo descreve a modelagem teórico-computacional do Subsistema de Suprimento de Energia Elétrica (\textit{Electrical Power System} -- EPS), da distribuição em alta tensão à dinâmica do BESS. As rotinas encontram-se descritas no Apêndice~C. Os gráficos e resultados quantitativos existentes nesta versão ainda não foram regenerados após a revisão das capacidades e cenários; devem ser tratados como resultados legados até nova execução reproduzível.
 
 \subsection{Arquitetura do Barramento de Potência e Balanço Geral de Cargas}
 \label{sec:arquitetura_barramento_balanco}
@@ -25,10 +25,10 @@ A definição do material condutor obedece ao compromisso de redução de massa 
 
 O banco de baterias (\textit{Battery Energy Storage System} -- BESS) possui topologia de 108 células Li-ion NMC em série ($108\text{S}1\text{P}$ de $22{,}5\text{ Ah}$), capacidade nominal unitária de $E_{bat,no} = 9{,}0\text{ kWh}$ ($399{,}6\text{ V}$ nominais, massa de $60\text{ kg}$) e faixa operacional entre $V_{UV} = 324\text{ V}$ ($3{,}0\text{ V/célula}$, corte crítico por subtensão) e $V_{OV} = 442{,}8\text{ V}$ ($4{,}1\text{ V/célula}$, teto de sobretensão) (NASA, 2021). A resistência interna do banco $R_0$, balizada por ensaios de qualificação espacial (JUN et al., 2020), foi parametrizada em três níveis: $32\text{ m}\Omega$ (BOL quente a $30^\circ\text{C}$), $45\text{ m}\Omega$ (nominal a $20^\circ\text{C}$) e $85\text{ m}\Omega$ (EOL frio a $5^\circ\text{C}$). A dinâmica do Estado de Carga ($SoC$) e a tensão terminal instantânea $V_{bus}(t)$ são regidas por:
 \begin{equation}
-    \frac{dSoC(t)}{dt} = -\frac{\eta_c(I_{bat})}{E_{bat,nom}} \cdot P_{bat}(t), \qquad V_{bus}(t) = V_{ocv}(SoC) - I_{bat}(t) R_{dist}
+    \frac{dSoC(t)}{dt} = \begin{cases} -\dfrac{P_{bat}(t)}{\eta_{dis} E_{bat,nom}}, & P_{bat}(t) \ge 0 \quad \text{(descarga)} \\[0.15cm] -\dfrac{\eta_{ch} P_{bat}(t)}{E_{bat,nom}}, & P_{bat}(t) < 0 \quad \text{(carga)} \end{cases}, \quad V_{bus}(t) = V_{oc}(SoC,T_{bat}) - I_{bat}(t)\left[R_0+R_{dist}\right] - V_{p1}(t)-V_{p2}(t)
     \label{eq:bess_dinamica}
 \end{equation}
-onde $\eta_c = 0{,}98$ representa a eficiência coulombica.
+Adota-se $P_{bat}>0$ na descarga e $P_{bat}<0$ na carga, com $I_{bat}>0$ na descarga. Na integração contínua, $E_{bat,nom}$ deve estar em joules, $P_{bat}$ em watts e $t$ em segundos; $\eta_{ch}$ e $\eta_{dis}$ permanecem parâmetros até serem sustentados por fonte ou dados de célula. A expressão de $V_{bus}$ inclui a resistência interna do pack, a resistência de distribuição e os estados de polarização do modelo DP.
 
 \subsubsection{Dinâmica Transitória sob Degraus de IA e Estabilidade CPL}
 
@@ -39,16 +39,20 @@ Os aceleradores neurais locais comportam-se perante o barramento de 400~V como C
 \end{equation}
 cujo fator de amortecimento intrínseco é $\zeta = \frac{R_{dist}}{2}\sqrt{\frac{C_{bus}}{L_{dist}}}$ e a frequência natural é $f_0 = \frac{1}{2\pi \sqrt{L_{dist} C_{bus}}}$.
 
-A Figura~\ref{fig:dinamica_barramento_bess} sintetiza em painel composto de alta densidade o comportamento operacional do barramento HVDC de 400~V.
+A Figura~\ref{fig:dinamica_barramento_bess} da versão anterior é retirada desta revisão. O script associado usa eclipse de $21{,}2\text{ min}$ no cenário de $500\text{ km}$ e contém rótulos de pack que não correspondem à capacidade de $9{,}0\text{ kWh}$ definida neste capítulo; o cenário máximo do Capítulo~2 usa $35{,}8\text{ min}$.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figuras/figura_3_1_dinamica_barramento_bess.png}
-    \caption{Dinâmica operacional do barramento HVDC de 400~V: (a1) balanço energético de Estado de Carga (SoC) do BESS em 5 órbitas consecutivas (500~km, 700~km e 1000~km) sob carga contínua ultra-conservadora de 23,22~kW; (a2) tensão terminal com resistência degradada EOL ($85\text{ m}\Omega$); (b1) perfil do trem de 5 pulsos de carga de IA ($2\text{ kW} \leftrightarrow 20\text{ kW}$ em $10\ \mu\text{s}$); (b2) resposta transitória de tensão sob subamortecimento extremo ($R_{dist} = 10\text{ m}\Omega$, $\zeta = 0{,}097$) versus condição amortecida ($R_{dist} = 50\text{ m}\Omega$, $\zeta = 0{,}484$).}
+    \fbox{\begin{minipage}{0.92\textwidth}
+    \centering
+    \textbf{Figura retirada para recálculo.}\\[0.5em]
+    O balanço do BESS e os transientes do barramento serão reapresentados após sincronização com o pack de $9{,}0\text{ kWh}$ por nó, o perfil de carga e o cenário orbital escolhido.
+    \end{minipage}}
+    \caption{Resultado da versão anterior retirado: a figura e suas conclusões não são usadas como evidência até a regeneração com capacidade e duração de eclipse consistentes.}
     \label{fig:dinamica_barramento_bess}
 \end{figure}
 
-Os resultados do Subpainel~(a) confirmam a estabilidade cíclica assintótica em cinco órbitas completas: a 500~km de altitude (pior caso de eclipse, $t_{ecl} = 21{,}2\text{ min}$), a profundidade máxima de descarga (DoD) estabilizou-se em $37{,}82\%$, recuperando $97{,}85\%$ de carga em cada período de sol, com tensão sempre superior a $355\text{ V}$ (margem segura de $31\text{ V}$ acima de $V_{UV}$). No Subpainel~(b), o ensaio com $R_{dist} = 10\text{ m}\Omega$ revela comportamento subamortecido ($\zeta = 0{,}097$), induzindo um \textit{undershoot} de $3{,}15\text{ V}$ ($V_{min} = 396{,}85\text{ V}$) e \textit{overshoot} ressonante de $+2{,}85\text{ V}$ em torno de 2~kHz; em contraste, a elevação da resistência para $50\text{ m}\Omega$ eleva o amortecimento para $\zeta = 0{,}484$, suprimindo o \textit{overshoot} para apenas $0{,}83\text{ V}$. Em todos os casos, a perturbação manteve-se inferior a 0,84\% dos 400~V nominais.
+\noindent\textbf{Status do resultado:} os valores de DoD, recuperação de carga e resposta transitória anteriormente associados a esta figura ficam suspensos. Não se afirma estabilidade cíclica do BESS até a execução do modelo atualizado.
 
 \subsubsection{Falhas Catastróficas: Curto-Circuito Franco, Religamentos e Acoplamento Térmico}
 
@@ -83,7 +87,7 @@ O Quadro~\ref{quadro:parametros_barramento_sintese} resume os parâmetros essenc
 Tensão do Barramento HVDC & $V_{bus}$ & 324,0~V & 400,0~V & 442,8~V & NASA-HDBK-4007A (NASA, 2026); Anexo~B \\
 Potência Total Demandada & $P_{load}$ & 2,9~kW & 21,5~kW & 23,2~kW & IA (2-20 kW), OISL (440 W), aviónica (560 W) \\
 Eficiência Global de Conversão & $\eta_{conv}$ & 90,0\% & 97,5\% & 98,2\% & 90,0\% conservador térmico; GaN/SiC nominal \\
-Capacidade e Resistência do BESS & $E_{bat}, R_0$ & 22~kWh / 32~m$\Omega$ & 25~kWh / 45~m$\Omega$ & 28~kWh / 85~m$\Omega$ & Bateria 108S1P Li-ion NMC (NASA, 2021) \\
+Capacidade e Resistência do BESS & $E_{bat}, R_0$ & 8,4~kWh / 32~m$\Omega$ & 9,0~kWh / 45~m$\Omega$ & 9,6~kWh / 85~m$\Omega$ & Pack 108S1P; energia coerente com 21/22,5/24~Ah a 399,6~V \\
 Resistência de Distribuição & $R_{dist}$ & 10~m$\Omega$ & 14~m$\Omega$ & 50~m$\Omega$ & Cabos de alumínio AWG 4 (redução 50,6\% massa) \\
 Fator de Amortecimento & $\zeta$ & 0,097 & 0,358 & 0,484 & $\zeta = 0{,}097$ sob $R_{dist} = 10\text{ m}\Omega$ (subamortecido) \\
 Indutância e Capacitância & $L_{dist}, C_{bus}$ & 1,0~$\mu$H / 1,5~mF & 1,8~$\mu$H / 4,7~mF & 4,0~$\mu$H / 6,0~mF & EOL degradado e pior arranjo de chicotes \\
@@ -100,9 +104,9 @@ A geração primária de energia elétrica no espaço exterior opera sob o espec
 
 \subsubsection{Dimensionamento da Matriz Solar do Nó de 50~kW e Escala Agregada de 1,0~MW}
 
-Conforme estabelecido na análise de trade-off técnico-econômico (Seção~\ref{sec:tradeoff_custo_escala}), a constelação opera em arquitetura distribuída composta por 20 nós operacionais de $50\text{ kW}$ de potência útil de processamento interligados por laser OISL, totalizando uma infraestrutura orbital em escala megawatt ($1{,}0\text{ MW}$ agregado). Cada nó satelital é equipado com um par de asas solares desdobráveis de enrolar de alta densidade específica (tecnologia tipo ROSA --- \textit{Roll-Out Solar Array}), cuja área externa de captação é de $A_{pv,no} = 122{,}5\text{ m}^2$ ($61{,}25\text{ m}^2$ por asa).
+Conforme estabelecido na análise de trade-off técnico-econômico (Seção~\ref{sec:tradeoff_custo_escala}), a constelação opera em arquitetura distribuída composta por 20 nós operacionais de $50\text{ kW}$ brutos instalados, dos quais $40\text{ kW}$ são destinados à TI e até $10\text{ kW}$ ficam disponíveis para cargas não-TI, perdas de conversão e recarga, interligados por laser OISL. A geração instalada agregada é $1{,}0\text{ MW}$ bruto e a capacidade agregada de TI é $800\text{ kW}$. Cada nó satelital é equipado com um par de asas solares desdobráveis de enrolar de alta densidade específica (tecnologia tipo ROSA --- \textit{Roll-Out Solar Array}), cuja área externa de captação é de $A_{pv,no} = 122{,}5\text{ m}^2$ ($61{,}25\text{ m}^2$ por asa).
 
-Considerando células solares espaciais multijunção de tripla junção padronizadas de área ativa $A_{cel} = 30{,}18\text{ cm}^2$ com parâmetros nominais sob espectro AM0 ($G_{AM0} = 1361\text{ W/m}^2$, $28^\circ\text{C}$) de $I_{sc,ref} = 0{,}538\text{ A}$, $V_{oc,ref} = 2{,}720\text{ V}$, $I_{mp,ref} = 0{,}512\text{ A}$ e $V_{mp,ref} = 2{,}410\text{ V}$, a potência unitária de pico por célula é $P_{mp,cel} = 2{,}410 \times 0{,}512 = 1{,}23392\text{ W}$. Para suprir a demanda nominal do nó satelital ($50\text{ kW}$), o número de células ativas por satélite e a área ativa correspondente são dados por:
+Considerando células solares espaciais multijunção de tripla junção padronizadas de área ativa $A_{cel} = 30{,}18\text{ cm}^2$ com parâmetros nominais sob espectro AM0 ($G_{AM0} = 1361\text{ W/m}^2$, $28^\circ\text{C}$) de $I_{sc,ref} = 0{,}538\text{ A}$, $V_{oc,ref} = 2{,}720\text{ V}$, $I_{mp,ref}=0{,}512\text{ A}$ e $V_{mp,ref}=2{,}410\text{ V}$, a potência unitária de pico por célula é $P_{mp,cel}=2{,}410\times0{,}512=1{,}23392\text{ W}$. Com $A_{cel}=30{,}18\text{ cm}^2$ e $G_{AM0}=1361\text{ W/m}^2$, esses valores implicam $\eta_{mp}=P_{mp,cel}/(G_{AM0}A_{cel})\approx30{,}04\%$, não $32{,}0\%$. A eficiência de catálogo e os parâmetros de MPP não são simultaneamente coerentes nesta versão e precisam ser reconciliados com a folha de dados e suas condições de ensaio. Para suprir a geração bruta nominal instalada do nó satelital ($50\text{ kW}$), o número de células ativas por satélite e a área ativa correspondente são dados por:
 \begin{align}
     N_{cel,no} &= \frac{50000\text{ W}}{1{,}23392\text{ W}} \approx 40500\text{ células por satélite} \label{eq:n_cel_no} \\
     A_{ativa,no} &= 40500 \times 30{,}18 \times 10^{-4}\text{ m}^2 = 122{,}23\text{ m}^2 \approx 122{,}5\text{ m}^2 \label{eq:area_no}
@@ -195,7 +199,7 @@ O Subpainel~(b) confirma a superioridade do controle adaptativo: a malha converg
 \subsection{Modelagem Eletrotérmica e Critério de Estabilidade dos Conversores CC-CC}
 \label{sec:conversores_estaticos}
 
-Para suprir a carga de processamento neural útil do nó satelital ($P_{IT} = 40{,}0\text{ kW}$, subdividida em dois racks de $20\text{ kW}$ convertidos de 400~VDC para 48~VDC intermediário e sub-1~V lógico), adota-se um arranjo com **3 módulos conversores GaN de 20~kW operando em paralelo com redundância ativa $N+1$** (2 módulos operacionais a plena carga compartilhando $20\text{ kW}$ cada e 1 módulo sobressalente a quente operando em standby ativo). Ressalta-se que a potência excedente do nó satelital ($10\text{ kW}$, destinada a recarga do banco de baterias BESS e alimentação de aviônica, OISL e bombas térmicas) é conectada e regulada diretamente no barramento primário de alta tensão de $400\text{ VDC}$ através do estágio de entrada Buck/MPPT das asas solares, não onerando a capacidade de conversão dos módulos secundários de TI. A opção por 3 módulos de 20~kW frente a uma fragmentação maior (como $6 \times 10\text{ kW}$ ou $12 \times 5\text{ kW}$) justifica-se por: (a) minimização drástica do chicote elétrico e conectores circulares espaciais blindados (MIL-DTL-38999), cuja penalidade de massa anularia ganhos de miniaturização; (b) alcance de eficiências superiores a $98{,}2\%$ (contra $\approx 95\%$ típicos em potências fracionárias de 5~kW); e (c) garantia de estabilidade estrita no compartilhamento ativo de corrente (\textit{droop current sharing}) sobre cargas CPL de impedância negativa, prevenindo ressonâncias harmônicas inter-módulos.
+Para suprir a carga de processamento neural útil do nó satelital ($P_{IT} = 40{,}0\text{ kW}$, subdividida em dois racks de $20\text{ kW}$ convertidos de 400~VDC para 48~VDC intermediário e sub-1~V lógico), adota-se um arranjo com **3 módulos conversores GaN de 20~kW em paralelo, compartilhando os $40\text{ kW}$ de TI**. Em operação nominal, cada módulo conduz $40/3 \approx 13{,}33\text{ kW}$, ou $66{,}7\%$ da potência nominal; a perda de um módulo deixa os dois restantes com capacidade total de $40\text{ kW}$, caracterizando redundância $N+1$ sem módulo dedicado em standby. Ressalta-se que a parcela não-TI do nó satelital (até $10\text{ kW}$, destinada a perdas de conversão, aviônica, OISL, bombas térmicas e recarga do BESS, limitada pelo excedente instantâneo) é conectada e regulada diretamente no barramento primário de alta tensão de $400\text{ VDC}$ através do estágio de entrada Buck/MPPT das asas solares, não onerando a capacidade de conversão dos módulos secundários de TI. A opção por 3 módulos de 20~kW frente a uma fragmentação maior (como $6 \times 10\text{ kW}$ ou $12 \times 5\text{ kW}$) justifica-se por: (a) minimização drástica do chicote elétrico e conectores circulares espaciais blindados (MIL-DTL-38999), cuja penalidade de massa anularia ganhos de miniaturização; (b) alcance de eficiências superiores a $98{,}2\%$ (contra $\approx 95\%$ típicos em potências fracionárias de 5~kW); e (c) garantia de estabilidade estrita no compartilhamento ativo de corrente (\textit{droop current sharing}) sobre cargas CPL de impedância negativa, prevenindo ressonâncias harmônicas inter-módulos.
 
 \subsubsection{Perdas por Condução e Comutação em Semicondutores GaN e Limite de Fuga Térmica}
 
@@ -455,7 +459,7 @@ onde $\mathbf{P}_{yy,k}$ é a covariância prevista da medição devida à incer
     d_k = \frac{1 - b}{1 - b^{k+1}}, \qquad 0 < b < 1 \quad \text{[PROVISÓRIO]}
     \label{eq:fator_dk}
 \end{equation}
-Sob a perspectiva epistêmica, declara-se que a meta de convergência com erro $RMSE < 1{,}2\%$ [A VALIDAR] constitui um requisito de projeto verificado empiricamente sob as simulações, não devendo ser confundida com garantia assintótica formal de Lyapunov, cuja demonstração exigiria hipóteses analíticas não universais para sistemas adaptativos não lineares.
+Sob a perspectiva epistêmica, $RMSE < 1{,}2\%$ é apenas uma meta provisória. Não há ensaios físicos nem dados independentes de referência apresentados aqui; portanto, o erro deve ser reportado somente após avaliação numérica reprodutível contra um perfil de SoC conhecido. A meta não constitui prova de convergência assintótica nem garantia de estabilidade do AUKF.
 
 A Figura~\ref{fig:convergencia_aukf_estresse} ilustra a trajetória de convergência do estimador sob perturbações deliberadas e identifica o ponto de colapso por subtensão em fim de vida (EOL).
 
@@ -508,7 +512,7 @@ Resistência Ôhmica EOL (10 anos) & $R_{0,eol}$ & 65,0~m$\Omega$ (a 30°C) & 85
 Potência Máxima do Aquecedor PWM & $P_{heat,max}$ & 0~W & 150~W & 300~W & \textbf{[CALCULADO]} Teto seguro contra superaquecimento em MLI \\
 Resistência Térmica da Manta MLI & $R_{th,MLI}$ & 3,5~K/W & 4,8~K/W & 6,2~K/W & \textbf{[PROVISÓRIO -- NÃO VALIDADO]} Isolamento passivo de vácuo \\
 Ruído de Sensoriamento de Tensão & $\sigma_{v,meas}$ & 20~mV$_{rms}$ & 150~mV$_{rms}$ & 300~mV$_{rms}$ & \textbf{[DEPENDENTE DE HARDWARE]} $R_{meas} = (0{,}15\text{ V})^2$ a 400~V \\
-Erro Residual Alvo de SoC (AUKF) & $e_{SoC,alvo}$ & 0,15\% & 0,42\% & 1,20\% & \textbf{[A VALIDAR]} Requisito verificado em ensaios empíricos \\ \hline
+Erro Residual Alvo de SoC (AUKF) & $e_{SoC,alvo}$ & -- & -- & 1,20\% & \textbf{[META; NÃO MEDIDA]} Avaliação numérica reprodutível ainda necessária \\ \hline
 \end{tabular}%
 }
 \end{table}
