@@ -1,0 +1,100 @@
+% ==============================================================================
+% CAPÍTULO 1: INTRODUÇÃO
+% ==============================================================================
+\section{INTRODUÇÃO}
+
+\subsection{Contextualização e Motivação}
+
+A evolução acelerada dos modelos de inteligência artificial generativa, redes neurais profundas de parâmetros massivos e grandes modelos de linguagem (\textit{Large Language Models} -- LLMs) transformou de maneira drástica a infraestrutura de computação em nuvem global. Essa transformação gerou uma demanda energética exponencial nos centros de processamento de dados terrestres (\textit{data centers}), que consomem centenas de terawatts-hora anualmente e pressionam a capacidade de geração e transmissão das matrizes energéticas regionais (BARROSO; HÖLZLE; RANGANATHAN, 2019, p. 14; BLOCH et al., 2026, p. 2). Paralelamente, o arrefecimento térmico desses servidores de alta densidade por sistemas evaporativos consome anualmente bilhões de litros de água tratada, gerando um conflito ecológico e hídrico em regiões metropolitanas e agrícolas.
+
+Diante do esgotamento iminente das redes terrestres e das exigências de descarbonização, a indústria aeroespacial e o setor de tecnologia iniciaram estudos para transferir infraestruturas de processamento massivo para o espaço: os chamados Centros de Dados Orbitais (\textit{Orbital Data Centers} -- ODCs). Dentre as iniciativas pioneiras, destacam-se o consórcio europeu ASCEND (\textit{Advanced Space Cloud for European Net Zero Emission and Data Sovereignty}) apoiado pela Comissão Europeia, a proposta de constelações Starmind da SpaceX e os estudos de arquiteturas de infraestrutura de IA no espaço desenvolvidos por pesquisadores do Google (AGÜERA Y ARCAS et al., 2025, p. 1; BLOCH et al., 2026, p. 3).
+
+Em órbitas de alta insolação — notadamente órbitas heliossíncronas do tipo \textit{dawn-dusk} (\textit{Sun-Synchronous Orbits} -- SSO) em altitudes entre 600~km e 800~km, ou em órbitas geoestacionárias (\textit{Geostationary Earth Orbit} -- GEO) —, os satélites de processamento são iluminados continuamente pela luz solar. Sob a constante extraterrestre AM0 ($1361\text{ W/m}^2$), a incidência solar direta no vácuo é livre de atenuação atmosférica, absorção de vapor d'água e interferência de nuvens. Essa condição assegura uma produtividade de geração fotovoltaica até oito vezes superior à de fazendas solares equivalentes em solo (AGÜERA Y ARCAS et al., 2025, p. 3; BLOCH et al., 2026, p. 5). Além disso, a computação espacial alivia a rede elétrica das cidades e prescinde integralmente do uso de água para resfriamento.
+
+\subsection{Formulação do Problema}
+
+A despeito da abundância de energia solar incidente em órbitas de iluminação contínua, a implantação prática de servidores de processamento de inteligência artificial no espaço enfrenta um desafio físico central: o \textbf{gerenciamento térmico no vácuo espacial} e o balanço do subsistema elétrico associado (MESEGUER; PÉREZ-GRANDE; SANZ-ANDRÉS, 2012, p. 45; CHEN et al., 2026, p. 1).
+
+No vácuo espacial, ocorre o fenômeno conhecido como o ``paradoxo do espaço frio'': conquanto a radiação de fundo do espaço profundo apresente temperatura de $\approx 3\text{ K}$, a ausência completa de matéria circundante impossibilita a troca de calor por condução ou convecção externa com o meio ambiente (WERTZ; EVERETT; PUSCHELL, 2011, p. 415). Dessa forma, a totalidade da potência térmica residual gerada pelos chips de processamento neural (como TPUs, GPUs e ASICs de IA, operando com consumo de centenas de watts a quilowatts por nó de servidor) deve ser rejeitada estritamente por meio de radiação térmica superficial, regida pela Lei de Stefan-Boltzmann:
+\begin{equation}
+    q_{rad} = \varepsilon \sigma A_{rad} \left( T_{rad}^4 - T_{space}^4 \right)
+\end{equation}
+em que $\varepsilon$ representa a emissividade da superfície, $\sigma$ é a constante de Stefan-Boltzmann ($5{,}670 \times 10^{-8}\text{ W/m}^2\text{K}^4$), $A_{rad}$ é a área efetiva do radiador, $T_{rad}$ é a temperatura absoluta da superfície radiante e $T_{space}$ é a temperatura de radiação do ambiente cósmico.
+
+Para que os semicondutores operem em regime de alta confiabilidade sem degradação acelerada de dopagem ou falhas estruturais, a temperatura de junção deve ser mantida rigidamente abaixo de seus patamares de projeto (tipicamente $T_j \le 85^\circ\text{C}$ a $105^\circ\text{C}$). Sob essa restrição, a potência máxima que um radiador consegue rejeitar por unidade de área é severamente limitada pelo fator $T_{rad}^4$. Se a dissipação térmica for excessiva e contínua, a área e a massa dos radiadores se tornam gigantescas e proibitivas para o lançamento espacial (CHEN et al., 2026, p. 2).
+
+Adicionalmente, o subsistema de potência elétrica (\textit{Electrical Power System} -- EPS) necessita converter as altas tensões fotovoltaicas geradas nos painéis para os níveis de baixa tensão e altíssima corrente demandados pelos núcleos de processamento de IA (e.g., barramentos de 48~V convertidos para sub-1~V nos núcleos lógicos). As perdas ôhmicas e de comutação nesses conversores DC-DC constituem fontes secundárias de aquecimento interno confinado, que elevam ainda mais a carga térmica da carcaça do satélite (AL HOSANI et al., 2021, p. 9126). Por outro lado, mesmo em órbitas com insolação quase ininterrupta, bancos de baterias de lítio são indispensáveis para garantir a estabilidade do barramento frente a transitórios bruscos de carga computacional, manobras orbitais e redundância de segurança, exigindo monitoramento adaptativo de Estado de Carga (SoC) para evitar degradação de capacidade (NASA, 2026, p. 40; FENG et al., 2022, p. 44521).
+
+O problema fundamental que motiva este trabalho é, portanto, a \textbf{ausência de um ambiente computacional integrado e multifísico que modele conjuntamente o suprimento de potência fotovoltaica sob radiação AM0, o rendimento dos estágios de conversão elétrica, o balanço de calor radiativo no vácuo e o controle coordenado de tarefas de inteligência artificial através de escalonamento térmico-energético ativo}.
+
+\subsection{OBJETIVOS}
+
+\subsubsection{Objetivo Geral}
+
+Desenvolver, parametrizar e validar computacionalmente um ambiente integrado de modelagem matemática e simulação dinâmica para o gerenciamento térmico-energético de Centros de Dados Orbitais (\textit{Orbital Data Centers} -- ODCs), acoplando a geração fotovoltaica sob espectro AM0, os estágios de conversão e condicionamento de potência, a dissipação radiativa de processadores de inteligência artificial no vácuo espacial e o escalonamento adaptativo de tarefas sob restrições térmicas e energéticas.
+
+\subsubsection{Objetivos Específicos}
+
+\noindent\textbf{Objetivos específicos até a qualificação (em conformidade com o Art. 75 do Regulamento ProPECAut):}
+\begin{enumerate}[label=\arabic*.]
+    \item Realizar levantamento bibliográfico sistemático e taxonômico sobre arquiteturas de data centers orbitais, métodos de rejeição térmica radiativa no vácuo espacial, subsistemas de potência elétrica de alta densidade e algoritmos de controle térmico-energético para processamento de IA no espaço.
+    \item Desenvolver a modelagem matemática e computacional das curvas características I-V e P-V de arranjos fotovoltaicos espaciais sob o espectro extraterrestre AM0 ($1361\text{ W/m}^2$) e formular algoritmos de rastreamento do ponto de máxima potência (MPPT) adaptativos de passo variável para barramentos espaciais de alta tensão.
+    \item Modelar eletrotermicamente a rede de distribuição e conversão estática de potência DC-DC em módulos baseados em nitreto de gálio (GaN), quantificando o rendimento, as perdas ôhmicas de condução e as perdas de chaveamento que atuam como fontes de aquecimento interno.
+    \item Formular o modelo de circuito equivalente de polarização dupla (Dual Polarization -- DP de 2ª ordem) do sistema de armazenamento eletroquímico e implementar o algoritmo adaptativo de estimativa de Estado de Carga (SoC) baseado no Filtro de Kalman Unscented Adaptativo (AUKF) com estimação recursiva de ruído de Sage--Husa para estabilização de transitórios e manobras.
+\end{enumerate}
+
+\noindent\textbf{Objetivos específicos até a defesa final (em conformidade com os Arts. 70 e 79 do Regulamento ProPECAut):}
+\begin{enumerate}[label=\arabic*., resume]
+    \item Modelar a dinâmica de transferência térmica no vácuo entre chips de processamento neural (GPUs/TPUs de IA), a carcaça estrutural e radiadores superficiais externos regidos pela Lei de Stefan-Boltzmann, caracterizando o acoplamento térmico em nós concentrados.
+    \item Projetar e implementar o algoritmo do Sistema de Gerenciamento Térmico-Energético (\textit{Thermal-Energy Management System} -- TEMS), integrando modulação dinâmica de tensão e frequência (DVFS) e escalonamento de tarefas de IA consciente de temperatura para prevenir o superaquecimento dos núcleos lógicos.
+    \item Integrar os submódulos de potência, térmico e computacional em um framework unificado de simulação numérica temporal em ambiente MATLAB/Simulink e Python, validando o balanço de potência e calor sob cenários orbitais operacionais e confrontando o desempenho contra estratégias de controle convencionais.
+    \item Elaborar artigos científicos completos para submissão a periódico indexado e congresso qualificado da área de engenharia de controle e automação, e redigir a dissertação de mestrado em conformidade com as diretrizes do ProPECAut e as normas da ABNT.
+\end{enumerate}
+
+\subsection{Justificativa e Relevância}
+
+A relevância acadêmica e científica desta pesquisa consolida-se na área de concentração em Sistemas de Automação e Controle e na linha de pesquisa em Sistemas de Controle e Automação do ProPECAut/Ifes. A pesquisa expande os estudos de modelagem de fontes renováveis desenvolvidos no programa por Pignaton et al. (2023) e de eficiência energética de data centers por Souza, Silva e Almeida (2021), adaptando-os à física de fronteira da exploração aeroespacial.
+
+Do ponto de vista tecnológico e industrial, o projeto responde diretamente às demandas emergentes da economia espacial (\textit{NewSpace}) e da computação em nuvem sustentável, onde gigantes do setor (Google, SpaceX, Thales Alenia Space) necessitam de ferramentas analíticas preditivas e de baixo custo computacional para dimensionar plataformas orbitais sem incorrer em custos proibitivos de prototipagem física prematura. Como suporte preliminar a esta investigação, estudos correlatos de viabilidade analisaram a seleção de trajetórias orbitais para data centers espaciais (BARROS; FERNANDES, 2026b) e a modelagem inicial de co-design térmico-energético com controle de atitude e downlink semântico (BARROS; FERNANDES, 2026a), fornecendo subsídios técnicos que são expandidos e formalizados nesta dissertação. Social e ambientalmente, a pesquisa contribui para a mitigação do consumo hídrico e a descarbonização da inteligência artificial planetária.
+
+\subsection{Metodologia Proposta}
+
+A metodologia adotada é estritamente quantitativa e teórico-computacional (\textit{in silico}), estruturada em modelagem analítica rigorosa e simulação dinâmica multivariada nos ambientes MATLAB/Simulink e no ecossistema de computação científica Python (NumPy, SciPy, CasADi e Matplotlib). O emprego exclusivo de simulação computacional de alta fidelidade é amplamente consolidado e aceito na engenharia aeroespacial e de sistemas de potência e controle (MESEGUER; PÉREZ-GRANDE; SANZ-ANDRÉS, 2012; PIGNATON et al., 2023; ZHANG; ANDERSON; PORTER, 2024), pois viabiliza a exploração exaustiva de regimes transitórios de contorno sem incorrer nos custos e restrições materiais proibitivas de câmaras de vácuo térmico (TVAC) ou lançamentos espaciais. Ressalta-se que a presente dissertação não contempla ensaios físicos em bancadas experimentais laboratoriais ou plataformas emuladoras \textit{Hardware-in-the-Loop} (HIL) --- inviáveis para os níveis de potência em escala megawatt investigados ---, concentrando seus esforços na alta fidelidade matemática, na formulação analítica acoplada e no estresse exaustivo dos modelos computacionais desenvolvidos para o nó representativo de 50~kW integrante do cluster orbital.
+
+O detalhamento metodológico segue a resolução estrita de cada objetivo específico:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Objetivo Específico 1 (Revisão Bibliográfica Sistemática):} Aplicação do protocolo PRISMA para levantamento e taxonomia nas bases IEEE Xplore, ScienceDirect, ACM Digital Library e AIAA Aerospace Research Central (2015 a 2026). Consolidação do estado da arte sobre data centers orbitais, limites térmicos de silício e técnicas de controle preditivo e inteligente aplicadas ao gerenciamento de potência espacial.
+    
+    \item \textbf{Objetivo Específico 2 (Modelagem Fotovoltaica e MPPT AM0):} Formulação do modelo matemático de 1 diodo e 5 parâmetros ($I_{ph}, I_0, R_s, R_{sh}, a$), recalculando as constantes de temperatura e irradiância para o espectro extraterrestre AM0 ($1361\text{ W/m}^2$). Implementação de algoritmos de rastreamento MPPT de alta velocidade de convergência e baixo consumo computacional baseados em perturbação e observação (P\&O) adaptativo com passo variável guiado por gradiente.
+    
+    \item \textbf{Objetivo Específico 3 (Modelagem Eletrotérmica da Distribuição de Potência):} Modelagem em blocos de estado dos conversores chaveados DC-DC baseados em GaN com cálculo dinâmico de rendimento ($\eta_{conv}$), incluindo perdas de condução dependentes da temperatura de junção, perdas de comutação e perdas de núcleo magnético em ferritas MnZn, mapeando a dissipação térmica secundária transferida à carcaça do rack.
+    
+    \item \textbf{Objetivo Específico 4 (Modelagem de Bateria e Estimativa de SoC via AUKF):} Modelagem do circuito equivalente de polarização dupla (DP) de 2ª ordem para o banco de baterias de lítio com dependência eletrotérmica de parâmetros. Implementação do Filtro de Kalman Unscented Adaptativo com fator de esquecimento e adaptação recursiva de Sage--Husa (AUKF) para estimação robusta de Estado de Carga (SoC com erro $< 1{,}5\%$) sob transitórios severos de carga de IA.
+    
+    \item \textbf{Objetivo Específico 5 (Modelagem Térmica Radiativa de Chips e Radiadores):} Construção de modelo térmico por rede de parâmetros concentrados (\textit{lumped thermal capacitance model}) acoplando o silício dos chips de IA, a pasta térmica condutiva, o dissipador e os radiadores externos orientados para o espaço profundo via Lei de Stefan-Boltzmann ($q = \varepsilon \sigma A (T_{rad}^4 - T_{space}^4)$).
+    
+    \item \textbf{Objetivo Específico 6 (Sistema de Gerenciamento Térmico-Energético -- TEMS):} Desenvolvimento de algoritmo de controle hierárquico com escalonamento de tarefas de inteligência artificial sensível à temperatura e modulação dinâmica de frequência/tensão (DVFS). O escalonador previne o estrangulamento térmico abrupto e distribui a execução de cargas de IA de acordo com a capacidade radiativa instantânea do nó.
+    
+    \item \textbf{Objetivo Específico 7 (Integração e Validação do Framework):} Integração de todas as equações diferenciais algébricas dos submódulos em um ambiente integrado de simulação temporal (\textit{Orbital Data Center Thermal-Energy Simulator} -- ODCTES). Execução de cenários operacionais de longa duração em órbita heliossíncrona e geoestacionária, avaliando temperatura máxima de junção ($T_j \le 85^\circ\text{C}$), vazão útil de processamento e eficácia energética orbital ($PUE_{orbital}$).
+    
+    \item \textbf{Objetivo Específico 8 (Publicações e Dissertação Final):} Documentação do framework em repositório de código aberto, submissão de pelo menos 1 artigo completo em periódico indexado Qualis CAPES da área e 1 artigo em anais de congresso, em coautoria com o orientador e em estrito atendimento ao Regulamento do ProPECAut, culminando na redação da dissertação de mestrado aprovada em banca de defesa formal.
+\end{itemize}
+
+\subsection{ESTRUTURA DA DISSERTAÇÃO}
+
+A dissertação final será estruturada em seis capítulos organizados de maneira sequencial e didática:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Capítulo 1 -- Introdução:} Apresenta o contexto de saturação energética e hídrica de data centers em solo, a proposta de data centers orbitais, a formulação matemática do problema térmico-energético no vácuo, os objetivos gerais e específicos, a justificativa e a metodologia adotada.
+    
+    \item \textbf{Capítulo 2 -- Fundamentação Teórica e Estado da Arte:} Revisa a literatura sobre o ambiente espacial extraterrestre (espectro AM0 e radiação cósmica), princípios de transferência de calor por radiação em satélites, arquiteturas de eletrônica de potência e computação de alto desempenho com aceleradores neurais no espaço.
+    
+    \item \textbf{Capítulo 3 -- Modelagem Matemática do Subsistema Elétrico e de Armazenamento:} Apresenta o equacionamento detalhado dos painéis solares espaciais multijunção sob o espectro extraterrestre AM0, o desenvolvimento de algoritmos de rastreamento de máxima potência (MPPT), a modelagem de perdas eletrotérmicas dos estágios de conversão e distribuição DC-DC de alta tensão e o modelo dinâmico do banco de baterias acoplado ao algoritmo adaptativo de estimação de estado de carga (AUKF).
+    
+    \item \textbf{Capítulo 4 -- Modelagem Térmica e Radiativa Orbital Multifísica:} Expõe o equacionamento da dinâmica orbital e dos fluxos radiativos incidentes (solar direto, albedo e infravermelho terrestre nas órbitas LEO, SSO e GEO), a rede térmica nodal dos nós de processamento neural e dos radiadores espaciais regidos pela Lei de Stefan-Boltzmann, e a concepção do algoritmo de escalonamento térmico-energético ativo (TEMS) com modulação dinâmica de tensão e frequência (DVFS).
+    
+    \item \textbf{Capítulo 5 -- Resultados de Simulação Numérica e Análise Comparativa de Estresse:} Apresenta os ensaios de simulação computacional do framework integrado sob condições extremas de estresse operacional (transientes de carga de IA, transições bruscas de eclipse, falhas parciais e degradação por radiação), confrontando o desempenho do sistema frente a estratégias clássicas da literatura.
+    
+    \item \textbf{Capítulo 6 -- Conclusões e Trabalhos Futuros:} Sintetiza as conclusões principais, discute as contribuições e limitações teóricas do framework computacional \textit{in silico} e delineia diretrizes para futuros desdobramentos de pesquisa e validação experimental física em bancadas dedicadas como passos posteriores para a indústria aeroespacial.
+\end{itemize}

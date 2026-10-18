@@ -1,0 +1,47 @@
+\newpage
+\section{OBJETIVOS}
+
+\subsection{OBJETIVO GERAL}
+Investigar, modelar e propor soluções integradas de gerenciamento de energia e otimização da eficiência energética para o Subsistema de Suprimento de Energia (\textit{Electrical Power System} -- EPS) de pico e nanossatélites, contemplando a modelagem da geração fotovoltaica sob dinâmica orbital, conversores estáticos de alta eficiência e algoritmos inteligentes de despacho de carga e proteção de baterias.
+
+\subsection{OBJETIVOS ESPECÍFICOS ATÉ A QUALIFICAÇÃO}
+\begin{enumerate}[label=\arabic*.]
+    \item Realizar levantamento bibliográfico sistemático sobre arquiteturas de EPS (\textit{Direct Energy Transfer} vs. barramento com MPPT), conversores estáticos chaveados e estratégias de gerenciamento de energia em plataformas espaciais de pequeno porte.
+    \item Desenvolver a modelagem matemática e computacional de arranjos fotovoltaicos miniaturizados, considerando variações de irradiação solar, albedo terrestre e gradientes térmicos típicos de órbita baixa da Terra (LEO).
+    \item Avaliar e selecionar algoritmos de rastreamento do ponto de máxima potência (MPPT) voltados para nanossatélites, priorizando alta acurácia de rastreamento e ultra-baixo consumo estático dos circuitos de controle.
+    \item Projetar e simular topologias de conversores DC-DC de alta eficiência energética para interface entre os painéis solares, o barramento de distribuição e o subsistema de armazenamento.
+    \item Modelar o comportamento do subsistema de armazenamento de energia (baterias recarregáveis de lítio), integrando métodos de estimativa do Estado de Carga (\textit{State of Charge} -- SoC) e controle de profundidade de descarga (\textit{Depth of Discharge} -- DoD).
+\end{enumerate}
+
+\subsection{OBJETIVOS ESPECÍFICOS ATÉ A DEFESA}
+\begin{enumerate}[label=\arabic*., resume]
+    \item Formular e implementar o algoritmo do Sistema de Gerenciamento de Energia (\textit{Energy Management System} -- EMS), com chaveamento seletivo de cargas e transições dinâmicas entre estados operacionais (nominal, comunicação, segurança e recarga).
+    \item Implementar o protótipo experimental de bancada do EPS (ou plataforma de simulação em tempo real / \textit{Hardware-in-the-Loop}), integrando emulação solar, conversores, circuito de carga de bateria e cargas ativas programáveis.
+    \item Executar ensaios experimentais sob perfis orbitais simulados (ciclos de sol e eclipse de 90 minutos), comparando quantitativamente a eficiência energética, perdas de conversão e autonomia do sistema frente a arquiteturas convencionais.
+    \item Elaborar artigos científicos para submissão a congressos e periódicos especializados e redigir a dissertação de mestrado final.
+\end{enumerate}
+
+\subsection{RELAÇÃO ENTRE OBJETIVOS, ENTREGAS E MARCOS}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Relação entre objetivos específicos, entregas e marcos previstos.}
+\begin{tabularx}{\textwidth}{p{1.8cm} X p{2.8cm}}
+\toprule
+\textbf{Objetivo} & \textbf{Entrega correspondente} & \textbf{Marco} \\
+\midrule
+OE1 & Relatório de estado da arte e taxonomia de arquiteturas EPS para pico/nanossatélites. & Qualificação \\
+OE2 & Modelo computacional validado do gerador fotovoltaico sob ambiente orbital LEO. & Qualificação \\
+OE3 & Avaliação comparativa de algoritmos de MPPT de baixo consumo próprio. & Qualificação \\
+OE4 & Projeto e simulação de conversores DC-DC de alto rendimento energético. & Qualificação \\
+OE5 & Modelo eletroquímico e térmico do banco de baterias com estimativa de SoC. & Qualificação \\
+\midrule
+OE6 & Algoritmo de gerenciamento inteligente de energia (EMS) e chaveamento de estados. & Defesa \\
+OE7 & Bancada experimental de testes montada e integrada com instrumentação de precisão. & Defesa \\
+OE8 & Relatório de validação experimental com balanço de potência e rendimento global. & Defesa \\
+OE9 & Artigo técnico submetido e dissertação de mestrado concluída. & Defesa \\
+\bottomrule
+\end{tabularx}
+\label{tab:objetivos_entregas}
+\end{table}

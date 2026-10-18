@@ -1,0 +1,53 @@
+\newpage
+\noindent\textbf{APÊNDICE B -- NOTAS DE ENCAMINHAMENTO}
+\vspace{0.5cm}
+
+\noindent As notas deste apêndice registram a contextualização técnica, a formulação do problema e o encaminhamento metodológico que embasam a proposta de dissertação no Programa de Pós-Graduação em Engenharia de Controle e Automação (ProPECAut/Ifes).
+
+\vspace{0.3cm}
+\noindent\textbf{INTRODUÇÃO E CONTEXTUALIZAÇÃO}
+
+\noindent A revolução proporcionada por plataformas espaciais miniaturizadas — em particular nanossatélites (CubeSats, $10 \times 10 \times 10$~cm, 1U a 3U) e picosatélites (PocketQubes, $5 \times 5 \times 5$~cm, 1p a 3p) — democratizou o acesso ao espaço para experimentos científicos, telecomunicações e sensoriamento remoto. Contudo, essa extrema miniaturização impõe restrições severas ao Subsistema de Suprimento de Energia (\textit{Electrical Power System} -- EPS). A área superficial diminuta limita a potência média gerada pelos painéis solares a valores entre centenas de miliwatts e poucos watts. Além disso, em órbita baixa da Terra (\textit{Low Earth Orbit} -- LEO), o satélite percorre cerca de 15 órbitas diárias ($\approx 90$~minutos cada), enfrentando períodos de eclipse de aproximadamente 35 a 40 minutos e variações térmicas drásticas ($-40^\circ$C a $+80^\circ$C), que alteram bruscamente o ponto de operação das células fotovoltaicas. Nesse ambiente, cada miliwatt dissipado em conversões ineficientes ou consumido por circuitos auxiliares compromete a disponibilidade operacional da carga útil (\textit{payload}) e a viabilidade da missão.
+
+\vspace{0.3cm}
+\noindent\textbf{PROBLEMA DE PESQUISA}
+
+\noindent Como maximizar a eficiência energética global e a disponibilidade de potência no Subsistema de Energia Elétrica (EPS) de pico e nanossatélites, integrando modelagem fotovoltaica orbital, rastreamento de máxima potência (MPPT) com ultra-baixo consumo estático, conversores DC-DC de alto rendimento e algoritmos preditivos de gerenciamento dinâmico de carga?
+
+\vspace{0.3cm}
+\noindent\textbf{EIXOS METODOLÓGICOS E LINHAS DE ATUAÇÃO}
+
+\noindent A pesquisa se desenvolverá por meio de abordagem aplicada, teórico-computacional e experimental, articulada nos seguintes eixos:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Eixo 1 -- Modelagem Fotovoltaica e MPPT Espacial:} Simulação computacional das curvas características I-V e P-V das células solares sob irradiação e temperatura variantes ao longo da trajetória orbital em LEO. Investigação de algoritmos de MPPT com compromisso ótimo entre acurácia de rastreamento, robustez a variações térmicas e consumo estático mínimo da eletrônica de sensoriamento e controle.
+    \item \textbf{Eixo 2 -- Eletrônica de Potência e Topologias de Conversores:} Análise de perdas por condução e comutação em conversores estáticos chaveados (Buck, Boost, Buck-Boost síncronos). Projeto de topologias otimizadas para interligação entre células solares, reguladores de barramento e banco de baterias, minimizando a dissipação de calor em confinamento a vácuo.
+    \item \textbf{Eixo 3 -- Gerenciamento Inteligente de Demanda e Baterias (EMS):} Desenvolvimento de lógica embarcada para despacho supervisionado de energia com base na estimativa em tempo real do Estado de Carga (SoC) e do Estado de Saúde (SoH) das células de lítio. Implementação de estratégias de \textit{duty cycling} e chaveamento dinâmico de subsistemas conforme o balanço energético em tempo real.
+\end{itemize}
+
+\vspace{0.3cm}
+\noindent\textbf{CRONOGRAMA PRELIMINAR}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Cronograma preliminar de execução da pesquisa (24 meses).}
+\begin{tabularx}{\textwidth}{X p{3.5cm}}
+\toprule
+\textbf{Atividade} & \textbf{Período Previsto} \\
+\midrule
+Levantamento bibliográfico sistemático e análise de arquiteturas EPS & Meses 1--4 \\
+Modelagem matemática orbital da matriz solar e simulação em software & Meses 3--6 \\
+Projeto das topologias de conversores DC-DC e simulação eletrotérmica & Meses 5--8 \\
+Implementação e validação em simulação de algoritmos de MPPT de baixo consumo & Meses 7--10 \\
+Elaboração do texto de qualificação e consolidação dos modelos & Meses 10--12 \\
+\textbf{Exame de Qualificação} & \textbf{Mês 12} \\
+\midrule
+Montagem da bancada experimental de testes e emulação solar & Meses 13--16 \\
+Implementação dos algoritmos de gerenciamento de carga (EMS) em bancada & Meses 15--18 \\
+Ensaios experimentais com perfis de órbita LEO e análise de rendimento global & Meses 17--20 \\
+Redação de artigos científicos e escrita final da dissertação & Meses 19--23 \\
+\textbf{Defesa da Dissertação} & \textbf{Mês 24} \\
+\bottomrule
+\end{tabularx}
+\label{tab:cronograma}
+\end{table}

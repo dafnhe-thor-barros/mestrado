@@ -1,0 +1,29 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+
+# Heavy external PDF downloads in bibliography (exceeds GitHub 100MB limit)
+bibliografia/*.pdf
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Octave / MATLAB
+*.asv
+
+# Editor / OS
+.DS_Store
+Thumbs.db

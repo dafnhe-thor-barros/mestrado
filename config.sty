@@ -1,0 +1,59 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{config}[2026/10/10 v1.1 Configuracoes Padrao IFES ProPECAut]
+
+% --- PACOTES DE IDIOMA E FONTES ---
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[T1]{fontenc}
+\RequirePackage[brazilian]{babel}
+
+% --- TIMES NEW ROMAN ---
+\RequirePackage{newtxtext}
+\RequirePackage{newtxmath}
+\RequirePackage{amsmath}
+
+% --- IMAGENS E GRÁFICOS ---
+\RequirePackage{graphicx}
+
+% --- GEOMETRIA E MARGENS (ABNT/IFES) ---
+\RequirePackage{geometry}
+\geometry{
+    a4paper,
+    left=3.0cm,
+    top=3.0cm,
+    right=2.0cm,
+    bottom=2.0cm
+}
+
+% --- TIPOGRAFIA E ESPAÇAMENTOS ---
+\RequirePackage{indentfirst}
+\RequirePackage{setspace}
+\RequirePackage{microtype}
+\setstretch{1.5}
+\setlength{\parindent}{1.25cm}
+
+% --- TABELAS E ALINHAMENTO ---
+\RequirePackage{booktabs}
+\RequirePackage{tabularx}
+\RequirePackage{array}
+\RequirePackage{multirow}
+
+% --- LISTAS E ENUMERAÇÕES ---
+\RequirePackage{enumitem}
+
+% --- FORMATAÇÃO DE TÍTULOS E SEÇÕES (ABNT) ---
+\RequirePackage{titlesec}
+\titleformat{\section}{\bfseries\normalsize\uppercase}{\thesection}{1em}{}
+\titleformat{\subsection}{\bfseries\normalsize}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\bfseries\normalsize}{\thesubsubsection}{1em}{}
+
+% --- REFERÊNCIAS E LINKS ---
+\RequirePackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue,
+    pdfborder={0 0 0},
+    breaklinks=true
+}
+\urlstyle{same}

@@ -1,0 +1,766 @@
+--- PAGE 1 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 1 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+Desenvolvimento de um kit de CubeSat para fins acadêmicos: 
+projeto, construção e aplicações 
+ 
+Development of a CubeSat kit for academic purposes: design, 
+construction, and applications 
+ 
+Desarrollo de un kit de CubeSat para fines académicos: diseño, 
+construcción y aplicaciones 
+ 
+DOI: 10.54033/cadpedv22n10-248 
+ 
+Originals received: 7/25/2025 
+Acceptance for publication: 8/18/2025 
+ 
+ 
+Dafnhê Thor Castro de Martins Barros 
+Bacharel em Engenharia de Segurança do Trabalho 
+Instituição: Centro Universitário União das Américas Descomplica 
+Endereço: Serra, Espírito Santo, Brasil 
+E-mail: dafnhe.thor@msn.com 
+ 
+ 
+RESUMO 
+A desconexão da teoria aprendida na escola, com a aplicação prática dos 
+conceitos, em objetos, itens ou ideias que, aparentemente não são palpáveis, 
+como um satélite por exemplo, apresenta -se como uma dificuldade no sistema 
+de ensino brasileiro, visando aproximar a teoria com o objetivo prático do ensino 
+de ciências e tecnologia, buscando também despertar a curiosidade e o interesse 
+dos docentes para o desenvolvimento tecnológico. O presente artigo se inicia 
+com um levantamento bibliográfico para explorar c onceitos e práticas 
+relacionados aos kits de CubeSat para uso acadêmico. A parte prática do projeto 
+envolve a construção de um protótipo de CubeSat, de forma a ser facilmente 
+replicado e utilizado por alunos de diversos níveis de conhecimento. Ao 
+disponibilizar um Kit de CubeSat completo e eficiente, utilizando das técnicas de 
+PBL ( Problem Based Learning ), capacitar uma nova geração de cientistas e 
+engenheiros, tanto desenvolvendo habilidades técnicas e soft-skills 
+imprescindíveis para o mercado de trabalho , como trabalho em equipe, 
+capacidade de liderança, desenvoltura em apresentações, como para explorar o 
+espaço e realizar experimentos inovadores. 
+ 
+Palavras-chave: CubeSat. Desenvolvimento de Competências . Tecnologia. 
+Educação. 
+ 
+ABSTRACT 
+The disconnection between theory learned at school and the practical application 
+of concepts in objects, items, or ideas that are apparently not tangible, such as a 
+--- PAGE 2 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 2 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+satellite, presents itself as a difficulty in the Brazilian educational system, aiming 
+to bridge the gap between theory and the practical objective of science and 
+technology education, while also seeking to spark curiosity and interest among 
+teachers for t echnological development. This article begins with a bibliographic 
+review to explore concepts and practices related to CubeSat kits for academic 
+use. The practical part of the project involves building a CubeSat prototype that 
+can be easily replicated and used by students with various levels of knowledge. 
+By providing a complete and efficient CubeSat Kit, using PBL (Problem Based 
+Learning) techniques, train a new generation of scientists and engineers, both 
+developing technical skills and essential soft ski lls for the job market, such as 
+teamwork, leadership ability, presentation skills, as well as to explore space and 
+conduct innovative experiments. 
+ 
+Keywords: CubeSat. Skills Development. Technology. Education. 
+ 
+RESUMEN 
+La desconexión entre la teoría aprendida en la escuela y la aplicación práctica 
+de los conceptos en objetos, elementos o ideas que, aparentemente, no son tan-
+gibles, como un satélite, por ejemplo, se presenta como una dificultad en el sis-
+tema educativo brasileño, con el objetivo de acercar la teoría al objetivo práctico 
+de la enseñanza de las ciencias y la tecnología, buscando también despertar la 
+curiosidad y el interés de los docentes por el desarrollo tecnológico. El presente 
+artículo comienza con una revisión bibliográfica para explorar conceptos y prác-
+ticas relacionados con los kits CubeSat para uso académico. La parte práctica 
+del proyecto consiste en la construcción de un prototipo de CubeSat, de forma 
+que pueda ser fácilmente replicado y utilizado por estudiantes de diferentes ni-
+veles de conocimiento. Al poner a disposición un kit CubeSat completo y efici-
+ente, utilizando las técnicas de PBL (Problem Based Learning), se capacita a 
+una nueva generación de científicos e ingenieros, tanto en el desarrollo de habi-
+lidades técnicas y soft skills imprescindibles para el mercado laboral, como el 
+trabajo en equipo, la capacidad de liderazgo, la desenvoltura en las presentaci-
+ones, como en la exploración del espacio y la realización de experimentos inno-
+vadores. 
+ 
+Palabras clave: CubeSat. Desarrollo de Competencias. Tecnología. Educación. 
+ 
+ 
+1 INTRODUÇÃO 
+ 
+Nos últimos anos, a indústria espacial tem testemunhado um aumento no-
+tável no interesse e na demanda por pequenos satélites, especialmente pelo seu 
+potencial de democratização do acesso ao espaço. Entre esses pequenos saté-
+lites, o CubeSat tem se destacado,  por ser uma plataforma padronizada e mo-
+dular, permitindo o desenvolvimento rápido, econômico e flexível de missões 
+--- PAGE 3 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 3 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+espaciais. No entanto, a disponibilidade de um kit abrangente e eficiente, capaz 
+de fornecer recursos para a criação de um CubeSat, de forma que seja acessível 
+ao meio acadêmico, e que estimule a curiosidade e o aprendizado e novas tec-
+nologias nas faculdad es, nas escolas profissionalizantes e no ensino médio 
+ainda é uma necessidade não totalmente atendida. (Brasil, 2023). 
+Nesse contexto, surge a motivação deste trabalho: desenvolver um Kit de 
+CubeSat completo e acessível, que possa ser utilizado por estudantes e pesqui-
+sadores para projetar, construir e desenvolver os aprendizados teóricos. Como 
+o exemplo dos estudantes de ensino fundamental de Ubatuba que participaram, 
+ativamente, do desenvolvimento do UbatubaSat (Ministério da educação, 2018). 
+Diante da motivação apresentada, o objetivo geral é, como desenvolver 
+um Kit de CubeSat inclusivo e eficiente, fornecendo os recursos necessários e 
+abrangendo as principais etapas necessárias para a criação de um satélite nessa 
+plataforma, desde o projeto, construção e operação em um sistema padronizado 
+e modular. 
+Para alcançar o objetivo geral, os seguintes objetivos específicos foram 
+estabelecidos: 
+I. Pesquisar e analisar os principais componentes e tecnologias utilizados 
+em CubeSats, como estrutura, eletrônica, energia, comunicação e senso-
+res; 
+II. Projetar e desenvolver os componentes essenciais do Kit de CubeSat, 
+considerando as restrições de tamanho, peso e energia. Considerando 
+utilizar de módulos e sistemas prontos e consolidados no mercado, tais 
+como Arduino®, Raspberry®; 
+III. Integrar os componentes em uma estrutura modular, permitindo a perso-
+nalização e expansão do kit conforme as necessidades do usuário; 
+IV. Desenvolver documentação e instruções para facilitar o uso do kit, desde 
+a montagem até a operação simulada em órbita; 
+V. Testar e validar o Kit de CubeSat em condições simuladas, verificando 
+sua funcionalidade e confiabilidade. 
+A importância deste trabalho reside na democratização do acesso ao de-
+senvolvimento de novas tecnologias, aplicação prática de conhecimento teórico 
+--- PAGE 4 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 4 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+em diversas áreas tecnológicas, tais como, sensoriamento, projeto, desenvolvi-
+mento de sistemas, programação, telemetria, proporcionando aos estudantes e 
+pesquisadores uma ferramenta completa e acessível para o desenvolvimento de 
+suas habilidades. Ao dispon ibilizar um Kit de CubeSat viável e eficiente, acom-
+panhado de documentação e instruções, espera -se capacitar e inspirar uma 
+nova geração de cientistas e engenheiros a explorar o espaço e realizar experi-
+mentos inovadores (Agência espacial brasileira, 2022). 
+Este trabalho está organizado em cinco seções, conforme a seguinte es-
+trutura: 
+• Seção 1: Introdução: apresentação da motivação, pergunta de pesquisa, 
+objetivos gerais e específicos, justificativa e estrutura do trabalho; 
+• Seção 2: Fundamentação Teórica: revisão dos principais conceitos e tec-
+nologias relacionadas a CubeSats, abordando sua origem, característi-
+cas, aplicações e desafios; 
+• Seção 3: Metodologia: descrição detalhada dos procedimentos utilizados 
+no desenvolvimento do Kit de CubeSat; 
+• Seção 4: Desenvolvimento do Kit de CubeSat: apresentação dos princi-
+pais componentes e funcionalidades do kit, incluindo sua estrutura física, 
+eletrônica, fornecimento e gerenciamento de energia, comunicação e sen-
+sores; 
+• Seção 5: Resultados e Conclusões: análise dos resultados obtidos com a 
+implementação do Kit de CubeSat, seguida das conclusões e recomen-
+dações para trabalhos futuros. 
+Com essa estrutura, pretende-se fornecer uma visão abrangente e deta-
+lhada sobre o desenvolvimento do Kit de CubeSat, desde a sua concepção até 
+a validação final. 
+ 
+2 CUBESATS: ORIGEM, COMPONENTES, VANTAGENS E DESVANTAGENS 
+ 
+Os CubeSats são satélites miniaturizados, baseados em uma plataforma 
+padronizada de cubo, geralmente com dimensões múltiplos de 10 cm x 10 cm x 
+10 cm, e 2 kg, definido como 1 unidade, ou 1U, sendo um modelo escalonável, 
+--- PAGE 5 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 5 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+podem ser projetados em 1U, 2U, até 12U. Eles foram desenvolvidos como uma 
+alternativa de baixo custo e tempo reduzido de desenvolvimento para missões 
+espaciais. O conceito de CubeSat foi proposto inicialmente em 1999 por Jordi 
+Puig-Suari e Bob Twiggs, com o objetivo de permitir que estudantes e pequenas 
+organizações realizassem experimentos espaciais. (Cds, 2022). 
+Desde então, os CubeSats têm evoluído e ganhado popularidade, impul-
+sionados por avanços tecnológicos e a crescente demanda por acesso ao es-
+paço. A padronização dos CubeSats facilitou a integração e a colaboração entre 
+diferentes instituições e países, resultando em uma ampla gama  de aplicações, 
+como observação da Terra, ciência espacial, comunicações e demonstração de 
+tecnologias (Raffa, 2021). 
+ 
+2.1 VANTAGENS E LIMITAÇÕES DOS CUBESATS 
+ 
+Os CubeSats apresentam diversas vantagens em relação aos satélites 
+convencionais. Sua construção modular e padronizada permite um desenvolvi-
+mento mais rápido e econômico, com componentes pré -fabricados disponíveis 
+comercialmente e tecnologias já conhecidas e largamente utilizadas. Além disso, 
+eles podem ser lançados como cargas secundárias em foguetes de maior porte, 
+aproveitando as oportunidades de lançamento existentes (David, 2004). 
+No entanto, os CubeSats também possuem algumas limitações. Devido 
+ao seu tamanho reduzido, a capacidade de carga útil e a energia disponível são 
+limitadas. A estabilidade e a precisão orbital também podem ser afetadas, resul-
+tando em uma vida útil mais curta em órbita. Além disso, a comunicação com os 
+CubeSats pode ser desafiadora, devido às restrições de tamanho das antenas e 
+à potência limitada. (Ministério da ciência, tecnologia e inovação, 2022). 
+ 
+2.2 COMPONENTES DE UM KIT DE CUBESAT 
+ 
+Conforme Silva e Lopes (2020); Cappelletti, Battistini e Malphrus (2020), 
+um kit de CubeSat geralmente consiste em uma variedade de componentes 
+--- PAGE 6 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 6 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+essenciais que permitem a construção e operação do satélite, que foram sepa-
+rados da seguinte forma estruturada. 
+• Estrutura: A estrutura é responsável por fornecer suporte físico e proteção 
+para os componentes internos do CubeSat. Geralmente, é construída com 
+materiais leves, como alumínio ou fibra de carbono, para manter o peso 
+reduzido. Possui também importância na carga térmica do satélite; 
+• Eletrônica: A eletrônica do CubeSat inclui a placa-mãe (PCB), que abriga 
+os circuitos e dispositivos eletrônicos essenciais, como processadores, 
+memória, sensores, atuadores. Também podem ser incluídos sistemas de 
+controle térmico e unidades de interface com a carga útil; 
+• Sistema de gerenciamento e fornecimento de energia: Os CubeSats nor-
+malmente possuem sistemas de energia limitados, como painéis solares 
+para captura de energia solar e baterias para armazenamento. Esses sis-
+temas são responsáveis por fornecer energia para o  funcionamento do 
+CubeSat durante a órbita; 
+• Comunicação: Os sistemas de comunicação permitem a troca de dados 
+entre o CubeSat e as estações terrestres. Geralmente, são utilizadas an-
+tenas de baixo ganho para transmissão e recepção de dados, enquanto 
+antenas de alto ganho podem ser utilizadas para comunicações de maior 
+alcance; 
+• Sensores: Os sensores permitem que o CubeSat colete dados do ambi-
+ente espacial e realize suas tarefas específicas. Eles podem incluir sen-
+sores de orientação e controle, como magnetômetros e giroscópios, e 
+sensores para aplicações científicas ou de observaç ão da Terra, como 
+câmeras ou espectrômetros. 
+ 
+2.3 IMPORTÂNCIA E APLICAÇÕES DOS KITS DE CUBESAT PARA USO ACA-
+DÊMICO 
+ 
+Os kits de CubeSat para uso acadêmico desempenham um papel funda-
+mental na formação de estudantes e na promoção da pesquisa e desenvolvi-
+mento em tecnologia espacial. Eles fornecem uma plataforma prática e acessível 
+--- PAGE 7 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 7 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+para que os alunos aprendam sobre os princípios da engenharia espacial, ad-
+quiram habilidades técnicas relevantes e conduzam experimentos científicos 
+(Silva, 2020). 
+Ao explorar a fundamentação teórica sobre os kits de CubeSat para uso 
+acadêmico, busca -se compreender os conceitos, definições e características 
+fundamentais dessas plataformas. Essa exploração permitirá uma compreensão 
+clara da base existente e auxiliará no desenvolvimento do projeto de pesquisa, 
+contribuindo para o avanço da educação tecnológica e espacial (Meller, 2021). 
+Em um estudo, observando o desenvolvimento de algumas habilidades, 
+Straub e Whalen (2014) pôde mensurar, qualitativamente o desenvolvimento do 
+conforto e da capacidade de apresentação para o público, trabalho em equipe, 
+liderança e desenvolvimento técnico durante o desenvolvimento de pequenos 
+satélites. 
+ 
+3 METODOLOGIA 
+ 
+A metodologia adotada envolve a realização de uma pesquisa aplicada, 
+com abordagem qualitativa e objetivos exploratórios e descritivos. Além disso, 
+serão utilizados procedimentos técnicos de pesquisa bibliográfica e documental 
+para embasar o desenvolvimento do projeto. 
+ 
+3.1 ETAPAS DA PESQUISA 
+ 
+As etapas da pesquisa serão estruturadas para investigar, de forma 
+abrangente o CubeSat, para a confecção do kit e o uso no contexto acadêmico. 
+Começando com um levantamento bibliográfico, diversas fontes como livros, ar-
+tigos e documentos serão usadas para  explorar conceitos, práticas e desafios 
+ligados aos kits, alimentando a criação da base teórica para a análise e sistema-
+tização dos dados levantados. Com a base teórica, será definido e construído 
+um protótipo, para demonstração. A conclusão abordará lacunas e contribuições 
+do projeto, solidificando um referencial útil para o desenvolvimento do projeto e 
+--- PAGE 8 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 8 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+orientando pesquisadores interessados na expansão do conhecimento nesse 
+campo em constante crescimento. 
+ 
+3.1.1 Levantamento bibliográfico 
+ 
+Realização de uma pesquisa bibliográfica sistemática, explorando diver-
+sas fontes de informação relevantes sobre o uso acadêmico de CubeSat. Serão 
+selecionados livros, artigos científicos e documentos que abordem os conceitos 
+e aplicações dos kits de CubeSa t, bem como as melhores práticas e desafios 
+relacionados à sua implementação acadêmica. 
+O kit a ser proposto não necessita, necessariamente, seguir as diretrizes 
+do CDS ( CubeSat Design Specification ), porém, deverá ser de conhecimento 
+dos usuários, pois em caso de interesse no lançamento, o CubeSat deve seguir 
+as especificações técnicas contidas no documento. 
+ 
+3.1.2 Análise e sistematização dos dados 
+ 
+Os dados obtidos por meio do levantamento bibliográfico serão analisados 
+e sistematizados de forma a identificar conceitos, características e tendências 
+relacionadas aos kits de CubeSat para uso acadêmico. Serão realizadas anota-
+ções, sínteses e categorizaç ões dos principais pontos relevantes encontrados 
+nas fontes consultadas. 
+ 
+3.1.3 Elaboração da fundamentação teórica 
+ 
+Com base na análise dos dados obtidos, será elaborada a fundamentação 
+teórica do trabalho, que abordará os conceitos, definições e características fun-
+damentais dos kits de CubeSat para uso acadêmico. Serão apresentadas as 
+principais informações e conhecimentos embasados na literatura científica, rela-
+cionando-os ao objetivo geral do projeto. 
+  
+--- PAGE 9 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 9 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+3.1.4 Construção do protótipo 
+ 
+Com os dados levantados, em conjunto com a fundamentação teórica, 
+será elaborado um protótipo básico, para demonstrar de forma física e visual a 
+viabilidade, a facilidade e a utilização do kit para a construção e desenvolvimento 
+de conhecimentos em montage m e tecnologia. Para a construção do protótipo 
+serão utilizados os seguintes materiais: 
+• Estrutura: A estrutura será construída com base na impressão 3D, como 
+o satélite é acadêmico, e não será lançado, não é necessário atender as 
+especificações de resistência mecânica e carga térmica; 
+• Eletrônica: Por ser um sistema escalonável, de fácil acesso, planejamento 
+e programação, será utilizado o Arduíno®, em conjunto com placa “Shi-
+eld”, para entradas e saídas de sinais; 
+• Sistema de gerenciamento e fornecimento de energia: A melhor opção de 
+fornecimento de energia elétrica é a solar, logo serão utilizados painéis 
+solares, baterias para armazenar energia aonde a órbita não permite a 
+incidência de luz solar, placa de gerencia mento e proteção da carga das 
+baterias, conversores DC-DC para ajustar os níveis de tensão, sistema de 
+proteção e monitoramento dos dados de consumo e energia disponível 
+(Tessari-zampieri et. al 2021); 
+• Comunicação: Devido às limitações de consumo de energia e distância, 
+deve ser escolhido uma tecnologia de baixo consumo e longo alcance, 
+pelo fato do sistema LoRa utilizar uma faixa de frequência livre de licença, 
+vai ser a tecnologia utilizada. A Anatel p ermite, no Brasil o uso livre da 
+faixa de 915Mhz. (Navarro e rodrigues, 2022); 
+• Sensores: Serão utilizados sensores de umidade, pressão, temperatura, 
+GPS para a geolocalização e acompanhamento da orbita. Adicional-
+mente, para missões mais específicas, podem ser utilizados outros sen-
+sores, isto é definido na fase de projeto do satélite devido a missão a ser 
+cumprida. 
+  
+--- PAGE 10 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 10 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+3.1.5 Considerações finais 
+ 
+Ao final da pesquisa, serão realizadas considerações finais com base nos 
+resultados obtidos. Será feita uma análise crítica dos principais aspectos abor-
+dados na fundamentação teórica, destacando as lacunas de conhecimento iden-
+tificadas e as possíveis contr ibuições do projeto para o avanço da área de kits 
+de CubeSat para uso acadêmico. 
+A metodologia proposta permitirá uma compreensão aprofundada dos 
+conceitos e características dos kits de CubeSat para uso acadêmico, proporcio-
+nando uma base sólida para o desenvolvimento do projeto. Além disso, a meto-
+dologia adotada também permite que outros pesquisadores possam repetir o es-
+tudo, seguindo as mesmas instruções e contribuindo para a ampliação do co-
+nhecimento nessa área. 
+ 
+4 RESULTADOS E DISCUSSÕES 
+ 
+O sistema de ensino atual necessita de várias melhorias, para formar não 
+só profissionais, bem como cidadãos conscientes e questionadores, pois há 
+sempre o que aprender e o que ensinar. Uma excelente forma de fixar a teoria, 
+trazer questionamentos e desenvolver o conhecimento e aguçar a curiosidade é 
+desenvolver, na prática, a teoria que pode aparentar muito abstrata. 
+Neste contexto surgiu a ideia dos picos e nano satélites, em especial os 
+CubeSats, pois estes se tornaram uma mudança de paradigma, visto que algo 
+que antes era muito distante da realidade dos estudantes de tecnologia, está se 
+tornando cada vez mais próximo a estudantes vários níveis acadêmicos, desde 
+mestres e doutores, até estudantes de ensino fundamental. 
+Um CubeSat 1U (Unidade) é uma categoria específica de CubeSat, que 
+segue um conjunto de diretrizes de tamanho e peso definidas pela CubeSat De-
+sign Specification (CDS). A CDS foi desenvolvida para padronizar os CubeSats 
+e torná-los mais acessíveis e econômicos de construir e lançar. 
+Principais características e especificações de um CubeSat 1U: 
+--- PAGE 11 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 11 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+• Dimensões Padrão: Um CubeSat 1U tem dimensões de aproximada-
+mente 10 centímetros x 10 centímetros x 10 centímetros. Isso equivale a 
+1 litro de volume e é a menor categoria de CubeSat; 
+• Peso Limitado: Um CubeSat 1U tem um limite de peso de cerca de 1 kg. 
+Essa restrição de peso é uma das razões pelas quais os CubeSats são 
+chamados de "miniaturizados"; 
+• Padrão de Encaixe: Os CubeSats  são projetados para encaixar em um 
+lançador de carga útil padrão de 3U (três unidades), que é comum em 
+foguetes de lançamento. Portanto, um CubeSat 1U é frequentemente 
+montado em uma estrutura de encaixe que é compatível com os padrões 
+de lançamento. Para o protótipo e o kit não será levado em consideração, 
+porém deverá ser de conhecimento da equipe de montagem; 
+• Estrutura: A estrutura de um CubeSat 1U é geralmente feita de materiais 
+leves, como alumínio ou fibra de carbono, para manter o peso dentro dos 
+limites. Essa estrutura fornece suporte físico e proteção para os compo-
+nentes internos. Para o protótipo e o kit , a estrutura será feira na impres-
+sora 3D, em PLA, devido à facilidade de modularização e personalização 
+e o custo reduzido; 
+• Eletrônica: A eletrônica do CubeSat 1U inclui uma placa -mãe (PCB) que 
+abriga os circuitos e dispositivos eletrônicos essenciais, como processa-
+dores, memória, sensores, e sistemas de controle; 
+• Sistema de Gerenciamento de Energia: Os CubeSats geralmente usam 
+painéis solares para capturar energia solar e baterias para armazenar 
+energia quando não estão na luz solar direta. Esses sistemas de gerenci-
+amento de energia são projetados para fornecer ene rgia para todas as 
+operações do satélite; 
+• Comunicação: Os sistemas de comunicação permitem que o CubeSat tro-
+que dados com as estações terrestres. Devido às limitações de tamanho 
+e energia, são comuns antenas de baixo ganho para transmissão e recep-
+ção de dados, enquanto antenas de alto ganho podem ser usadas para 
+comunicações de maior alcance; 
+--- PAGE 12 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 12 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+• Sensores: Os CubeSats podem ser equipados com vários sensores, como 
+sensores de orientação e controle, magnetômetros, giroscópios e senso-
+res para aplicações científicas ou de observação da Terra, como câmeras 
+ou espectrômetros, dependendo da missão específica; 
+• Potência Limitada: Devido ao tamanho reduzido, a capacidade de carga 
+útil e a energia disponível são limitadas em CubeSats 1U. Isso pode afetar 
+a vida útil em órbita e a capacidade de realizar certos tipos de missões. 
+Para projetar o satélite é necessário seguir os seguintes passos: 
+• Determinação da missão a ser cumprida, isto é, qual o objetivo que o sa-
+télite tem em sua vida útil. Para este caso em específico, a missão será 
+simples, a medição de algumas variáveis na órbita baixa da terra que com-
+preende a distância entre 350 e 1400km a cima da superfície da terra, as 
+orbitas inferiores são instáveis devido ao arrastamento atmosférico. As 
+variáveis a serem medidas são: umidade, pressão, temperatura e geolo-
+calização para acompanhamento da orbita, por ser um kit educacional, o 
+objetivo é o desenvolvimento e o contato com a tecnologia; 
+• Determinação das Especificações: Com base na missão, determine as 
+especificações do CubeSat, incluindo tamanho (por exemplo, 1U, 2U, 3U), 
+tipos de sensores e instrumentação. É possível estimar o peso e o con-
+sumo de energia nesta fase, porém sem muita precisão, pois é necessário 
+a seleção de todos os componentes, fazer os cálculos aproximados de 
+peso e consumo de energia, logo, o peso, o consumo de energia e o sis-
+tema de gerenciamento de energia será especificado em conjunto com a 
+seleção dos componentes. Para o kit, o cubesat será do padrão 1U, com 
+peso até de 1kg, e os sensores serão de umidade, pressão, temperatura 
+e GPS; 
+• Seleção de Componentes: Escolha os componentes que serão usados no 
+CubeSat, como sensores, eletrônica, painéis solares, baterias e antenas. 
+Certifique-se de que esses componentes atendam às especificações da 
+missão. Os componentes eletrônicos estão listados abaixo, assim como o 
+consumo médio de energia, crucial para o projeto do sistema de gerenci-
+amento de energia. 
+--- PAGE 13 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 13 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+Tabela 1. Lista de materiais 
+Item Qtd. Sistema Descrição Pot. mW Preço Peso (g) 
+1 1 PCB Arduino UNO 600 R$ 50,00 58 
+2 1 PCB Sensor ShieldV5.0 240 R$ 15,00 26 
+3 1 PCB 
+Sensor de Temperatura e 
+Umidade de Alta Precisão - 
+AHT10 
+70 R$ 15,00 13 
+4 1 PCB Sensor de Pressão 
+Barométrico BMP180 50 R$ 15,00 12 
+5 1 PCB GPS 250 R$ 55,00 25 
+6 1 Com. SX1276 LoRa 915Mhz RF + 
+Antena 4Km 300 R$ 65,00 25 
+7 6 SGE Painéis solares 6V -2160 R$ 125,00 138 
+8 1 SGE Bateria 12v 5000mah - R$ 120,00 200 
+9 1 SGE Controlador de Carga MPPT - R$ 50,00 200 
+10 1 Estrutur
+al Kit Frame montagem - R$ 200,00 200 
+11 1 Estrutur
+al 
+Kit de parafusos, porcas, 
+arruelas, cabos e conectores 
+para montagem. 
+- R$ 100,00 150 
+Total estimado R$810,00 822 
+Fonte: Elaborado pelo autor com base em pesquisas de preço no ano de 2024.  
+ 
+• Construção: O protótipo será cuidadosamente construído com base nos 
+itens levantados anteriormente. 
+ 
+Figura 1. Frames e montagem do cubesat. 
+ 
+Fonte: O autor. 
+  
+
+--- PAGE 14 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 14 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+Figura 2. Cubesat em montagem. 
+ 
+Fonte: O autor. 
+ 
+• Testes em solo: Realizar testes em solo para garantir que o CubeSat fun-
+cione corretamente. Isso inclui testes de eletrônica, comunicação e inte-
+gridade estrutural; 
+• Preparação para o lançamento e lançamento: Estas etapas não são rele-
+vantes para o projeto do kit, mas são de conhecimento indispensáveis 
+para a equipe de projetistas, pois são necessários testes térmicos e me-
+cânicos no satélite antes do lançamento; 
+• Missão em órbita: Após o lançamento, o CubeSat entra em órbita e inicia 
+a missão. Isso envolve a coleta de dados, a transmissão de informações 
+para a Terra e a realização de experimentos planejados; 
+• Monitoramento e controle: Monitore o CubeSat em órbita para garantir que 
+ele funcione conforme o planejado. Isso pode envolver atualizações de 
+software e ajustes de trajetória; 
+• Coleta de dados: Utilize os dados coletados pelo CubeSat para atender 
+aos objetivos da missão. Isso pode incluir a análise de dados científicos, 
+a observação da Terra ou a realização de experimentos; 
+• Fim da missão: Quando a missão do CubeSat estiver completa, planeje o 
+desligamento e a reentrada segura na atmosfera, se necessário. Uma pre-
+ocupação crescente é a do lixo espacial, a agência espacial europeia 
+
+--- PAGE 15 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 15 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+(ESA) estima que existam cerca de 900.000 objetos sem qualquer utili-
+dade, em órbita, cujo tamanho variam entre 1 e 10 cm. 
+ 
+5 CONSIDERAÇÕES FINAIS 
+ 
+5.1 CONSIDERAÇÕES SOBRE O ESTUDO REALIZADO 
+ 
+O protótipo do kit de CubeSat, concebido como uma ferramenta de notá-
+vel versatilidade e acessibilidade, oferece uma solução de baixo custo que se 
+revela de extrema utilidade em ambientes educacionais de diversos níveis. A sua 
+facilidade de montagem e progr amação torna-o acessível a um amplo espectro 
+de públicos, desde estudantes do ensino fundamental até alunos de graduação. 
+Para os estudantes mais jovens, que talvez necessitem de alguma orientação na 
+programação, o kit pode disponibilizar um código-fonte base já pronto. Isso sim-
+plifica significativamente a introdução destes alunos ao vasto mundo da progra-
+mação, incentivando o desenvolvimento de habilidades de resolução de proble-
+mas, criatividade e pensamento crítico. 
+Não obstante, a sua aplicabilidade abrangente não se limita aos alunos 
+mais jovens, uma vez que este kit se mostra igualmente adequado para estu-
+dantes de graduação e projetos multidisciplinares. Este protótipo oferece a opor-
+tunidade de engajar -se em projet os interdisciplinares, o que é vital para a pro-
+moção de habilidades de trabalho em equipe, liderança e aprimoramento da ca-
+pacidade de apresentação em público. Além disso, a sua acessibilidade em ter-
+mos de custo é particularmente benéfica, possibilitando qu e instituições educa-
+cionais com recursos limitados tenham acesso a uma ferramenta educacional 
+valiosa. 
+No contexto de um mundo cada vez mais orientado pela tecnologia e pela 
+inovação, este protótipo de CubeSat representa um recurso educacional inesti-
+mável, pois não apenas facilita a aquisição de habilidades tecnológicas, mas 
+também desempenha um papel funda mental na capacitação dos alunos para o 
+futuro. Assim, ao proporcionar uma plataforma aberta para a exploração do es-
+paço e da tecnologia espacial, este kit não apenas enriquece a aprendizagem, 
+--- PAGE 16 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 16 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+mas também promove o desenvolvimento de habilidades cruciais que servirão 
+aos estudantes ao longo de suas vidas, tanto no âmbito pessoal quanto no pro-
+fissional. 
+Mesmo em um cenário adverso, como foi o da pandemia do Sars-Cov-2, 
+onde era necessário manter as medidas de isolamento social, houve uma grande 
+aceitação, por parte dos docentes (80%), da aplicação prática e integrada de 
+várias disciplinas em PBL ( Project-Based Learning), a aplicação prática e inte-
+grada na resolução de problemas se mostrou um método eficaz para, além de 
+despertar a curiosidade e o interesse no aprendizado tecnológico, desenvolver 
+habilidades necessárias e de extrema importância no meio acadêmico e no mer-
+cado de trabalho. 
+ 
+5.2 LIMITAÇÕES DA PESQUISA 
+ 
+Embora o desenvolvimento do Kit de CubeSat tenha demonstrado grande 
+potencial para aplicação educacional, algumas limitações importantes devem ser 
+consideradas: 
+• Ausência de validação em ambiente real de órbita: O protótipo foi testado 
+apenas em condições simuladas de solo, sem exposição a fatores reais 
+como microgravidade, radiação espacial ou variações térmicas extremas, 
+que são comuns em missões espaciais reais; 
+• Foco exclusivo em ambientes educacionais: O projeto foi concebido para 
+fins didáticos, o que exclui requisitos técnicos exigidos por agências es-
+paciais para lançamento, como certificações, testes de vibração e resis-
+tência mecânica; 
+• Limitações de recursos tecnológicos: Por se tratar de um kit de baixo 
+custo, foram utilizados componentes acessíveis e simplificados, o que res-
+tringe a complexidade das missões que podem ser simuladas; 
+• Ausência de avaliação longitudinal: Ainda não foram realizados estudos 
+que acompanhem o impacto do uso do kit ao longo do tempo na formação 
+de competências técnicas e comportamentais dos estudantes. 
+ 
+--- PAGE 17 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 17 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+5.3 RECOMENDAÇÕES PARA ESTUDOS FUTUROS 
+ 
+Para ampliar o impacto do projeto no contexto acadêmico, recomenda-se 
+que futuras pesquisas considerem: 
+• Avaliação pedagógica: Investigar, por meio de metodologias educacio-
+nais, como o uso do kit contribui para o desenvolvimento de habilidades 
+como pensamento crítico, resolução de problemas, trabalho em equipe e 
+criatividade em diferentes níveis de ensino; 
+• Adaptação curricular: Estudar formas de integrar o Kit de CubeSat em dis-
+ciplinas específicas do currículo escolar e universitário, promovendo abor-
+dagens interdisciplinares e alinhadas à Base Nacional Comum Curricular 
+(BNCC); 
+• Inclusão e acessibilidade: Desenvolver versões do kit adaptadas para es-
+tudantes com deficiência, garantindo que a experiência prática seja aces-
+sível a todos os públicos; 
+• Formação docente: Criar programas de capacitação para professores, 
+com foco na utilização do kit como ferramenta didática, incluindo materiais 
+de apoio e estratégias de ensino baseadas em projetos; 
+• Expansão para ensino remoto: Explorar o uso do kit em ambientes de en-
+sino híbrido ou remoto, especialmente em contextos de baixa conectivi-
+dade, utilizando recursos offline e materiais impressos complementares. 
+  
+--- PAGE 18 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 18 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+REFERÊNCIAS 
+ 
+BRASIL, Agência Espacial Brasileira. Nanossatélites movimentam o 
+Programa Espacial Brasileiro, 13 fev. 2023. Disponível em 
+<https://www.gov.br/aeb/pt-br/assuntos/noticias/nanossatelites-movimentam-o-
+programa-espacial-brasileiro> Acesso em 01 nov 2023. 
+BRASIL. Desenvolvimento do Cubesat Aldebaran-I provoca impactos sociais 
+no Maranhão. Agência Espacial Brasileira. 2022. Disponível em: 
+<https://www.gov.br/aeb/pt-br/assuntos/noticias/desenvolvimento-do-cubesat-
+aldebaran-i-provoca-impactos-sociais-no-maranhao> Acesso em 16 de ago. de 
+2023. 
+BRASIL. Estudantes do ensino fundamental constroem satélite em Ubatuba, no 
+litoral de São Paulo. Ministério da Educação. 2018. Disponível em: 
+<http://portal.mec.gov.br/component/tags/tag/ubatubasat> Acesso em: 16 de 
+Julho de 2023. 
+CAPPELLETTI, Chantal; BATTISTINI, Simone; MALPHRUS, Benjamin K. 
+CubeSat Handbook: From Mission Design to Operations. Cidade de 
+publicação: Academic Press – 1ª Ed. 2020 
+CubeSat Design Specification (CDS). Disponível em: <www.cubesat.org>. 
+Acessado em 12 de jul. de 2023. 
+CUSTÓDIO, Sueli Sampaio Damin. CERQUEIRA, Christopher Schneider. 
+APRENDIZAGEM POR PROJETOS NO ENSINO DE ENGENHARIA 
+AEROESPACIAL E AERONÁUTICA. COBENGE. São Paulo. Setembro 2021. 
+Disponível em: 
+<http://www.abenge.org.br/sis_artigo_doi.php?e=COBENGE&a=21&c=3595> 
+Acesso em: 21 out 2023. 
+DAVID, Leonard. Cubesats: Tiny Spacecraft, Huge Payoffs. Space.com. 2004 
+Disponível em:  <https://www.space.com/308-cubesats-tiny-spacecraft-huge-
+payoffs.html>. Acesso em 16 de ago. 2023. 
+Lixo espacial: chegou o momento de começar a cuidar do cosmo?. 
+Iberdrola, 2023. Disponível em: 
+<https://www.iberdrola.com/sustentabilidade/lixo-
+espacial#:~:text=Atualmente%2C%20segundo%20a%20Ag%C3%AAncia%20E
+spacial,34.000%20superiores%20a%2010%20cm.> Acesso em: 21 out 2023. 
+MELLER, Fernanda Gusso Rosa. As vantagens e desafios por trás da 
+tecnologia na educação. Central de Notícias Uninter. 2021. Disponível em: 
+<https://www.uninter.com/noticias/as-vantagens-e-desafios-por-tras-da-
+tecnologia-na-educacao>. Acesso em 14 de jul. de 2023. 
+NAVARRO, Paula Gonçalves. RODRIGUES, Ernesto Luiz Malta. O uso de 
+redes LoRa para sensoriamento industrial remoto. Programa de Apoio à 
+Iniciação Científica - PAIC 2021-2022, FAE Centro Universitário, Curitiba, p. 
+425-437. 
+--- PAGE 19 ---
+ 
+ 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações Ltda. 
+ISSN: 1983-0882 
+Page 19 
+REVISTA CADERNO PEDAGÓGICO – Studies Publicações e Editora Ltda., Curitiba, v.22, n.10, p. 01-19. 2025. 
+ 
+Pequenos satélites: Grandes possibilidades: Olimpíadas brasileira de satélites 
+Ministério da Ciencia, Tecnologia e Informação.  Volume 1, 1ª ed. São 
+Carlos, SP: Ed. dos Autores, 2022. 
+RAFFA, Rodrigo. Satélite idealizado por alunos e professor de Itapetininga é 
+selecionado em olimpíada científica, Clube de Astronomia de Itapetininga. 
+2021. Disponível em: <https://www.clubecentauri.com.br/post/satelite-de-
+itapetininga-obsat>. Acesso em 15 de ago. de 2023. 
+SILVA, Eduardo Henrique da. LOPES, João Luiz Dallamuta. Proposta de um 
+CubeSat universitário para desenvolvimento de tecnologias espaciais 
+nacionais. 11º Workshop em Engenharia e Tecnologia Espaciais. 2020. 
+Disponível em: <http://mtc-m16d.sid.inpe.br/col/sid.inpe.br/mtc-
+m16d/2020/08.13.14.29/doc/10%20-
+%20%5BARTIGO%5D%5BExterno%5D%20Eduardo%20Henrique%20da%20
+Silva.pdf> Acesso em: 18 de jul. de 2023 
+STRAUB, Jeremy. WAHLEN, David. Evaluation of the Educational Impact of 
+Participation Time in a Small Spacecraft Development Program. Disponível 
+em: <https://www.mdpi.com/2227-7102/4/1/141> Acesso em: 21 out 2023. 
+TESSARI-ZAMPIERI Maria Cristina. SANTIAGO, Alessandro Ferreira de. 
+LOPES, Weder Fabricio. SILVA, Abraão Ramos da. SCAPIN, Marcos Antonio. 
+Utilização de Projetos de Nanossatélites na Graduação em Engenharia de 
+Computação: Planejamento do Subsistema Energia Elétrica para CubeSat. 12º 
+Workshop em Engenharia e Tecnologias Espaciais, p. 1-10, 2021. 

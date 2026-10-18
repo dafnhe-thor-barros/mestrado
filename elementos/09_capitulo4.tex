@@ -1,0 +1,819 @@
+% ==============================================================================
+% CAPÍTULO 4: MODELAGEM TÉRMICA E RADIATIVA ORBITAL MULTIFÍSICA
+% ==============================================================================
+\section{MODELAGEM TÉRMICA E RADIATIVA ORBITAL MULTIFÍSICA}
+\label{sec:capitulo4_modelagem_termica}
+
+A operação contínua de aceleradores de inteligência artificial em plataformas espaciais defronta-se com a ausência de matéria circundante no vácuo, inviabilizando qualquer mecanismo clássico de convecção ou condução com o ambiente externo. Sob essas condições de contorno, a totalidade da potência térmica gerada pelos circuitos de processamento neural e estágios de conversão elétrica deve ser transportada internamente e rejeitada para o espaço profundo estritamente por meio de radiação térmica superficial. Este capítulo desenvolve a modelagem matemática e física rigorosa da dinâmica orbital, dos fluxos radiativos ambientais incidentes, da rede térmica nodal de resfriamento e do sistema de controle térmico-energético ativo (TEMS) concebido para estabilizar as temperaturas operacionais da carga útil sob os cenários mais severos de estresse orbital.
+
+\subsection{Dinâmica Orbital e Fluxos Radiativos Ambientais Incidentes}
+\label{sec:dinamica_orbital_fluxos}
+
+A determinação precisa das cargas térmicas externas que oneram a espaçonave requer a segregação estrita entre os regimes orbitais investigados. Conforme justificado na análise técnico-econômica e arquitetural (Capítulo~\ref{sec:tradeoff_custo_escala}), a trajetória de referência e ponto de projeto primário da missão é a \textbf{Órbita Heliossíncrona (\textit{Sun-Synchronous Orbit} -- SSO) do tipo \textit{Dawn-Dusk}}, situada a $700\text{ km}$ de altitude. Em complemento, definem-se cenários paramétricos comparativos em Órbita Baixa Terrestre convencional (\textit{Low Earth Orbit} -- LEO, $500\text{ km}$) e Órbita Geoestacionária (\textit{Geostationary Earth Orbit} -- GEO, $35.786\text{ km}$), analisados sob conjuntos distintos e independentes de parâmetros orbitais.
+
+A Tabela~\ref{tab:parametros_orbitais_comparativos} sintetiza as propriedades físicas e ambientais de contorno que regem cada um dos três cenários orbitais considerados.
+
+\begin{table}[htbp]
+\centering
+\caption{Parâmetros orbitais e ambientais comparativos para os três regimes de voo.}
+\label{tab:parametros_orbitais_comparativos}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\hline
+\textbf{Propriedade / Condição de Contorno} & \textbf{SSO Dawn-Dusk (Projeto)} & \textbf{LEO Convencional} & \textbf{GEO} & \textbf{Classificação Epistêmica} \\ \hline
+Altitude Orbital Nominal ($h$) & $700{,}0\text{ km}$ & $500{,}0\text{ km}$ & $35.786{,}0\text{ km}$ & \textbf{[DEPENDENTE DE MISSÃO]} \\
+Semieixo Maior ($a$) & $7071{,}0\text{ km}$ & $6871{,}0\text{ km}$ & $42.164{,}0\text{ km}$ & \textbf{[CALCULADO]} ($R_E = 6371\text{ km}$) \\
+Excentricidade da Órbita ($e$) & $0{,}001$ ($\approx$ circular) & $0{,}001$ ($\approx$ circular) & $0{,}000$ (circular) & \textbf{[PROVISÓRIO]} Órbita operacional congelada \\
+Inclinação Orbital ($i$) & $98{,}19^\circ$ (retrógrada) & $51{,}60^\circ$ (ISS) & $0{,}00^\circ$ (equatorial) & \textbf{[VERIFICÁVEL]} Condição heliossíncrona \\
+Hora Local do Nó Ascendente (LTAN) & 18:00 (Dawn-Dusk) & Variante ($0\text{ a }24\text{ h}$) & N/A & \textbf{[DEPENDENTE DE MISSÃO]} \\
+Ângulo Beta Nominal ($\beta$) & $85^\circ \le |\beta| \le 90^\circ$ & $0^\circ \le |\beta| \le 75^\circ$ & $-23{,}4^\circ \le \beta \le +23{,}4^\circ$ & \textbf{[VERIFICÁVEL]} Geometria Sol-plano orbital \\
+Período Orbital ($T_{orb}$) & $98{,}77\text{ min}$ ($5926\text{ s}$) & $94{,}62\text{ min}$ ($5677\text{ s}$) & $1436{,}07\text{ min}$ ($23{,}93\text{ h}$) & \textbf{[CALCULADO]} $T = 2\pi \sqrt{a^3/\mu_E}$ \\
+Fração Anual de Eclipse ($f_{ecl}$) & $< 0{,}8\%$ (solstício) & $\approx 35\% - 40\%$ & $\approx 1\%$ (equinócios) & \textbf{[VERIFICÁVEL]} Barramento e balanço térmico \\
+Duração Máxima de Eclipse ($t_{ecl,max}$) & $18{,}8\text{ min}$ & $35{,}8\text{ min}$ & $72{,}0\text{ min}$ & \textbf{[CALCULADO]} Cônico com penumbra \\
+Albedo e Infravermelho Terrestre & Moderados a relevantes & Altamente relevantes & Desprezíveis ($F_{E} < 0{,}005$) & \textbf{[VERIFICÁVEL]} Fator de forma com altitude \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+\subsubsection{Propagação Kepleriana e Transformação de Referenciais de Atitude}
+
+A propagação da posição do satélite no tempo obedece às equações do movimento kepleriano bi-dimensional no plano orbital. A distância geocêntrica $r(t)$ e a anomalia verdadeira $\theta(t)$ são regidas pela equação da órbita:
+\begin{equation}
+    r(\theta) = \frac{a (1 - e^2)}{1 + e \cos \theta}
+    \label{eq:orbita_raio}
+\end{equation}
+onde $\mu_E = 398600{,}4418\text{ km}^3/\text{s}^2$ é a constante gravitacional da Terra. Para órbitas com excentricidade residual $e \ll 1$, a evolução temporal é resolvida deterministicamente através da Equação de Kepler para a anomalia excêntrica $E(t)$:
+\begin{equation}
+    M(t) = E(t) - e \sin E(t) = M_0 + n(t - t_0), \qquad n = \sqrt{\frac{\mu_E}{a^3}}
+    \label{eq:kepler_anomalia}
+\end{equation}
+extraindo a anomalia verdadeira pela relação trigonométrica fechada:
+\begin{equation}
+    \theta(t) = 2 \arctan\left[ \sqrt{\frac{1 + e}{1 - e}} \tan\left(\frac{E(t)}{2}\right) \right]
+    \label{eq:anomalia_verdadeira}
+\end{equation}
+
+A correta incidência de radiação nas faces da espaçonave exige a definição unívoca de três sistemas de coordenadas ortogonais:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Referencial Inercial Equatorial Geocêntrico (ECI / J2000):} Eixo $+\mathbf{X}_{ECI}$ direcionado ao ponto vernal ($\Upsilon$), $+\mathbf{Z}_{ECI}$ normal ao equador terrestre e coincidente com o eixo de rotação planetária, e $+\mathbf{Y}_{ECI}$ completando a tríade dextrógira. O vetor solar unitário $\hat{\mathbf{s}}_{ECI}(t)$ é expresso em função da longitude eclíptica solar $\lambda_\odot(t)$ e da obliquidade da eclíptica ($\epsilon \approx 23{,}44^\circ$):
+    \begin{equation}
+        \hat{\mathbf{s}}_{ECI}(t) = \begin{bmatrix} \cos \lambda_\odot(t) \\ \sin \lambda_\odot(t) \cos \epsilon \\ \sin \lambda_\odot(t) \sin \epsilon \end{bmatrix}
+        \label{eq:vetor_solar_eci}
+    \end{equation}
+    
+    \item \textbf{Referencial de Órbita Local (LVLH -- \textit{Local Vertical Local Horizontal}):} Origem no centro de massa do satélite, com $+\mathbf{Z}_{LVLH}$ apontado diretamente para o centro geométrico da Terra (vetor Nadir), $+\mathbf{X}_{LVLH}$ no sentido do vetor velocidade orbital para órbita circular, e $+\mathbf{Y}_{LVLH} = \mathbf{Z}_{LVLH} \times \mathbf{X}_{LVLH}$ perpendicular ao plano orbital, alinhado ao momento angular orbital $\mathbf{h} = \mathbf{r} \times \mathbf{v}$.
+    
+    \item \textbf{Referencial do Corpo da Espaçonave ($\mathbf{B}$):} Eixos solidários à estrutura do rack computacional, com matriz de rotação $\mathbf{R}_{B/LVLH}(t)$ orientada pelo Subsistema de Determinação e Controle de Atitude (ADCS).
+\end{enumerate}
+
+Para a missão nominal em órbita SSO *Dawn-Dusk*, adota-se a lei de controle de apontamento estático-solar (\textit{Sun-Pointing / Anti-Solar Orientation}):
+\begin{itemize}[leftmargin=*]
+    \item A face normal das asas solares flexíveis ROSA ($\hat{\mathbf{n}}_{pv}$) é mantida permanentemente orientada para o Sol: $\hat{\mathbf{n}}_{pv,B} = [0, +1, 0]^T$;
+    \item A face externa principal dos radiadores térmicos desdobráveis ($\hat{\mathbf{n}}_{rad}$) é mantida permanentemente colinear com o vetor anti-solar, orientada para o espaço profundo frio no semiplano oposto ao Sol: $\hat{\mathbf{n}}_{rad,B} = [0, -1, 0]^T$;
+    \item As faces laterais do chassi ($\pm \mathbf{X}_B$ e $\pm \mathbf{Z}_B$) interceptam os fluxos terrestres de albedo e infravermelho de raspão, minimizando a sua contribuição para a carcaça.
+\end{itemize}
+
+O cosseno do ângulo de incidência solar sobre uma dada superfície $k$ de normal unitária $\hat{\mathbf{n}}_{k,B}$ é computado deterministicamente pela projeção unilateral:
+\begin{equation}
+    \mu_{s,k}(t) = \max\left( 0, \, \hat{\mathbf{n}}_{k,B} \cdot \mathbf{R}_{B/ECI}(t) \, \hat{\mathbf{s}}_{ECI}(t) \right)
+    \label{eq:cosseno_solar_unilateral}
+\end{equation}
+
+\subsubsection{Modelo de Ocultação Cônica: Umbra, Penumbra e Transição Gradual}
+
+A representação geométrica dos eclipses espaciais rejeita aproximações cilíndricas simplistas que consideram os raios solares paralelos, adotando a formulação analítica de ocultação cônica exata baseada na extensão angular finita do disco solar (ECSS-E-HB-31-01 Parte 1; NASA/TM-4527).
+
+Considerando o raio volumétrico do Sol ($R_\odot = 696.340\text{ km}$), a distância heliocêntrica Terra-Sol ($d_{\odot-E} \approx 1{,}496 \times 10^8\text{ km}$) e o raio médio da Terra ($R_E = 6371{,}0\text{ km}$), definem-se os semi-ângulos aparentes subtendidos pelo Sol ($\alpha_\odot$) e pela Terra ($\alpha_E$) a partir da posição instantânea do satélite $\mathbf{r}_{sat}(t)$:
+\begin{equation}
+    \alpha_\odot = \arcsin\left( \frac{R_\odot}{\|\mathbf{r}_{sat} - \mathbf{r}_\odot\|} \right) \approx 0{,}267^\circ, \qquad \alpha_E(t) = \arcsin\left( \frac{R_E}{\|\mathbf{r}_{sat}(t)\|} \right)
+    \label{eq:angulos_aparentes}
+\end{equation}
+A separação angular aparente entre os centros do Sol e da Terra, vista pelo observador orbital, é expressa por:
+\begin{equation}
+    \gamma(t) = \arccos\left( \frac{-\mathbf{r}_{sat}(t) \cdot \hat{\mathbf{s}}(t)}{\|\mathbf{r}_{sat}(t)\|} \right)
+    \label{eq:separacao_angular}
+\end{equation}
+
+O fator de iluminação solar efetiva $S(t) \in [0, 1]$ é modelado pela fração desobstruída do disco solar visível:
+\begin{equation}
+    S(t) = 
+    \begin{cases}
+        1{,}0, & \text{se } \gamma(t) \ge \alpha_E(t) + \alpha_\odot \quad \text{(Iluminação Plena)} \\
+        0{,}0, & \text{se } \gamma(t) \le \alpha_E(t) - \alpha_\odot \quad \text{(Umbra Total)} \\
+        1 - \frac{A_{ocultada}(t)}{\pi \alpha_\odot^2}, & \text{se } |\alpha_E(t) - \alpha_\odot| < \gamma(t) < \alpha_E(t) + \alpha_\odot \quad \text{(Penumbra Gradual)}
+    \end{cases}
+    \label{eq:fator_sombra_conica}
+\end{equation}
+onde a área geométrica de sobreposição de dois discos circulares $A_{ocultada}(t)$ é deduzida de forma fechada por:
+\begin{align}
+    A_{ocultada} &= \alpha_\odot^2 \arccos\left( \frac{\gamma^2 + \alpha_\odot^2 - \alpha_E^2}{2 \gamma \alpha_\odot} \right) + \alpha_E^2 \arccos\left( \frac{\gamma^2 + \alpha_E^2 - \alpha_\odot^2}{2 \gamma \alpha_E} \right) \nonumber \\
+    &\quad - \frac{1}{2} \sqrt{\left[ (\alpha_\odot + \alpha_E)^2 - \gamma^2 \right] \left[ \gamma^2 - (\alpha_E - \alpha_\odot)^2 \right]}
+    \label{eq:area_sobreposicao}
+\end{align}
+Essa formulação suave em $S(t)$ elimina descontinuidades numéricas artificiais nos integradores de equações diferenciais durante as transições de entrada e saída de sombra orbital.
+
+\subsubsection{Formulações Físicas dos Fluxos Incidentes e Fatores de Forma Planetários}
+
+A densidade de potência radiativa incidente total ($q_{in,k}$) absorvida pela face externa de uma superfície condutora de área $A_k$, com absortividade solar $\alpha_{s,k}$ e absortividade infravermelha $\alpha_{ir,k}$ (igual à emissividade térmica $\varepsilon_{k}$ pela Lei de Kirchhoff para corpos opacos em equilíbrio espectral), decompõe-se na tríade fundamental:
+\begin{equation}
+    q_{abs,k}(t) = q_{sol,abs,k}(t) + q_{alb,abs,k}(t) + q_{ir,abs,k}(t)
+    \label{eq:triade_fluxos}
+\end{equation}
+
+\noindent\textbf{1. Fluxo Solar Direto Absorvido ($q_{sol,abs,k}$):}
+\begin{equation}
+    q_{sol,abs,k}(t) = G_{AM0} \cdot \alpha_{s,k} \cdot S(t) \cdot \max\left( 0, \, \hat{\mathbf{n}}_{k,B} \cdot \hat{\mathbf{s}}_B(t) \right)
+    \label{eq:fluxo_solar_direto}
+\end{equation}
+adotando a constante solar nominal extraterrestre $G_{AM0} = 1361{,}0\text{ W/m}^2$ (WERTZ et al., 2011).
+
+\noindent\textbf{2. Fluxo de Albedo Terrestre Absorvido ($q_{alb,abs,k}$):}
+O albedo representa a reflexão difusa da radiação solar de ondas curtas pela superfície e atmosfera da Terra. Diferentemente de abordagens simplistas que tratam o albedo como um escalar arbitrário, a formulação analítica incorpora o fator de forma geométrico entre a placa plana e o disco terrestre ($F_{k-E}$), a fração de iluminação da calota visível e o coeficiente médio planetário de refletância $a_E \approx 0{,}30$ (NASA/TM-4527; CERES):
+\begin{equation}
+    q_{alb,abs,k}(t) = G_{AM0} \cdot a_E \cdot \alpha_{s,k} \cdot F_{k-E}(h, \phi_k) \cdot \max\left( 0, \, \cos \theta_{sun,nadir}(t) \right) \cdot S(t)
+    \label{eq:fluxo_albedo_exato}
+\end{equation}
+em que $\theta_{sun,nadir}$ é o ângulo zenital solar em relação ao ponto sub-satelital no Nadir.
+
+\noindent\textbf{3. Fluxo Infravermelho Terrestre Absorvido ($q_{ir,abs,k}$):}
+A emissão térmica planetária da Terra na faixa do infravermelho termodinâmico de ondas longas ($\lambda \approx 4\text{ a }50\ \mu\text{m}$) é modelada a partir da densidade média de fluxo planetário $q_{Earth} \approx 237\text{ W/m}^2$ (ECSS-E-HB-31-01 Parte 1):
+\begin{equation}
+    q_{ir,abs,k}(t) = q_{Earth} \cdot \varepsilon_k \cdot F_{k-E}(h, \phi_k)
+    \label{eq:fluxo_ir_exato}
+\end{equation}
+
+\noindent\textbf{Cálculo Analítico do Fator de Visão Satélite-Terra ($F_{k-E}$):}
+Para uma superfície plana com inclinação $\phi_k$ entre a sua normal $\hat{\mathbf{n}}_k$ e o vetor Nadir ($+\mathbf{Z}_{LVLH}$), orbitando a uma altitude $h$ com parâmetro de altitude adimensional $H = (R_E + h) / R_E$, o semi-ângulo do horizonte visível terrestre é $\theta_m = \arcsin(1/H)$. O fator de visão geométrico com integração fechada sobre a calota esférica (ECSS-E-HB-31-01 Parte 1) é expresso por:
+\begin{equation}
+    F_{k-E}(h, \phi_k) = 
+    \begin{cases}
+        \frac{1}{H^2} \cos \phi_k, & \text{se } 0 \le \phi_k \le \frac{\pi}{2} - \theta_m \\[0.2cm]
+        \begin{aligned}[b]
+            &\frac{1}{2} - \frac{1}{\pi} \arcsin\left( \frac{\sqrt{H^2 - 1}}{H \sin \phi_k} \right) \\
+            &\quad + \frac{\cos \phi_k}{\pi H^2} \arccos\left( \sqrt{H^2 - 1} \cot \phi_k \right) \\
+            &\quad - \frac{\sqrt{H^2 - 1}}{\pi H^2} \sqrt{1 - H^2 \cos^2 \phi_k},
+        \end{aligned} & \text{se } \frac{\pi}{2} - \theta_m < \phi_k \le \frac{\pi}{2} + \theta_m \\[0.6cm]
+        0{,}0, & \text{se } \phi_k > \frac{\pi}{2} + \theta_m
+    \end{cases}
+    \label{eq:fator_forma_ecss}
+\end{equation}
+
+Na altitude de projeto de $700\text{ km}$, tem-se $H = 7071/6371 = 1{,}1098$ e $\theta_m = 64{,}29^\circ$. Para a face Nadir pura ($\phi = 0^\circ$), o fator de visão atinge $F_{Nadir-E} = 1/H^2 = 0{,}8119$. Para o painel radiador orientado na face anti-solar ($-\mathbf{Y}_B$), o alinhamento com a órbita polar conduz a $\phi_{rad} \approx 90^\circ$, resultando em um fator de visão minorante estritamente restrito a $F_{rad-E} \approx 0{,}0314$. Esse amortecimento geométrico reduz a absorção parasita de calor terrestre no radiador em mais de 96\% frente à face Nadir, viabilizando a rejeição plena para o espaço profundo frio.
+
+\subsubsection{Propriedades Termo-Ópticas e Degradação de Fim de Vida (EOL)}
+
+A absorção de fluxos e a capacidade radiativa dependem criticamente dos revestimentos de superfície e de seu histórico de contaminação e envelhecimento sob bombardeio de radiação UV e oxigênio atômico (AO). Adotam-se materiais e revestimentos espaciais de classe de voo rigorosamente balizados pelo manual de controle térmico da ESA (ECSS-E-HB-31-01 Parte 6), diferenciando os estados de Início de Vida (\textit{Beginning-of-Life} -- BOL) e Fim de Vida (\textit{End-of-Life} -- EOL, após 10 anos de missão em órbita LEO/SSO), conforme consolidado na Tabela~\ref{tab:propriedades_termoopticas_materiais}.
+
+\begin{table}[htbp]
+\centering
+\caption{Propriedades termo-ópticas dos revestimentos externos em início e fim de vida (10 anos).}
+\label{tab:propriedades_termoopticas_materiais}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Superfície da Espaçonave} & \textbf{Material / Acabamento Espacial} & $\mathbf{\alpha_{s,BOL}}$ & $\mathbf{\alpha_{s,EOL}}$ & $\mathbf{\varepsilon_{ir}}$ & $\mathbf{\alpha_s/\varepsilon}$ (EOL) & \textbf{Referência / Norma} \\ \hline
+Painéis Radiadores Térmicos & Espelhos Ópticos Solares (OSR Quartzo/Prata) & $0{,}08$ & $0{,}14$ & $0{,}88$ & $0{,}159$ & ECSS-E-HB-31-01 Parte 6; Gilmore (2002) \\
+Carcaça Externa Estrutural & Tinta Branca Cerâmica de Silicato (AZ-93) & $0{,}15$ & $0{,}26$ & $0{,}91$ & $0{,}286$ & NASA-SP-8005; AZ Technology \\
+Isolamento Passivo (MLI Externa) & Filme Kapton Aluminizado com VDA (1 mil) & $0{,}38$ & $0{,}48$ & $0{,}76$ & $0{,}632$ & Sheldahl Space Materials (2020) \\
+Coverglass dos Painéis Solares & Borosilicato Ceriado CMG ($100\ \mu\text{m}$) MgF$_2$ & $0{,}90$ & $0{,}92$ & $0{,}85$ & $1{,}082$ & Qioptiq Space Power Optics (2022) \\
+Bordas e Trilhos Estruturais & Alumínio Anodizado Duro Al 6061-T6 & $0{,}42$ & $0{,}55$ & $0{,}82$ & $0{,}671$ & ECSS-Q-ST-70-08C (ECSS, 2017) \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+O acentuado aumento da razão $\alpha_s / \varepsilon$ nos radiadores (de $0{,}091$ para $0{,}159$, crescimento de $+74{,}7\%$ em EOL) decorre da perda de refletância por escurecimento da sílica sob radiação ultravioleta cósmica (*solar UV browning*) e deposição de filmes finos de contaminantes voláteis desgaseificados do satélite (*outgassing*).
+
+\subsubsection{Definição Epistêmica dos Casos Térmicos Extremos (Hot Case e Cold Case)}
+
+Para garantir que o dimensionamento térmico e as ações de controle ativo do TEMS tolerem com margem comprovada o envelope ambiental, formulam-se dois casos extremos fisicamente coerentes, rejeitando a agregação ingênua e desacoplada de máximos arbitrários:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Pior Caso Quente (\textit{Worst-Case Hot} -- WCH):}
+    \begin{itemize}
+        \item Geometria: Solstício de verão no hemisfério norte ($\beta = +85^\circ$ em SSO; ou equinócio sob iluminação contínua com periélio terrestre a $G_{AM0,max} = 1414\text{ W/m}^2$);
+        \item Coeficientes planetários: Albedo elevado ($a_E = 0{,}35$) e emissão infravermelha terrestre máxima ($q_{Earth} = 250\text{ W/m}^2$);
+        \item Propriedades ópticas: Superfícies degradadas em Fim de Vida ($\alpha_{s,EOL} = 0{,}14$ para o radiador e $0{,}26$ para o chassi);
+        \item Carga térmica interna: Dissipação contínua máxima de processamento de inteligência artificial ($P_{IT} = 40{,}0\text{ kW}$ úteis), rendimento conservador dos conversores GaN ($\eta_{conv} = 90{,}0\%$, gerando $P_{loss,GaN} = 4444\text{ W}$) e comunicação OISL plena ($Q_{OISL} = 343\text{ W}$);
+        \item Objetivo de teste: Verificar a suficiência de área de radiadores ($A_{rad}$) e garantir que a temperatura de junção dos processadores de IA não ultrapasse o teto rígido de $T_{j,max} = 85{,}0^\circ\text{C}$.
+    \end{itemize}
+    
+    \item \textbf{Pior Caso Frio (\textit{Worst-Case Cold} -- WCC):}
+    \begin{itemize}
+        \item Geometria: Órbita LEO convencional a 500 km com incidência coplanar ($\beta = 0^\circ$), produzindo o eclipse orbital máximo de $t_{ecl} = 35{,}8\text{ min}$ sob afélio terrestre ($G_{AM0,min} = 1322\text{ W/m}^2$);
+        \item Coeficientes planetários: Albedo mínimo conservador ($a_E = 0{,}25$) e radiação planetária atenuada sobre calota polar ($q_{Earth} = 210\text{ W/m}^2$);
+        \item Propriedades ópticas: Revestimentos limpos em Início de Vida ($\alpha_{s,BOL} = 0{,}08$ para radiadores e $\alpha_{s,BOL} = 0{,}15$ para o chassi);
+        \item Carga térmica interna: Nó em repouso e standby computacional durante o eclipse ($P_{IT,idle} = 2{,}0\text{ kW}$ e cargas auxiliares básicas de $560\text{ W}$);
+        \item Objetivo de teste: Quantificar o consumo energético dos aquecedores elétricos PWM de sobrevivência ($P_{heat} \le 300\text{ W}$) e comprovar que o BESS e a eletrônica sensível mantêm-se estritamente acima de seus limites congelantes ($T_{bat} \ge +10^\circ\text{C}$ para evitar a deposição de lítio metálico; $T_{elec} \ge -20^\circ\text{C}$ e fluido amônia do LHP acima de $-77^\circ\text{C}$).
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Fronteira Térmica de Volume de Controle e Eliminação de Dupla Contagem}
+
+Para preservar a integridade da 1ª Lei da Termodinâmica e evitar o erro metodológico de dupla contagem de potência na interface com o Capítulo~\ref{sec:arquitetura_barramento_balanco}, estabelece-se a fronteira fechada de volume de controle do nó satelital unitário de $50\text{ kW}$.
+
+No domínio elétrico em regime permanente, a potência solar líquida gerada no barramento primário de $400\text{ V}$ é integralmente convertida em:
+\begin{equation}
+    P_{pv,net}(t) = P_{IT}(t) + P_{loss,GaN}(t) + P_{OISL}(t) + P_{aux}(t) + \frac{dE_{bat}(t)}{dt}
+    \label{eq:fronteira_eletrica}
+\end{equation}
+Durante os períodos de sol, a taxa de energia eletroquímica armazenada no BESS de 9~kWh ($dE_{bat}/dt \approx 9\text{ kW}$) constitui energia de ligação molecular acumulada nas células de lítio, **não se manifestando como calor**, salvo a parcela dissipativa por resistência ôhmica interna e sobretensões de polarização $P_{loss,BESS}(t) = I_{bat}^2 R_0 + V_{p1}^2/R_{p1} + V_{p2}^2/R_{p2}$.
+
+No domínio computacional, a potência elétrica entregue aos módulos de processamento neural ($P_{IT} = 40{,}0\text{ kW}$) é consumida pelas matrizes de transistores lógicos de comutação sub-1~V. Como a energia gasta no chaveamento de estados binários e cargas de capacitâncias parasitas de silício não realiza trabalho mecânico externo e os fótons emitidos são desprezíveis, **a totalidade de $P_{IT}(t)$ é convertida em calor interno residual por efeito Joule na pastilha semicondutora**:
+\begin{equation}
+    Q_{IT}(t) \equiv P_{IT}(t) = 40000\text{ W} \quad \text{[VERIFICÁVEL]}
+    \label{eq:conversao_integral_it}
+\end{equation}
+
+A taxa total de calor interno confinado ($Q_{int,total}$) que deve ser extraída pela rede térmica condutiva e rejeitada para o espaço profundo é univocamente formulada por:
+\begin{align}
+    Q_{int,total}(t) &= \underbrace{P_{IT}(t)}_{\text{IA (40 kW)}} + \underbrace{P_{loss,GaN}(t)}_{\text{GaN (0,5 a 2,2 kW)}} + \underbrace{Q_{OISL}(t)}_{\text{Laser (343 W)}} \nonumber \\
+    &\quad + \underbrace{P_{loss,BESS}(t)}_{\text{Joule BESS (35 a 120 W)}} + \underbrace{P_{aux,th}(t)}_{\text{Bombas/Aviônica (450 W)}}
+    \label{eq:balanco_termico_global_no}
+\end{align}
+totalizando $Q_{int,total} \approx 41{,}4\text{ kW}$ em regime nominal eficiente ($\eta_{conv} = 97{,}5\%$), e atingindo $Q_{int,total} \approx 45{,}3\text{ kW}$ no envelope de estresse degradado WCH ($\eta_{conv} = 90{,}0\%$), estabelecendo a base analítica estrita para o dimensionamento dos radiadores e do sistema LHP na Seção~\ref{sec:rede_nodal_termica}.
+
+\subsection{Rede Térmica Nodal Acoplada de Parâmetros Concentrados no Vácuo}
+\label{sec:rede_nodal_termica}
+
+A ausência completa de matéria gasosa no ambiente de vácuo orbital impede os mecanismos clássicos de troca térmica por convecção natural ou forçada com o meio externo. Dessa forma, a extração de calor gerado nos núcleos lógicos dos aceleradores neurais depende com exclusividade da condução térmica no estado sólido e da convecção bifásica forçada em circuitos termohidráulicos hermeticamente selados. Para capturar as diferentes escalas de tempo e os gradientes espaciais de temperatura com fidelidade física e baixo custo computacional para o controle em tempo real, formula-se uma rede térmica nodal multinodal de parâmetros concentrados (\textit{Lumped Parameter Thermal Network}), em conformidade com as diretrizes da norma ECSS-E-HB-31-01 Parte 1.
+
+A arquitetura do nó computacional de $50\text{ kW}$ é discretizada em cinco nós térmicos fundamentais acoplados, abrangendo desde a junção microscópica semicondutora até as superfícies exteriores de emissão radiativa:
+\begin{enumerate}[label=\textbf{Nó \arabic*:},leftmargin=*]
+    \item \textbf{Junção do Die Semicondutor de IA ($T_1 \equiv T_j$):} Representa a camada ativa de transistores FinFET/GAA sub-7~nm onde ocorre a dissipação por comutação e correntes de fuga ($P_{chip}$). Apresenta capacitância térmica extremamente reduzida ($C_1 = 85{,}0\text{ J/K}$ por die individual de $50\text{ g}$ de silício), tornando a sua dinâmica ultra-rápida, com constantes de tempo térmicas inferiores a $1\text{ segundo}$.
+    
+    \item \textbf{Interface Térmica Primária (TIM1) e Espalhador de Calor Integrado ($T_2 \equiv T_{sp}$):} Representa a camada de Material de Interface Térmica (\textit{Thermal Interface Material} -- TIM1) acoplada ao espalhador de calor (\textit{heat spreader}) de alta condutividade térmica, composto por câmara de vapor (\textit{vapor chamber}) com substrato de cobre isento de oxigênio (Cu-OFHC) ou diamante sintético dopado. Possui capacitância térmica intermediária ($C_2 = 420{,}0\text{ J/K}$) e resistência de condução $R_{12} = 0{,}035\text{ K/W}$, atuando no amortecimento de transientes térmicos de alta frequência.
+    
+    \item \textbf{Interface Secundária (TIM2) e Placa Fria de Microcanais ($T_3 \equiv T_{cp}$):} Representa a placa fria (\textit{cold plate}) estruturada em alumínio aeroespacial Al 6061-T6 contendo microcanais de escoamento, acoplada mecanicamente ao espalhador através de pasta de alta condutividade TIM2 ($R_{23} = 0{,}025\text{ K/W}$). A sua capacitância térmica estrutural é $C_3 = 1100{,}0\text{ J/K}$.
+    
+    \item \textbf{Circuito de Transporte Bifásico por Loop Heat Pipe / MPFL ($T_4 \equiv T_{fl}$):} Representa o fluido circulante e a linha de vapor de um Circuito Bifásico Bombeado Mecanicamente (\textit{Mechanically Pumped Fluid Loop} -- MPFL) associado a tubos de calor em circuito fechado (\textit{Loop Heat Pipes} -- LHP). Adota-se como fluido de trabalho termodinâmico a \textbf{amônia anidra de grau espacial} ($\text{NH}_3$), selecionada por seu elevado calor latente de vaporização ($h_{lv} = 1371{,}0\text{ kJ/kg}$ a $20^\circ\text{C}$), expressiva tensão superficial e elevado número de mérito térmico. A capacitância térmica efetiva do inventário de fluido no evaporador e linhas de transporte é $C_4 = 3500{,}0\text{ J/K}$.
+    
+    \item \textbf{Painel Radiador Externo Desdobrável ($T_5 \equiv T_{rad}$):} Representa o conjunto de painéis estruturais sanduíche com facesheets de compósito de fibra de carbono de ultra-alto módulo (K13D2U) e aletas de grafite pirolítico encapsulado (APG), revestidos externamente com espelhos ópticos solares (OSR quartzo/prata). Possui a maior capacitância térmica do sistema ($C_5 = 12500{,}0\text{ J/K}$), o que lhe confere uma constante de tempo dominante de centenas de segundos, trocando calor com o espaço profundo a $T_{space} = 3{,}0\text{ K}$ por emissão radiativa não linear.
+\end{enumerate}
+
+\subsubsection{Equações Diferenciais da Rede Nodal Acoplada}
+
+O balanço dinâmico de energia em cada um dos cinco nós térmicos obedece ao sistema acoplado de Equações Diferenciais Ordinárias (EDOs) não lineares:
+\begin{align}
+    C_1 \frac{dT_1(t)}{dt} &= P_{chip}(t) - \frac{T_1(t) - T_2(t)}{R_{12}} \label{eq:edo_no1} \\[0.2cm]
+    C_2 \frac{dT_2(t)}{dt} &= \frac{T_1(t) - T_2(t)}{R_{12}} - \frac{T_2(t) - T_3(t)}{R_{23}} \label{eq:edo_no2} \\[0.2cm]
+    C_3 \frac{dT_3(t)}{dt} &= \frac{T_2(t) - T_3(t)}{R_{23}} - \dot{m}_{fl} \, c_{p,fl} \left( T_{out}(t) - T_{in}(t) \right) - \frac{T_3(t) - T_4(t)}{R_{34}} \label{eq:edo_no3} \\[0.2cm]
+    C_4 \frac{dT_4(t)}{dt} &= \dot{m}_{fl} \, c_{p,fl} \left( T_{out}(t) - T_{in}(t) \right) + \frac{T_3(t) - T_4(t)}{R_{34}} - \frac{T_4(t) - T_5(t)}{R_{45}} \label{eq:edo_no4} \\[0.2cm]
+    C_5 \frac{dT_5(t)}{dt} &= \frac{T_4(t) - T_5(t)}{R_{45}} + q_{abs,rad}(t) A_{rad} - \varepsilon_{ir} \sigma A_{rad} \eta_{fin} \left( T_5^4(t) - T_{space}^4 \right) \label{eq:edo_no5}
+\end{align}
+em que $q_{abs,rad}(t)$ representa a densidade de fluxo radiativo ambiental absorvida pela face externa do radiador (Eq.~\ref{eq:triade_fluxos}), $\sigma = 5{,}67037 \times 10^{-8}\text{ W/(m}^2\text{K}^4)$ é a constante de Stefan-Boltzmann, $\eta_{fin}$ é a eficiência da aleta radiativa e $R_{jk}$ denota a resistência térmica de contato condutiva entre os nós adjacentes $j$ e $k$.
+
+Na forma matricial compacta para integração numérica, o sistema é expresso por:
+\begin{equation}
+    \mathbf{C} \frac{d\mathbf{T}(t)}{dt} = \mathbf{Q}_{in}(t) - \mathbf{K}_{cond} \mathbf{T}(t) - \mathbf{Q}_{rad}(\mathbf{T}(t))
+    \label{eq:forma_matricial_termica}
+\end{equation}
+onde $\mathbf{C} = \text{diag}(C_1, C_2, C_3, C_4, C_5)$ é a matriz diagonal de capacitâncias térmicas, $\mathbf{K}_{cond}$ é a matriz de condutâncias condutivas tridiagonal simétrica, e $\mathbf{Q}_{rad}$ é o vetor não linear de emissão radiativa contendo o termo quártico $T_5^4$ na 5ª linha.
+
+A Tabela~\ref{tab:parametros_rede_nodal} consolida as grandezas termofísicas, resistências de contato e parâmetros construtivos adotados no modelo nodal.
+
+\begin{table}[htbp]
+\centering
+\caption{Parâmetros termofísicos da rede térmica nodal de resfriamento.}
+\label{tab:parametros_rede_nodal}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\hline
+\textbf{Elemento Térmico / Interface} & \textbf{Símbolo} & \textbf{Valor Nominal} & \textbf{Unidade} & \textbf{Classificação Epistêmica} \\ \hline
+Capacitância Térmica da Junção (por acelerador) & $C_1$ & $85{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Massa silício $50\text{ g}$, $c_p = 712\text{ J/(kg}\cdot\text{K)}$ \\
+Capacitância Térmica do Espalhador de Calor & $C_2$ & $420{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Cu-OFHC / câmara de vapor ($c_p = 385\text{ J/(kg}\cdot\text{K)}$) \\
+Capacitância Térmica da Placa Fria (Microcanais) & $C_3$ & $1100{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Alumínio 6061-T6 com galerias de fluido \\
+Capacitância Efetiva do Fluido Circulante & $C_4$ & $3500{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Inventário de amônia anidra bifásica \\
+Capacitância do Painel Radiador Composto & $C_5$ & $12500{,}0$ & $\text{J/K}$ & \textbf{[VERIFICÁVEL]} Estrutura sanduíche K13D2U/APG \\
+Resistência Condutiva Junção-Spreader (TIM1) & $R_{12}$ & $0{,}035$ & $\text{K/W}$ & \textbf{[PROVISÓRIO]} Metal líquido GaInSn espessura $30\ \mu\text{m}$ \\
+Resistência Térmica Spreader-Cold Plate (TIM2) & $R_{23}$ & $0{,}025$ & $\text{K/W}$ & \textbf{[PROVISÓRIO]} Fixação sob torque e graxa espacial de siloxano \\
+Resistência de Acoplamento Evaporador-Loop & $R_{34}$ & $0{,}015$ & $\text{K/W}$ & \textbf{[VERIFICÁVEL]} Coeficiente de ebulição em microcanais \\
+Resistência Tubos Condensadores-Radiador & $R_{45}$ & $0{,}018$ & $\text{K/W}$ & \textbf{[VERIFICÁVEL]} Brasagem por difusão de tubos de condensador \\
+Vazão Mássica de Amônia no Loop MPFL & $\dot{m}_{fl}$ & $2{,}80$ & $\text{kg/s}$ & \textbf{[DEPENDENTE DE PROJETO]} Bomba centrífuga redundante (200 W) \\
+Calor Latente de Vaporização da Amônia ($20^\circ\text{C}$) & $h_{lv}$ & $1371{,}0$ & $\text{kJ/kg}$ & \textbf{[VERIFICÁVEL]} NIST Chemistry WebBook \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+\subsubsection{Análise de Falhas e Limites Críticos: Secamento Capilar e Degradação de TIM no Vácuo}
+
+A operação sob densidades térmicas de processamento de inteligência artificial superiores a $100\text{ W/cm}^2$ no nível do encapsulamento expõe o sistema térmico a dois modos de falha severos, analisados a seguir sob a ótica da pior contingência operacional (\textit{Worst-Case Analysis} -- WCA):
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+    \item \textbf{Secamento Capilar (\textit{Capillary Dry-out}) no Evaporador do LHP:}
+    O funcionamento estável dos tubos de calor em circuito fechado (\textit{Loop Heat Pipes}) fundamenta-se na pressão capilar desenvolvida pela mecha porosa sinterizada de níquel no evaporador ($\Delta P_{cap}$), a qual deve ser estritamente superior ao somatório das quedas de pressão hidrodinâmicas do circuito fechado em microgravidade (onde o gradiente hidrostático $\Delta P_{grav} = \rho g L \sin \theta \approx 0$):
+    \begin{equation}
+        \Delta P_{cap,max} = \frac{2 \sigma_{fl} \cos \theta_c}{r_{pore}} \ge \Delta P_{v} + \Delta P_{l} + \Delta P_{wick}
+        \label{eq:limite_capilar_lhp}
+    \end{equation}
+    onde $\sigma_{fl}$ é a tensão superficial da amônia líquida ($0{,}021\text{ N/m}$ a $20^\circ\text{C}$), $\theta_c \approx 0^\circ$ é o ângulo de contato para molhabilidade perfeita, e $r_{pore} \approx 1{,}2\ \mu\text{m}$ é o raio efetivo dos poros da mecha sinterizada, resultando em $\Delta P_{cap,max} \approx 35{,}0\text{ kPa}$.
+    
+    A queda de pressão viscosa do vapor ($\Delta P_v$) ao longo da linha de transporte e dos condensadores cresce parabolicamente com a taxa de evaporação mássica $\dot{m} = Q_{in} / h_{lv}$. Sob um degrau de computação abrupto para $40\text{ kW}$ úteis sem modulação de clock, se a densidade local de fluxo térmico no evaporador ultrapassar o Fluxo Crítico de Calor (\textit{Critical Heat Flux} -- $CHF \approx 120\text{ W/cm}^2$), bolhas de vapor isolantes se formam na interface entre a parede metálica e a mecha. Isso rompe o menisco capilar e causa o desabastecimento de líquido condutivo (\textit{dry-out}), elevando instantaneamente a resistência térmica do evaporador em mais de $800\%$ e disparando a temperatura da junção a taxas superiores a $+15\text{ K/s}$, o que aciona o desligamento térmico de emergência por hardware (\textit{thermal trip} a $105^\circ\text{C}$).
+    
+    \item \textbf{Ejeção de Material de Interface (\textit{Pump-Out}) e Delaminação no Vácuo:}
+    A expressiva disparidade entre os coeficientes de dilatação térmica linear do silício ($\alpha_{Si} \approx 2{,}6 \times 10^{-6}\text{ K}^{-1}$) e do espalhador de cobre ($\alpha_{Cu} \approx 16{,}5 \times 10^{-6}\text{ K}^{-1}$) gera tensões cisalhantes cíclicas na interface TIM1 durante as transições de carga computacional. No ambiente de vácuo espacial ($P_{amb} < 10^{-5}\text{ Pa}$), pastas térmicas poliméricas convencionais sofrem desgaseificação contínua (\textit{outgassing}) de seus veículos fluidos e migração transversal por esmagamento diferencial (\textit{pump-out effect}).
+    
+    A formação de vazios microscópicos na interface substitui o contato sólido-líquido por microcavidades de vácuo absoluto, onde a condutividade térmica cai de $k_{TIM} \approx 4\text{ a }8\text{ W/(m}\cdot\text{K)}$ para o limite radiativo puro de cavidade ($k_{eff} < 0{,}02\text{ W/(m}\cdot\text{K)}$). Isso triplica a resistência térmica de interface ($R_{12} \rightarrow 3 R_{12}$), induzindo gradientes de até $35^\circ\text{C}$ através de apenas $50\ \mu\text{m}$ de espessura. Por essa razão, o projeto espacial adota como requisito mandatório a selagem hermética periférica dos encapsulamentos com pré-formas de solda de índio ou ligas eutéticas de gálio-índio-estanho (GaInSn) com barreira de difusão de titânio/níquel/ouro (Ti/Ni/Au).
+\end{enumerate}
+
+A dinâmica transitória da rede térmica nodal de 5 nós sob degrau abrupto de potência e os seus modos críticos de contingência no vácuo são apresentados na Figura~\ref{fig:dinamica_rede_nodal_estresse}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figuras/figura_4_2_dinamica_rede_nodal_estresse.png}
+    \caption{Resposta dinâmica da rede térmica nodal de 5 nós sob degrau de IA e modos de falha WCA no vácuo: (a1) evolução temporal das temperaturas dos 5 nós sob degrau de processamento neural nominal de 2~kW para 40~kW úteis, mantendo a junção em $73{,}1^\circ\text{C}$ ($11{,}9^\circ\text{C}$ abaixo do teto operacional de $85{,}0^\circ\text{C}$); (a2) contingência WCA 1 de ejeção de TIM (\textit{pump-out}) com $R_{12} \rightarrow 3 R_{12}$, deflagrando throttling aos 55~s e violação de thermal trip aos 280~s; (b1) contingência WCA 2 de secamento capilar (\textit{dry-out}) no evaporador do LHP, com disparo de corte de hardware (\textit{thermal trip} em $105{,}0^\circ\text{C}$) em $t = 271{,}0\text{ s}$; (b2) resposta em frequência da magnitude de impedância térmica ($Z_{th}(j\omega)$), evidenciando a dinâmica rápida da junção ($\tau_1 < 1\text{ s}$) e a inércia dominante de filtragem passiva de transientes pelo radiador ($\tau_5 > 400\text{ s}$).}
+    \label{fig:dinamica_rede_nodal_estresse}
+\end{figure}
+
+A inspeção quantitativa da Figura~\ref{fig:dinamica_rede_nodal_estresse} corrobora as premissas físicas do modelo térmico nodal:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Resposta Nominal (Subpainel~a1):} Ao ser aplicado o degrau de processamento neural de $40{,}0\text{ kW}$ em $t = 30\text{ s}$, a temperatura da junção de silício ($T_j$) exibe elevação rápida governada por sua reduzida capacitância térmica ($C_1 = 85\text{ J/K}$), estabilizando-se em $73{,}1^\circ\text{C}$. Os nós subsequentes amortecem o transiente progressivamente: o espalhador de calor atinge $54{,}2^\circ\text{C}$, a placa fria opera a $43{,}1^\circ\text{C}$, o fluido bifásico amônia atinge $35{,}8^\circ\text{C}$ e a superfície externa do radiador alcança $27{,}3^\circ\text{C}$. O sistema preserva uma margem térmica nominal de segurança de $+11{,}9^\circ\text{C}$ abaixo do limiar de throttling ($85{,}0^\circ\text{C}$);
+    
+    \item \textbf{Degradação de TIM no Vácuo (Subpainel~a2):} Sob o pior caso de \textit{pump-out} e formação de vazios de vácuo na interface primária ($R_{12} \rightarrow 3 R_{12}$), o gradiente condutivo die-spreader sofre elevação drástica. A temperatura da junção rompe o teto de throttling de $85{,}0^\circ\text{C}$ em apenas $t = 55\text{ s}$, e atinge o corte catastrófico de hardware (\textit{thermal trip} em $105{,}0^\circ\text{C}$) em $t \approx 280\text{ s}$, enquanto a carcaça do satélite e o spreader permanecem a temperaturas amenas ($< 55^\circ\text{C}$), comprovando que o aprisionamento interno de calor é o agente causador da falha;
+    
+    \item \textbf{Secamento Capilar Dry-Out no LHP (Subpainel~b1):} Caso a densidade de fluxo no evaporador rompa o limite capilar e ocorra a perda de líquido na mecha porosa sinterizada ($R_{34} \rightarrow 12 R_{34}$), a taxa de extração do die para o circuito de amônia colapsa. O die aquece a uma taxa de $+0{,}32\text{ K/s}$, violando o teto operacional de $85{,}0^\circ\text{C}$ em $t \approx 160\text{ s}$ e deflagrando o desarme compulsório por \textit{thermal trip} ($105{,}0^\circ\text{C}$) aos $t = 271{,}0\text{ s}$;
+    
+    \item \textbf{Resposta em Frequência e Filtragem Passiva (Subpainel~b2):} A análise de impedância térmica em frequência revela que a junção semicondutora opera como filtro passa-baixas de polo dominante em alta frequência ($\omega_1 \approx 1{,}17\text{ rad/s}$, $\tau_1 < 1\text{ s}$), sendo sensível a surtos instantâneos de comutação lógica. Em contrapartida, a expressiva capacitância do painel radiador ($C_5 = 12500\text{ J/K}$) confere-lhe uma inércia dominante ($\tau_5 > 400\text{ s}$), atenuando modulações térmicas cíclicas à razão assintótica de $-20\text{ dB/década}$ e filtrando os picos de carga computacional antes da interface com o espaço profundo.
+\end{enumerate}
+
+\subsection{Modelagem Radiativa e Dimensionamento Óptico do Radiador Espacial}
+\label{sec:modelagem_radiador_espacial}
+
+A rejeição térmica de centros de dados espaciais no vácuo apoia-se com exclusividade na radiação superficial para o espaço circundante. Para garantir a rigorosa homogeneidade dimensional e eliminar ambiguidades entre densidade de fluxo ($\text{W/m}^2$) e potência térmica ($\text{W}$), formula-se o balanço térmico radiativo superficial em termos da taxa líquida de calor rejeitado para o espaço ($Q_{net,rej}$, expresso estritamente em Watts):
+\begin{equation}
+    Q_{net,rej}(t) = Q_{emit}(t) - P_{abs,amb}(t) \quad \text{[W]}
+    \label{eq:balanco_liquido_radiador_potencia}
+\end{equation}
+em que $Q_{emit}(t)$ é a potência térmica bruta emitida pela área ativa do radiador ($A_{rad}$) e $P_{abs,amb}(t)$ é a potência radiativa parasita total absorvida a partir das fontes ambientais externas (Sol, albedo e infravermelho terrestre).
+
+A potência emitida por radiação de corpo cinzento difuso obedece à Lei de Stefan-Boltzmann acoplada à temperatura efetiva de sumidouro radiativo ($T_{sink}$):
+\begin{equation}
+    Q_{emit}(t) = \varepsilon_{ir}(t) \cdot \sigma \cdot A_{rad} \cdot \eta_{fin} \cdot \left( T_{rad}^4(t) - T_{sink}^4(t) \right) \quad \text{[W]}
+    \label{eq:stefan_boltzmann_radiador_rigoroso}
+\end{equation}
+onde:
+\begin{itemize}[leftmargin=*]
+    \item $\sigma = 5{,}67037 \times 10^{-8}\text{ W/(m}^2\text{K}^4)$ é a constante fundamental de Stefan-Boltzmann;
+    \item $\varepsilon_{ir}(t)$ é a emissividade hemisférica no infravermelho térmico ($\lambda \approx 4\text{ a }50\ \mu\text{m}$);
+    \item $A_{rad}$ é a área superficial total de emissão radiativa livre (para painéis desdobráveis bifaciais com ambas as faces expostas ao espaço, $A_{rad} = 2 A_{painel}$);
+    \item $\eta_{fin}$ é a eficiência média de aleta radiativa;
+    \item $T_{rad}(t)$ é a temperatura média termodinâmica absoluta da superfície externa do radiador;
+    \item $T_{sink}(t)$ é a temperatura equivalente de sumidouro ambiental vista pelo campo de visão hemisférico do radiador, calculada a partir do fator de forma satélite-Terra ($F_{rad-E}$) e do fundo cósmico ($T_{space} = 3{,}0\text{ K}$):
+    \begin{equation}
+        T_{sink}^4(t) = \left( 1 - F_{rad-E}(h, \phi_{rad}) \right) T_{space}^4 + F_{rad-E}(h, \phi_{rad}) \cdot T_{Earth,eff}^4
+        \label{eq:temperatura_sink_exata}
+    \end{equation}
+    em que $T_{Earth,eff} = (q_{Earth} / \sigma)^{1/4} \approx 254{,}3\text{ K}$ é a temperatura efetiva de emissão radiativa da Terra. Na órbita heliossíncrona de projeto ($700\text{ km}$) sob atitude anti-solar ($\phi_{rad} \approx 90^\circ$), o fator de visão deduzido na Equação~(\ref{eq:fator_forma_ecss}) restringe-se a $F_{rad-E} \approx 0{,}0314$. Substituindo na Equação~(\ref{eq:temperatura_sink_exata}), obtém-se $T_{sink} \approx 107{,}2\text{ K}$. Como $T_{sink}^4 \approx 1{,}32 \times 10^8\text{ K}^4$, comparado a $T_{rad}^4 \approx 1{,}02 \times 10^{10}\text{ K}^4$ na temperatura operacional nominal de $45^\circ\text{C}$ ($318{,}15\text{ K}$), a parcela de retorno ambiental da Terra representa apenas $1{,}29\%$ da emissão bruta, confirmando que a simplificação clássica $T_{sink} \approx T_{space}$ introduz desvio inferior a $1{,}3\%$, mas é aqui preservada formalmente na Equação~(\ref{eq:stefan_boltzmann_radiador_rigoroso}) para exatidão do modelo.
+\end{itemize}
+
+A potência ambiental parasita total absorvida ($P_{abs,amb}$) decompõe-se rigorosamente nas áreas projetadas e fatores de forma geométricos:
+\begin{align}
+    P_{abs,amb}(t) &= \underbrace{\alpha_s(t) \cdot A_{sol,proj}(t) \cdot G_{AM0} \cdot S(t)}_{\text{Absorção Solar Direta}} \nonumber \\
+    &\quad + \underbrace{\alpha_s(t) \cdot A_{rad} \cdot F_{rad-E}(h, \phi) \cdot a_E \cdot G_{AM0} \cdot S(t) \cdot \max(0, \cos \theta_{sun,nadir})}_{\text{Absorção de Albedo Terrestre}} \nonumber \\
+    &\quad + \underbrace{\varepsilon_{ir}(t) \cdot A_{rad} \cdot F_{rad-E}(h, \phi) \cdot q_{Earth}}_{\text{Absorção Infravermelha Terrestre}} \quad \text{[W]}
+    \label{eq:potencia_parasita_absorvida}
+\end{align}
+onde $A_{sol,proj}(t) = A_{rad} \cdot \max(0, \, \hat{\mathbf{n}}_{rad} \cdot \hat{\mathbf{s}}(t))$ é a área efetiva projetada normal ao vetor solar. Na atitude nominal estática em órbita heliossíncrona *Dawn-Dusk*, a normal do radiador aponta permanentemente para o semiplano anti-solar ($\hat{\mathbf{n}}_{rad} \cdot \hat{\mathbf{s}} \le 0$), anulando $A_{sol,proj} = 0\text{ m}^2$ em regime nominal.
+
+\subsubsection{Condução Bidimensional em Aletas de APG Anisotrópico e Eficiência \texorpdfstring{($\eta_{fin}$)}{(eta_fin)}}
+
+O transporte de calor entre os tubos coletores do condensador bifásico de amônia e as extremidades emissoras do radiador depende da condução sólida bidimensional nas aletas. Diferentemente de metais isotrópicos homogêneos, adota-se uma estrutura avançada de \textbf{Grafite Pirolítico Encapsulado} (\textit{Annealed Pyrolytic Graphite} -- APG). O APG exibe condutividade térmica planar extraordinária no plano basal cristalográfico ($k_{xx} = k_{yy} = k_{in-plane} \ge 1500\text{ W/(m}\cdot\text{K)}$), mas baixa condutividade transversal através das lamelas de grafeno ($k_{zz} = k_{through-plane} \approx 10\text{ W/(m}\cdot\text{K)}$).
+
+Para conferir rigidez estrutural e mitigar a fragilidade mecânica do grafite sob cargas de lançamento, o núcleo de APG de espessura $t_{APG} = 1{,}5\text{ mm}$ é encapsulado em facesheets estruturais de compósito de fibra de carbono de ultra-alto módulo K13D2U em matriz cianato-éster de espessura $t_c = 0{,}25\text{ mm}$ e condutividade $k_c = 600\text{ W/(m}\cdot\text{K)}$. A condutividade térmica efetiva no plano da aleta compósita sanduíche ($k_{eff}$) é calculada pela média ponderada das camadas paralelas:
+\begin{align}
+    k_{eff} &= \frac{k_{in-plane} t_{APG} + 2 k_c t_c}{t_{APG} + 2 t_c} \nonumber \\
+    &= \frac{1500 \cdot 1{,}5 + 2 \cdot 600 \cdot 0{,}25}{2{,}0} = 1275{,}0\text{ W/(m}\cdot\text{K)} \quad \text{[VERIFICÁVEL]}
+    \label{eq:condutividade_efetiva_apg}
+\end{align}
+
+Considerando uma aleta retangular de comprimento livre $L_{fin} = 75\text{ mm}$ entre tubos condutores de condensação espaçados de $2 L_{fin} = 150\text{ mm}$, a equação diferencial de condução de calor unidimensional em regime permanente ao longo da coordenada longitudinal $x$ da aleta, com emissão radiativa simétrica em ambas as faces para o sumidouro a $T_{sink}$, é governada por:
+\begin{equation}
+    k_{eff} t_{fin} \frac{d^2 T(x)}{dx^2} = 2 \varepsilon_{ir} \sigma \left( T^4(x) - T_{sink}^4 \right), \quad 0 \le x \le L_{fin}
+    \label{eq:equacao_aleta_nao_linear_exata}
+\end{equation}
+sujeita às condições de contorno de Dirichlet na raiz condutora e de Neumann (adiabática) na ponta de simetria:
+\begin{equation}
+    T(0) = T_{root} = 45{,}0^\circ\text{C} = 318{,}15\text{ K}, \qquad \left. \frac{dT}{dx} \right|_{x = L_{fin}} = 0
+    \label{eq:condicoes_contorno_aleta}
+\end{equation}
+
+Como o gradiente térmico ao longo da aleta de APG é pequeno em virtude de sua elevadíssima condutividade ($k_{eff} = 1275\text{ W/(m}\cdot\text{K)}$), lineariza-se a troca radiativa quártica através da expansão em série de Taylor em torno da temperatura média da raiz ($T_{root}$):
+\begin{equation}
+    T^4(x) - T_{sink}^4 \approx 4 T_{root}^3 \left( T(x) - T_{sink} \right) \implies h_{rad} = 4 \varepsilon_{ir} \sigma T_{root}^3 \approx 6{,}43\text{ W/(m}^2\text{K)}
+    \label{eq:coeficiente_linearizado_hrad}
+\end{equation}
+A integração analítica fechada da equação diferencial linearizada resulta no perfil hiperbólico de temperatura $\theta(x) = \theta_{root} \cosh[m (L_{fin} - x)] / \cosh(m L_{fin})$, definindo a eficiência de aleta radiativa ($\eta_{fin}$):
+\begin{equation}
+    \eta_{fin} = \frac{\tanh(m L_{fin})}{m L_{fin}}, \qquad m = \sqrt{\frac{2 h_{rad}}{k_{eff} t_{fin}}} = \sqrt{\frac{2 \cdot 6{,}43}{1275 \cdot 0{,}0020}} \approx 2{,}244\text{ m}^{-1}
+    \label{eq:eficiencia_aleta_apg_rigorosa}
+\end{equation}
+Para $L_{fin} = 0{,}075\text{ m}$, tem-se $m L_{fin} = 0{,}1683$, resultando em uma eficiência excepcional de:
+\begin{equation}
+    \eta_{fin} = \frac{\tanh(0{,}1683)}{0{,}1683} = \frac{0{,}1667}{0{,}1683} \approx \mathbf{0{,}9906} \quad (> 99\%)
+\end{equation}
+Mesmo adotando a margem conservadora de projeto $\eta_{fin} = 0{,}945$ (para absorver resistências térmicas de contato na fixação dos tubos condensadores e degradação marginal), a aleta de APG encapsulado demonstra eficiência $7{,}5\%$ superior à de aletas de alumínio maciço Al 6061-T6 ($\eta_{fin} \approx 0{,}879$), permitindo uma redução de $42{,}3\%$ na massa estrutural dos radiadores.
+
+\subsubsection{Modelo Dinâmico de Degradação Óptica Temporal (BOL para EOL em 10 Anos)}
+
+As propriedades termo-ópticas dos revestimentos externos degradam-se de forma não linear ao longo dos 10 anos de vida útil de projeto, em decorrência do escurecimento fotoquímico sob radiação ultravioleta do vácuo cósmico (\textit{vacuum UV solar browning}), impactos de oxigênio atômico (AO) e deposição de filmes moleculares desgaseificados da espaçonave (\textit{molecular contamination outgassing}). Rejeita-se a soma estática de constantes arbitrárias e adota-se o modelo físico de evolução temporal por saturação exponencial, recomendado pela norma ECSS-E-HB-31-01 Parte 6:
+\begin{equation}
+    \alpha_s(t) = \alpha_{s,BOL} + \left( \alpha_{s,EOL} - \alpha_{s,BOL} \right) \left[ 1 - \exp\left( -\frac{t}{\tau_{deg}} \right) \right]
+    \label{eq:lei_degradacao_optica_temporal}
+\end{equation}
+onde:
+\begin{itemize}[leftmargin=*]
+    \item Para os **Espelhos Ópticos Solares de Quartzo/Prata (OSR)** aplicados sobre os radiadores térmicos: $\alpha_{s,BOL} = 0{,}08$, saturando em $\alpha_{s,EOL} = 0{,}14$ em 10 anos, com constante de tempo de saturação por radiação UV $\tau_{deg,OSR} = 3{,}2\text{ anos}$. A emissividade térmica no infravermelho mantém-se praticamente inalterada e estável em $\varepsilon_{ir} = 0{,}88 \pm 0{,}01$, pois o quartzo fundido é inerte à erosão por AO;
+    \item Para a **Tinta Branca Cerâmica de Silicato (AZ-93)** empregada na carcaça estrutural externa: $\alpha_{s,BOL} = 0{,}15$, degradando para $\alpha_{s,EOL} = 0{,}26$, com constante de tempo $\tau_{deg,AZ} = 2{,}1\text{ anos}$ e $\varepsilon_{ir} = 0{,}91 \rightarrow 0{,}89$.
+\end{itemize}
+
+O impacto térmico direto dessa degradação sobre o radiador na órbita heliossíncrona reside no aumento de $+75\%$ na absortividade solar ($\Delta \alpha_s = +0{,}06$). Como a atitude nominal é anti-solar, a absorção de albedo terrestre residual (Eq.~\ref{eq:potencia_parasita_absorvida}) cresce ligeiramente de $2{,}17\text{ W/m}^2$ para $3{,}80\text{ W/m}^2$. A elevação efetiva de temperatura de equilíbrio da carcaça do satélite ao longo da década situa-se em $\Delta T_{eq} \approx +3{,}8\text{ K}$ na atitude nominal, e alcança $+12\text{ a }+16\text{ K}$ apenas se houver exposição solar direta de faces estruturais revestidas com AZ-93.
+
+\subsubsection{Sensibilidade Térmica a Desvios de Atitude e Análise de Margem Operacional}
+
+Para substituir noções imprecisas de ``saturação anti-solar'', modela-se rigorosamente o impacto térmico de um \textbf{desvio angular de atitude} ($\delta \theta_{att}$) do sistema de controle de atitude (ADCS) em relação ao vetor anti-solar ideal. Se a plataforma sofrer uma perturbação de guinada ou arfagem de magnitude $\delta \theta_{att}$, a face do radiador deixa de estar na sombra do corpo principal e passa a interceptar radiação solar direta com área projetada $A_{sol,proj} = A_{rad} \sin |\delta \theta_{att}|$.
+
+A densidade de fluxo solar direto incidente absorvido passa a ser:
+\begin{equation}
+    q_{sol,abs,pert}(t) = \alpha_{s}(t) \cdot G_{AM0} \cdot \sin |\delta \theta_{att}|
+    \label{eq:fluxo_solar_perturba_atitude}
+\end{equation}
+Para um desvio angular moderado de apenas $|\delta \theta_{att}| = 5{,}0^\circ$ sob condições de fim de vida ($\alpha_{s,EOL} = 0{,}14$):
+\begin{equation}
+    q_{sol,abs,pert} = 0{,}14 \cdot 1361{,}0 \cdot \sin(5^\circ) \approx 16{,}61\text{ W/m}^2
+\end{equation}
+Essa carga parasita adicional consome $3{,}5\%$ da capacidade de rejeição líquida do radiador ($473\text{ W/m}^2$), forçando a temperatura do radiador a elevar-se em $\Delta T_{rad} \approx +1{,}4^\circ\text{C}$ para restabelecer o equilíbrio térmico. Se o desvio de atitude atingir $|\delta \theta_{att}| = 20^\circ$, o fluxo solar absorvido salta para $65{,}16\text{ W/m}^2$, degradando a capacidade líquida em $13{,}8\%$ e elevando $T_{rad}$ em $+5{,}8^\circ\text{C}$. Esse resultado quantifica com precisão o envelope de tolerância angular exigido do ADCS: o controle de atitude deve manter o erro de apontamento anti-solar restrito a $|\delta \theta_{att}| \le 3{,}5^\circ$ para preservar a margem térmica nominal do sistema de resfriamento.
+
+A Tabela~\ref{tab:dimensionamento_radiador_comparativo} sintetiza o dimensionamento analítico rigoroso da área de radiação do nó de 50 kW para os três regimes orbitais investigados.
+
+\begin{table}[htbp]
+\centering
+\caption{Dimensionamento analítico de área radiativa para o nó de 50 kW nos três cenários orbitais com homogeneidade dimensional.}
+\label{tab:dimensionamento_radiador_comparativo}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\hline
+\textbf{Parâmetro de Dimensionamento Radiativo} & \textbf{SSO Dawn-Dusk (700 km)} & \textbf{LEO Convencional (500 km)} & \textbf{GEO (35.786 km)} & \textbf{Classificação Epistêmica} \\ \hline
+Dissipação Térmica Interna Requerida ($Q_{int,nom}$) & $41{,}40\text{ kW}$ ($41.400\text{ W}$) & $41{,}40\text{ kW}$ & $41{,}40\text{ kW}$ & \textbf{[VERIFICÁVEL]} Eq.~(\ref{eq:balanco_termico_global_no}) \\
+Temperatura Média de Operação do Radiador ($T_{rad}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & $45{,}0^\circ\text{C}$ ($318{,}15\text{ K}$) & \textbf{[PROVISÓRIO]} Ponto nominal de projeto \\
+Temperatura Efetiva de Sumidouro ($T_{sink}$) & $107{,}2\text{ K}$ & $174{,}6\text{ K}$ & $35{,}8\text{ K}$ & \textbf{[CALCULADO]} Eq.~(\ref{eq:temperatura_sink_exata}) \\
+Emissância Bruta Stefan-Boltzmann ($q_{emit}$) & $510{,}9\text{ W/m}^2$ & $505{,}2\text{ W/m}^2$ & $511{,}6\text{ W/m}^2$ & \textbf{[CALCULADO]} $\varepsilon \sigma (T_{rad}^4 - T_{sink}^4)$ \\
+Fluxo Solar Direto Médio Absorvido ($q_{sol,abs}$) & $0{,}0\text{ W/m}^2$ (Anti-solar) & $57{,}2\text{ W/m}^2$ (Incidência média) & $0{,}0\text{ W/m}^2$ (Anti-solar) & \textbf{[VERIFICÁVEL]} Lei de atitude \\
+Fluxo Médio de Albedo Absorvido ($q_{alb,abs}$) & $3{,}8\text{ W/m}^2$ & $48{,}5\text{ W/m}^2$ & $0{,}0\text{ W/m}^2$ ($F_E \approx 0$) & \textbf{[CALCULADO]} Eqs.~(\ref{eq:fluxo_albedo_exato}) e (\ref{eq:fator_forma_ecss}) \\
+Fluxo Infravermelho Terrestre Absorvido ($q_{ir,abs}$) & $6{,}5\text{ W/m}^2$ & $42{,}1\text{ W/m}^2$ & $0{,}8\text{ W/m}^2$ & \textbf{[CALCULADO]} Eq.~(\ref{eq:fluxo_ir_exato}) \\
+Fluxo Parasita Total Médio ($q_{parasita}$) & $10{,}3\text{ W/m}^2$ & $147{,}8\text{ W/m}^2$ & $0{,}8\text{ W/m}^2$ & \textbf{[VERIFICÁVEL]} Somatório ambiental \\
+Eficiência de Aleta de APG Compósito ($\eta_{fin}$) & $0{,}945$ & $0{,}945$ & $0{,}945$ & \textbf{[CALCULADO]} Eq.~(\ref{eq:eficiencia_aleta_apg_rigorosa}) com margem \\
+Capacidade Líquida Específica de Rejeição ($q_{net,rej}$) & $472{,}5\text{ W/m}^2$ & $329{,}6\text{ W/m}^2$ & $482{,}7\text{ W/m}^2$ & \textbf{[CALCULADO]} $q_{emit} \eta_{fin} - q_{parasita}$ \\ \hline
+\textbf{Área Radiativa Efetiva Ativa Necessária ($A_{rad,eff}$)} & $\mathbf{87{,}6\text{ m}^2}$ & $\mathbf{125{,}6\text{ m}^2}$ & $\mathbf{85{,}8\text{ m}^2}$ & \textbf{[CALCULADO]} $A_{rad} = Q_{int} / q_{net,rej}$ \\
+Área Física do Painel Bifacial Desdobrável ($A_{painel}$) & $43{,}8\text{ m}^2$ & $62{,}8\text{ m}^2$ & $42{,}9\text{ m}^2$ & \textbf{[CALCULADO]} Duas faces ativas \\
+\textbf{Área Radiativa Total do Cluster (20 Nós / 1 MW)} & $\mathbf{1752{,}0\text{ m}^2}$ & $\mathbf{2512{,}0\text{ m}^2}$ & $\mathbf{1716{,}0\text{ m}^2}$ & \textbf{[PROVISÓRIO]} Constelação agregada \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+A comparação quantitativa comprova a superioridade termodinâmica da órbita heliossíncrona *Dawn-Dusk*: em virtude da orientação permanente anti-solar e do baixo fator de visão com o Nadir ($\phi \approx 90^\circ$), o fluxo parasita ambiental absorvido restringe-se a apenas $10{,}3\text{ W/m}^2$. Em contrapartida, em LEO convencional (500 km), os intensos fluxos de albedo e infravermelho terrestre degradam a capacidade de rejeição térmica em $29{,}1\%$, exigindo uma área adicional de radiadores de $+35{,}8\text{ m}^2$ por satélite ($+40{,}9\%$), impondo penalidades severas de massa de lançamento e momento de inércia para o sistema de controle de atitude.
+
+A síntese visual comparativa dos fluxos ambientais, da sensibilidade a erros de atitude e do balanço de área radiativa entre os três regimes é apresentada na Figura~\ref{fig:fluxos_orbitais_comparativos}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figuras/figura_4_1_fluxos_orbitais_comparativos.png}
+    \caption{Dinâmica orbital comparativa e sensibilidade radiativa em regimes espaciais: (a1) fluxos térmicos incidentes sobre a face externa em órbita LEO convencional (500 km), exibindo eclipse periódico de $35{,}8\text{ min}$ e intensos picos de albedo e infravermelho terrestre; (a2) fluxos incidentes em órbita heliossíncrona SSO \textit{Dawn-Dusk} (700 km), evidenciando iluminação solar ininterrupta e amortecimento superior a $96\%$ dos fluxos terrestres pela atitude anti-solar com fator de visão ECSS $F_{rad-E} = 0{,}0314$; (b1) sensibilidade térmica e perda de margem de resfriamento em função do erro angular de atitude do radiador ($|\delta \theta|$), identificando o limiar de início de throttling em $|\delta \theta| = 19{,}8^\circ$ e o disparo de thermal trip em $31{,}2^\circ$; (b2) balanço de capacidade líquida específica de rejeição ($q_{net,rej}$) e dimensionamento comparativo da área radiativa total necessária por nó de 50~kW.}
+    \label{fig:fluxos_orbitais_comparativos}
+\end{figure}
+
+A decomposição dos quatro subpainéis da Figura~\ref{fig:fluxos_orbitais_comparativos} evidencia:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Ciclagem Térmica em LEO (Subpainel~a1):} Em órbita baixa convencional (500 km), a alternância periódica entre insolação direta ($G_{AM0} = 1361\text{ W/m}^2$) e eclipse profundo de $35{,}8\text{ minutos}$ impõe ciclos térmicos violentos. No ponto sub-solar ao meio-dia orbital, o albedo atinge pico de $96{,}5\text{ W/m}^2$ e o infravermelho planetário alcança $73{,}8\text{ W/m}^2$, forçando a estrutura externa a oscilar ciclicamente em amplitudes térmicas da ordem de $\Delta T \approx 48^\circ\text{C}$;
+    
+    \item \textbf{Estabilidade Termodinâmica em SSO (Subpainel~a2):} Na órbita heliossíncrona de projeto (700 km), o satélite opera sob incidência solar constante sem eclipses na maior parte do ano. O alinhamento rigoroso da face do radiador no semiplano anti-solar ($\phi \approx 90^\circ$, $F_{rad-E} = 0{,}0314$) atenua o albedo para menos de $3{,}8\text{ W/m}^2$ e o infravermelho terrestre para menos de $6{,}5\text{ W/m}^2$. A absorção ambiental parasita residual restringe-se a $10{,}3\text{ W/m}^2$, garantindo um ambiente radiativo praticamente invariante no tempo com excursões cíclicas $\Delta T < 7^\circ\text{C}$;
+    
+    \item \textbf{Sensibilidade Angular e Envelope do ADCS (Subpainel~b1):} A curva de sensibilidade demonstra que pequenos desvios de atitude ($|\delta \theta| \le 3{,}5^\circ$) absorvem fluxos solares parasitas inferiores a $11{,}6\text{ W/m}^2$, perfeitamente tolerados pela margem de resfriamento. Contudo, se um erro de atitude ultrapassar $|\delta \theta| = 19{,}8^\circ$, o fluxo solar projetado atinge $46{,}2\text{ W/m}^2$, esgotando a capacidade de reserva e forçando o início de \textit{thermal throttling} ($T_j \ge 85{,}0^\circ\text{C}$). Se a anomalia atingir $|\delta \theta| \ge 31{,}2^\circ$, o calor solar absorvido sobrepuja a rejeição líquida, deflagrando o desarme compulsório por \textit{thermal trip} ($T_j \ge 105{,}0^\circ\text{C}$);
+    
+    \item \textbf{Capacidade Específica e Economia de Área (Subpainel~b2):} A capacidade líquida específica de rejeição térmica em SSO atinge $472{,}5\text{ W/m}^2$, valor virtualmente idêntico ao de GEO ($482{,}7\text{ W/m}^2$) e expressivamente superior ao de LEO ($329{,}6\text{ W/m}^2$). Em consequência direta, a área ativa de radiador requerida por satélite reduz-se de $125{,}6\text{ m}^2$ (em LEO) para apenas $87{,}6\text{ m}^2$ (em SSO), gerando uma economia de massa estrutural de $38{,}0\text{ m}^2$ por nó ($-30{,}2\%$) e viabilizando o acondicionamento em coifa de lançadores comerciais.
+\end{enumerate}
+
+\subsection{Dinâmica de Co-Design Eletrotérmico de Chips de IA e Condição Analítica de Instabilidade}
+\label{sec:co_design_eletrotermico_runaway}
+
+A modelagem térmica no nível de silício exige a integração acoplada entre o comportamento elétrico dos circuitos semicondutores e a dinâmica de transferência de calor. Em nós litográficos avançados com transistores FinFET e Gate-All-Around (GAA) sub-7~nm, a elevação da temperatura de junção ($T_j$) induz o aumento exponencial das correntes térmicas de fuga quântica e termoiônica. Esse acoplamento eletrotérmico bidirecional estabelece uma retroalimentação não linear que, na ausência de capacidade adequada de extração térmica, pode deflagrar a divergência térmica descontrolada (\textit{thermal runaway}).
+
+\subsubsection{Fronteira de Potência no Nó e Decomposição da Dissipação}
+
+Para assegurar a estrita conservação de energia e evitar a duplicidade de contabilidade com os modelos elétricos do Capítulo~\ref{sec:arquitetura_barramento_balanco}, define-se a fronteira física de dissipação no rack computacional. A potência elétrica total entregue ao nó de processamento neural ($P_{node}$) decompõe-se nas seguintes parcelas:
+\begin{equation}
+    P_{node}(t) = \underbrace{P_{core}(t) + P_{mem}(t)}_{P_{chip}(t)} + P_{VRM}(t) + P_{interconnect}(t) \quad \text{[W]}
+    \label{eq:decomposicao_potencia_no}
+\end{equation}
+onde:
+\begin{itemize}[leftmargin=*]
+    \item $P_{chip}(t)$ representa a potência total dissipada no encapsulamento multi-die do acelerador de IA (núcleos de processamento neural e pilhas de memória de alta largura de banda HBM3e acopladas por interposer de silício CoWoS);
+    \item $P_{VRM}(t)$ representa as perdas por condução e chaveamento nos módulos reguladores de tensão de ponto de carga (conversores GaN PoL de 48~V para sub-1~V, com rendimento $\eta_{PoL} \approx 94{,}5\%$, gerando $P_{VRM} \approx 2{,}3\text{ kW}$ agregados por nó);
+    \item $P_{interconnect}(t)$ representa a potência dissipada nos transceptores de barramentos seriais PCIe 5.0/CXL e roteadores ópticos de interconexão interna ($P_{interconnect} \approx 650\text{ W}$).
+\end{itemize}
+
+A potência do acelerador neural ($P_{chip}$) é modelada pela superposição da componente dinâmica de chaveamento lógico e da componente estática de fuga sublimiar (\textit{subthreshold leakage}):
+\begin{equation}
+    P_{chip}(V_{core}, f_{clk}, T_j) = P_{dyn}(V_{core}, f_{clk}) + P_{leak}(T_j, V_{core}) \quad \text{[W]}
+    \label{eq:potencia_total_chip_rigorosa}
+\end{equation}
+
+A \textbf{potência dinâmica} decorre do carregamento e descarregamento capacitivo síncrono das matrizes multiplicadoras de tensores aritméticos (unidades sistólicas operando em precisões mistas FP16, BF16 e INT8):
+\begin{equation}
+    P_{dyn} = \left( \alpha_{act} \cdot C_{eff} \right) \cdot V_{core}^2 \cdot f_{clk}
+    \label{eq:potencia_dinamica_calibrada}
+\end{equation}
+onde o produto macroscópico $\left( \alpha_{act} \cdot C_{eff} \right)$ é identificado e calibrado como um parâmetro efetivo a partir de medições de bancada em cargas representativas:
+\begin{itemize}[leftmargin=*]
+    \item Para inferência neural esparsa (modelos com quantização INT8/FP8):\\
+    $(\alpha_{act} C_{eff})_{inf} \approx 171{,}0\text{ nF}$ (atividade $\approx 0{,}45$ sob $C_{eff} = 380\text{ nF}$);
+    \item Para treinamento neural denso (matrizes densas em BF16/FP32):\\
+    $(\alpha_{act} C_{eff})_{train} \approx 334{,}4\text{ nF}$ (atividade $\approx 0{,}88$);
+    \item $V_{core}$ é a tensão de núcleo, modulada por DVFS entre $0{,}65\text{ V}$ e $1{,}05\text{ V}$;
+    \item $f_{clk}$ é a frequência de clock, ajustável entre $0{,}60\text{ GHz}$ e $2{,}10\text{ GHz}$.
+\end{itemize}
+
+\subsubsection{Modelo Físico e Calibrado de Corrente de Fuga Sublimiar}
+
+A corrente estática de fuga é governada primordialmente pela emissão termoiônica de portadores sobre a barreira de potencial do canal do transistor e por correntes de tunelamento quântico através do dielétrico de porta de alto-$\kappa$. Em conformidade com a formulação BSIM-CMOS para transistores nanométricos, a potência de fuga sublimiar exibe forte dependência com a tensão de alimentação e a temperatura absoluta da junção:
+\begin{align}
+    P_{leak}(T_j, V_{core}) &= V_{core} \cdot I_{leak,0}(V_{core}) \cdot \left( \frac{T_j}{T_{ref}} \right)^2 \exp\left[ \frac{-q \left( V_{th0} - \kappa_T (T_j - T_{ref}) \right)}{\eta_{sub} \, k_B T_j} \right] \nonumber \\
+    &\quad \times \left[ 1 - \exp\left( -\frac{q V_{core}}{k_B T_j} \right) \right]
+    \label{eq:potencia_fuga_bsim_completa}
+\end{align}
+onde:
+\begin{itemize}[leftmargin=*]
+    \item $q = 1{,}602176 \times 10^{-19}\text{ C}$ é a carga elementar e $k_B = 1{,}380649 \times 10^{-23}\text{ J/K}$ é a constante de Boltzmann;
+    \item $V_{th0} \approx 0{,}28\text{ V}$ é a tensão de limiar nominal na temperatura de referência $T_{ref} = 298{,}15\text{ K}$ ($25^\circ\text{C}$);
+    \item $\kappa_T \approx 1{,}10\text{ mV/K}$ é o coeficiente empírico de degradação térmica da tensão de limiar ($dV_{th}/dT < 0$);
+    \item $\eta_{sub} \approx 1{,}25$ é o fator de idealidade da inclinação sublimiar (\textit{subthreshold swing factor}).
+\end{itemize}
+
+Para viabilizar a resolução computacional em tempo real na camada de controle do TEMS e simulações de longa duração, ajusta-se a Equação~(\ref{eq:potencia_fuga_bsim_completa}) na formulação empírica compacta calibrada:
+\begin{equation}
+    P_{leak}(T_j, V_{core}) = P_{leak,ref}(V_{core}) \cdot \exp\left[ \beta_T \left( T_j - T_{ref} \right) \right] \quad \text{[W]}
+    \label{eq:potencia_fuga_calibrada_local}
+\end{equation}
+em que $P_{leak,ref}(V_{core}) = I_{leak,ref} \cdot V_{core} \cdot (V_{core} / V_{core,nom})^2$ modela a dependência com a tensão, e $\beta_T \approx 0{,}0285\text{ K}^{-1}$ é o coeficiente térmico calibrado por dados de caracterização de transistores sub-7~nm, apresentando erro residual inferior a $2{,}4\%$ no intervalo de temperatura de qualificação $T_j \in [25{,}0^\circ\text{C}, 105{,}0^\circ\text{C}]$.
+
+\subsubsection{Dedução Analítica da Condição de Fuga Térmica (\textit{Thermal Runaway})}
+
+A condição de estabilidade térmica do nó semicondutor é investigada analisando-se o balanço térmico dinâmico do die de silício (Nó 1 da rede nodal):
+\begin{equation}
+    C_1 \frac{dT_j(t)}{dt} = P_{chip}(T_j, V_{core}, f_{clk}) - \dot{Q}_{out}(T_j)
+    \label{eq:dinamica_escalar_juncao}
+\end{equation}
+onde $\dot{Q}_{out}(T_j) = (T_j - T_{sink}) / R_{th,j-sink}(P_{chip})$ representa a taxa líquida de calor extraído pela cadeia de resfriamento (TIM1, espalhador de calor, placa fria, LHP e radiador). A resistência térmica agregada $R_{th,j-sink}$ é inerentemente não linear com a potência transportada pelo LHP, incorporando a aproximação assintótica ao limite capilar:
+\begin{equation}
+    R_{th,j-sink}(Q) = R_{th,0} \cdot \left[ 1 + \left( \frac{Q}{Q_{max,cap}} \right)^4 \right]
+    \label{eq:resistencia_nao_linear_lhp}
+\end{equation}
+onde $R_{th,0} \approx 0{,}093\text{ K/W}$ em regime nominal e $Q_{max,cap} \approx 52{,}0\text{ kW}$ é a capacidade máxima de transporte capilar do circuito antes do início do secamento de mecha.
+
+Em regime permanente em torno do ponto de operação $T_j^*$, tem-se $P_{chip}(T_j^*) = \dot{Q}_{out}(T_j^*)$. Perturbando o sistema por $\delta T_j(t) = T_j(t) - T_j^*$, a linearização de Taylor de primeira ordem conduz à Equação Diferencial de Lyapunov:
+\begin{equation}
+    C_1 \frac{d(\delta T_j)}{dt} = \left( \left. \frac{\partial P_{chip}}{\partial T_j} \right|_{T_j^*} - \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} \right) \delta T_j = \left( \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{T_j^*} - \frac{1}{R_{th,j-sink}} \right) \delta T_j
+    \label{eq:lyapunov_runaway_estrito}
+\end{equation}
+Para que o ponto de equilíbrio seja assintoticamente estável no sentido de Lyapunov ($\delta T_j(t) \rightarrow 0$ para $t \rightarrow \infty$), o autovalor linear deve ser estritamente negativo, estabelecendo o \textbf{Critério Fundamental de Estabilidade Térmica}:
+\begin{equation}
+    \boxed{\left. \frac{\partial P_{leak}(T_j)}{\partial T_j} \right|_{T_j^*} < \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} = \frac{1}{R_{th,j-sink}}} \quad \text{[VERIFICÁVEL]}
+    \label{eq:criterio_estabilidade_box}
+\end{equation}
+
+Diferenciando analiticamente a Equação~(\ref{eq:potencia_fuga_calibrada_local}), obtém-se o gradiente de fuga térmica:
+\begin{equation}
+    \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{T_j^*} = \beta_T \cdot P_{leak}(T_j^*, V_{core})
+    \label{eq:gradiente_fuga_derivada}
+\end{equation}
+Para as condições nominais do nó ($T_j^* = 70{,}0^\circ\text{C} = 343{,}15\text{ K}$, $V_{core} = 0{,}85\text{ V}$, com fuga total do nó $P_{leak} \approx 3{,}6\text{ kW}$ sobre $40\text{ kW}$ úteis):
+\begin{equation}
+    \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{70^\circ\text{C}} = 0{,}0285 \cdot 3600 \approx 102{,}6\text{ W/K}
+\end{equation}
+A condutância térmica equivalente do sistema de refrigeração nominal é $1 / R_{th,j-sink} = 1 / (0{,}093 / 80) \approx 860{,}2\text{ W/K}$ (considerando o arranjo de 80 chips distribuídos em paralelo no rack). Como $102{,}6\text{ W/K} \ll 860{,}2\text{ W/K}$, o sistema opera em regime termicamente estável com margem de segurança de amortecimento de $+738\%$.
+
+Entretanto, se ocorrer um modo de falha na cadeia de refrigeração — tal como a delaminação de TIM ($R_{12} \rightarrow 3 R_{12}$) ou secamento capilar parcial do LHP —, a resistência térmica equivalente por die cresce para $R_{th,j-sink} \ge 0{,}35\text{ K/W}$, reduzindo a condutância térmica agregada para $1/R_{th} \le 228{,}5\text{ W/K}$. Se $T_j$ atingir $95{,}0^\circ\text{C}$ ($P_{leak} \approx 7{,}4\text{ kW}$), o gradiente de fuga alcança $\partial P_{leak}/\partial T_j \approx 210{,}9\text{ W/K}$, aproximando-se perigosamente do limiar de bifurcação estática. Caso o critério da Equação~(\ref{eq:criterio_estabilidade_box}) seja violado ($\partial P_{leak}/\partial T_j > 1/R_{th}$), a temperatura de junção não se estabiliza em um novo patamar, divergindo exponencialmente.
+
+Ao contrário de descrições ingênuas que supõem a fusão física imediata do silício, a consequência prática desse fenômeno é a violação ultra-rápida do envelope seguro de temperatura, acionando em menos de $50\text{ ms}$ os mecanismos de proteção de hardware do acelerador:
+\begin{enumerate}[label=(\alph*)]
+    \item \textit{Thermal Throttling de Emergência} ao atingir $T_{alarm} = 85{,}0^\circ\text{C}$ (redução forçada de clock para $f_{min} = 0{,}6\text{ GHz}$ pelo controlador interno);
+    \item \textit{Thermal Trip (Corte Catastrófico de Alimentação)} ao atingir $T_{crit} = 105{,}0^\circ\text{C}$, desarmando os comutadores de estado sólido GaN SSPC para evitar a quebra irreversível de óxido de porta e eletromigração das interconexões metálicas de cobre.
+\end{enumerate}
+
+A caracterização quantitativa do co-design eletrotérmico, a validação do critério de Lyapunov e a identificação da fronteira de bifurcação de \textit{thermal runaway} são ilustradas na Figura~\ref{fig:estabilidade_runaway_lhp}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figuras/figura_4_3_estabilidade_runaway_lhp.png}
+    \caption{Co-design eletrotérmico, bifurcação de \textit{thermal runaway} e limites de estabilidade de Lyapunov: (a1) potência de fuga sublimiar FinFET sub-7~nm calculada pelo modelo BSIM calibrado em função de $T_j$ sob tensões de núcleo de $0{,}70\text{ V}$, $0{,}85\text{ V}$ e $1{,}05\text{ V}$; (a2) critério fundamental de estabilidade de Lyapunov ($\partial P_{leak}/\partial T_j < 1/R_{th}$), identificando a bifurcação de instabilidade estática e deflagração de runaway em $T_j = 83{,}4^\circ\text{C}$ sob tensão turbo ($1{,}05\text{ V}$) e extração degradada WCA; (b1) não linearidade da resistência térmica efetiva do LHP ($R_{th,j-sink}$) governada pela aproximação quártica ao limite de transporte capilar ($Q_{max} = 52{,}0\text{ kW}$); (b2) mapa de bifurcação de estabilidade no plano paramétrico $V_{core} \times R_{th,crit}$, confirmando que o ponto de projeto nominal ($0{,}85\text{ V}$, $0{,}093\text{ K/W}$) opera com ampla margem de segurança no interior da região estável.}
+    \label{fig:estabilidade_runaway_lhp}
+\end{figure}
+
+A análise aprofundada dos quatro subpainéis da Figura~\ref{fig:estabilidade_runaway_lhp} revela:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Crescimento Exponencial de Fuga (Subpainel~a1):} O modelo BSIM calibrado para transistores nanométricos evidencia que a potência dissipada por fuga cresce exponencialmente com a temperatura de junção. Sob tensão nominal ($V_{core} = 0{,}85\text{ V}$), a fuga totaliza $3{,}6\text{ kW}$ no ponto nominal de $70{,}0^\circ\text{C}$, subindo para $5{,}5\text{ kW}$ no teto de throttling ($85{,}0^\circ\text{C}$) e alcançando $9{,}7\text{ kW}$ caso a junção atinja o limiar de desarme por hardware de $105{,}0^\circ\text{C}$. Sob tensão turbo ($1{,}05\text{ V}$), a curva desloca-se bruscamente para cima, superando $14{,}8\text{ kW}$ a $105^\circ\text{C}$, o que representa mais de $37\%$ de toda a potência útil do nó;
+    
+    \item \textbf{Bifurcação de Lyapunov e Instabilidade Térmica (Subpainel~a2):} Em condições de projeto com condutância nominal $1/R_{th} = 860{,}2\text{ W/K}$, a reta de extração térmica situa-se amplamente acima da curva de gradiente de fuga ($\partial P_{leak}/\partial T_j = 102{,}6\text{ W/K}$ a $70^\circ\text{C}$), garantindo amortecimento exponencial estável. Contudo, sob falha WCA de resfriamento (como secamento capilar parcial reduzindo a condutância para $228{,}5\text{ W/K}$), a curva de derivada em modo turbo ($1{,}05\text{ V}$) cruza a capacidade de extração exatamente em $T_j = 83{,}4^\circ\text{C}$. Acima dessa temperatura crítica, a taxa de geração interna por efeito Joule supera a capacidade máxima de transporte do circuito, caracterizando uma bifurcação estática tangente onde o autovalor de Lyapunov torna-se positivo e deflagra a fuga térmica descontrolada;
+    
+    \item \textbf{Não Linearidade Capilar do LHP (Subpainel~b1):} A resistência térmica efetiva do circuito bifásico LHP mantém-se estável e plana ($R_{th,0} \approx 0{,}093\text{ K/W}$) em baixas cargas, mas sofre forte degradação quártica à medida que a potência térmica transportada aproxima-se do limite de transporte capilar ($Q_{max} = 52{,}0\text{ kW}$). No ponto operacional nominal de inteligência artificial ($40{,}0\text{ kW}$), a resistência térmica efetiva por die atinge $0{,}128\text{ K/W}$, preservando uma margem operacional de $+30{,}0\%$ de reserva capilar contra secamento prematuro;
+    
+    \item \textbf{Fronteira Crítica no Espaço de Parâmetros (Subpainel~b2):} O mapa bidimensional no plano $V_{core} \times R_{th,crit}$ traça a curva divisória de estabilidade de Lyapunov. O ponto de projeto nominal ($V_{core} = 0{,}85\text{ V}$, $R_{th} = 0{,}093\text{ K/W}$) encontra-se profundamente ancorado na região verde de operação incondicionalmente estável, com um fator de segurança superior a $4{,}3\times$ em relação ao limiar de instabilidade ($R_{th,crit} \approx 0{,}40\text{ K/W}$), comprovando a robustez teórica do dimensionamento eletrotérmico frente a incertezas paramétricas.
+\end{enumerate}
+
+\subsection{Sistema de Gerenciamento Térmico-Energético Ativo (TEMS)}
+\label{sec:tems_arquitetura_controle}
+
+Para prevenir que o sistema atinja limiares críticos de instabilidade térmica, minimizar as oscilações mecânicas de fadiga cíclica nas soldas e otimizar dinamicamente a entrega de processamento neural frente à geração solar orbitária e à carga da bateria, desenvolve-se a arquitetura de controle hierárquico em duas camadas do \textbf{Sistema de Gerenciamento Térmico-Energético Ativo} (\textit{Thermal and Energy Management System} -- TEMS).
+
+\subsubsection{Classificação Epistêmica dos Limiares Operacionais de Projeto}
+
+Para eliminar arbitrariedades de parametrização e fornecer rastreabilidade física de engenharia, a Tabela~\ref{tab:classificacao_limiares_tems} cataloga os limiares de controle, segurança e atuação do TEMS sob rigorosa classificação epistêmica.
+
+\begin{table}[htbp]
+\centering
+\caption{Classificação epistêmica e justificativa dos limiares operacionais do TEMS.}
+\label{tab:classificacao_limiares_tems}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\hline
+\textbf{Limiar / Parâmetro Operacional} & \textbf{Símbolo} & \textbf{Valor de Projeto} & \textbf{Classificação} & \textbf{Justificativa Física / Referência de Norma} \\ \hline
+Temperatura Alvo Nominal de Junção & $T_{target}$ & $65{,}0^\circ\text{C}$ ($338{,}15\text{ K}$) & \textbf{[PROVISÓRIO]} & Otimiza confiabilidade e eficiência energética \\
+Temperatura Limite de Início de Throttling & $T_{safe}$ & $85{,}0^\circ\text{C}$ ($358{,}15\text{ K}$) & \textbf{[PROVISÓRIO]} & Margem conservadora de $20^\circ\text{C}$ abaixo do corte \\
+Temperatura Crítica de Hardware (Thermal Trip) & $T_{crit}$ & $105{,}0^\circ\text{C}$ ($378{,}15\text{ K}$) & \textbf{[DEPENDENTE DE HARDWARE]} & Limite de qualificação FinFET/GAA JEDEC JESD22 \\
+Temperatura Máxima da Bateria BESS & $T_{bat,max}$ & $+25{,}0^\circ\text{C}$ ($298{,}15\text{ K}$) & \textbf{[VERIFICÁVEL]} & Mitiga crescimento de SEI e degradação cíclica \\
+Temperatura Mínima da Bateria BESS & $T_{bat,min}$ & $+10{,}0^\circ\text{C}$ ($283{,}15\text{ K}$) & \textbf{[VERIFICÁVEL]} & Previne deposição de lítio metálico (\textit{lithium plating}) \\
+Estado de Carga Mínimo de Sobrevivência & $SoC_{min}$ & $35{,}0\%$ & \textbf{[DEPENDENTE DE MISSÃO]} & Reserva de energia para contingências de ADCS/OISL \\
+Taxa Máxima de Variação de Frequência & $\Delta f_{slew,max}$ & $100{,}0\text{ MHz/s}$ & \textbf{[PROVISÓRIO]} & Limita choque térmico nas esferas de solda BGA \\
+Banda de Histerese Térmica Anti-Chattering & $\Delta T_{hyst}$ & $3{,}0^\circ\text{C}$ & \textbf{[PROVISÓRIO]} & Amortece comutações espúrias de alta frequência \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+\subsubsection{Camada Rápida Descentralizada: DVFS em Malha Fechada}
+
+A camada rápida atua em nível de die semicondutor e conversores GaN PoL de ponto de carga com período de amostragem de controle sub-milissegundo ($\Delta t_{fast} \le 1{,}0\text{ ms}$). O seu objetivo primário é conter excursões térmicas de alta frequência provocadas por degraus de ativação de tensores lógicos.
+
+A lei de atuação do DVFS modula o vetor de ponto operacional $u_{fast}[k] = [f_{clk}[k], V_{core}[k]]^T$ a partir da leitura filtrada dos diodos térmicos internos do die ($T_j$), seguindo a relação de mapeamento de tensão-frequência do fabricante ($V_{core} = V_{core,min} + \lambda_{DVFS} (f_{clk} - f_{clk,min})$). Para evitar instabilidades de ciclo limite e chaveamento espúrio (\textit{chattering}), implementa-se uma banda de histerese finita com dois limiares desacoplados:
+\begin{equation}
+    f_{clk}[k] = 
+    \begin{cases}
+        \max\left( f_{clk,min}, \, f_{clk}[k-1] - \Delta f_{step} \right), & \text{se } T_j[k] \ge T_{safe} \quad (85{,}0^\circ\text{C}) \\[0.2cm]
+        \min\left( f_{clk,max}, \, f_{clk}[k-1] + \Delta f_{step} \right), & \text{se } T_j[k] \le T_{safe} - \Delta T_{hyst} \quad (82{,}0^\circ\text{C}) \\[0.2cm]
+        f_{clk}[k-1], & \text{se } T_{safe} - \Delta T_{hyst} < T_j[k] < T_{safe}
+    \end{cases}
+    \label{eq:dvfs_histerese_antichattering}
+\end{equation}
+em que o passo discreto de modulação de frequência é restrito pelo limitador de taxa (\textit{slew rate limiter}) para mitigar fadiga por choque mecânico nas soldas:
+\begin{equation}
+    \Delta f_{step} \le \Delta f_{slew,max} \cdot \Delta t_{fast} = 100\text{ MHz/s} \cdot 10^{-3}\text{ s} = 100\text{ kHz por ciclo}
+\end{equation}
+
+A resposta do DVFS não acarreta a paralisação abrupta ou colapso a zero do processamento, mas sim uma \textbf{redução temporária controlada de frequência} (reduzindo a dissipação dinâmica proporcionalmente a $f_{clk}$ e quadraticamente com $V_{core}$), preservando a integridade física e mantendo a vazão computacional no maior patamar compatível com a capacidade instantânea de resfriamento.
+
+\subsubsection{Camada Lenta Supervisória Preditiva: Formulação NMPC com Consciência Orbital}
+
+A camada supervisória do TEMS opera a uma taxa de amostragem de $\Delta t_{ctrl} = 3{,}0\text{ s}$, formulando o problema de controle sob a metodologia de \textbf{Controle Preditivo Baseado em Modelo Não Linear} (\textit{Nonlinear Model Predictive Control} -- NMPC) com horizonte de predição de $N_p = 20$ passos ($60\text{ segundos}$ à frente) e horizonte de controle $N_u = 10$ passos.
+
+O NMPC integra explicitamente o vetor de estados físicos acoplados do satélite:
+\begin{equation}
+    \mathbf{x}[k] = \begin{bmatrix} T_1[k] & T_2[k] & T_3[k] & T_4[k] & T_5[k] & SoC[k] & V_{p1}[k] & V_{p2}[k] \end{bmatrix}^T \in \mathbb{R}^8
+    \label{eq:vetor_estados_nmpc}
+\end{equation}
+o vetor de variáveis de controle manipuladas:
+\begin{equation}
+    \mathbf{u}[k] = \begin{bmatrix} f_{clk,base}[k] & V_{core,base}[k] & \dot{m}_{pump}[k] & D_{mppt}[k] & a_{sched}[k] \end{bmatrix}^T
+    \label{eq:vetor_controle_nmpc_completo}
+\end{equation}
+onde $a_{sched}[k] \in [0, 1]$ representa a fração de alocação de tarefas de treinamento neural denso vs. inferência prioritária, e o vetor de perturbações orbitais conhecidas:
+\begin{equation}
+    \mathbf{w}[k] = \begin{bmatrix} S(t_k) & F_{rad-E}(t_k) & \theta_{sun,nadir}(t_k) & G_{AM0}(t_k) \end{bmatrix}^T
+    \label{eq:vetor_perturbacoes_orbitais}
+\end{equation}
+
+A cada instante de amostragem $k$, o NMPC resolve numericamente o problema de otimização em horizonte deslizante:
+\begin{align}
+    \min_{\mathbf{u}_k, \dots, \mathbf{u}_{k+N_u-1}} J &= \sum_{i=0}^{N_p-1} \Bigg( 
+        w_T \left[ T_j(k+i|k) - T_{target} \right]^2 + 
+        w_P \left[ P_{total}(k+i|k) - P_{avail}(k+i|k) \right]^2 \nonumber \\
+        &\quad - w_\Psi \cdot \Psi_{ops}\left( \mathbf{u}(k+i|k), a_{sched}(k+i|k) \right) + 
+        \Phi_{barrier}\left( T_j(k+i|k) \right) \Bigg) \nonumber \\
+        &\quad + \sum_{i=0}^{N_u-1} \left\| \mathbf{u}(k+i|k) - \mathbf{u}(k+i-1|k) \right\|_{\mathbf{W}_u}^2
+    \label{eq:problema_otimizacao_nmpc_rigoroso}
+\end{align}
+sujeito ao modelo dinâmico preditivo em espaço de estados discretizado no tempo $\mathbf{x}_{k+i+1|k} = \mathbf{f}_d(\mathbf{x}_{k+i|k}, \mathbf{u}_{k+i|k}, \mathbf{w}_{k+i|k})$ e ao conjunto de restrições operacionais rígidas:
+\begin{align}
+    T_j(k+i|k) &\le 85{,}0^\circ\text{C} \quad \text{(Restrição rígida de segurança do silício)} \label{eq:restricao_hard_tj} \\
+    10{,}0^\circ\text{C} \le T_4(k+i|k) &\le 60{,}0^\circ\text{C} \quad \text{(Faixa líquida de operação da amônia no LHP)} \label{eq:restricao_hard_lhp} \\
+    +10{,}0^\circ\text{C} \le T_{bat}(k+i|k) &\le +25{,}0^\circ\text{C} \quad \text{(Envelope de integridade eletroquímica do BESS)} \label{eq:restricao_hard_tbat} \\
+    SoC(k+i|k) &\ge 35{,}0\% \quad \text{(Reserva mandatória de contingência)} \label{eq:restricao_hard_soc} \\
+    0{,}60\text{ GHz} \le f_{clk,base} &\le 2{,}10\text{ GHz}, \quad 0{,}65\text{ V} \le V_{core,base} \le 1{,}05\text{ V} \label{eq:restricao_atuadores_dvfs} \\
+    0{,}80\text{ kg/s} \le \dot{m}_{pump} &\le 3{,}20\text{ kg/s} \quad \text{(Limites de vazão da bomba MPFL)} \label{eq:restricao_atuadores_bomba}
+\end{align}
+
+A inclusão explícita do termo quadrático de regularização de controle $\|\Delta \mathbf{u}\|_{\mathbf{W}_u}^2$ na função de custo penaliza variações bruscas nos comandos dos atuadores, garantindo a supressão matemática de oscilações espúrias (*chattering*) na vazão de bombeamento e nas transições de clock.
+
+\subsubsection{Mecanismo Preditivo de Pré-Resfriamento Orbital (\textit{Orbital Precooling})}
+
+Como o horizonte de predição do NMPC ($N_p \Delta t = 60\text{ s}$) é alimentado diretamente pela propagação kepleriana dos fluxos orbitais $\mathbf{w}(t)$ e pelo agendamento da fila de tarefas computacionais, o controlador antecipa a inércia térmica do radiador e das placas frias através do mecanismo de \textbf{Pré-Resfriamento Orbital}:
+\begin{enumerate}[label=(\roman*)]
+    \item Nos $90\text{ segundos}$ que antecedem a execução de um lote maciço de treinamento neural denso ($40\text{ kW}$ úteis), o NMPC eleva preventivamente a vazão mássica da bomba MPFL para o patamar máximo ($\dot{m}_{pump} \rightarrow 3{,}2\text{ kg/s}$) enquanto mantém o clock dos nós lógicos em patamar moderado ($1{,}2\text{ GHz}$). Isso rebaixa preventivamente a temperatura da placa fria e dos espalhadores de calor para $T_{cp} \approx 42^\circ\text{C}$ ($T_{j,pre} \approx 52^\circ\text{C}$);
+    \item Ao ingressar no degrau de carga máxima, a grande inércia térmica do conjunto pré-resfriado absorve o fluxo transitório de calor, mantendo a temperatura de pico da junção estritamente abaixo de $76{,}8^\circ\text{C}$, eliminando qualquer necessidade de engasgamento reativo de emergência (\textit{throttling});
+    \item Em caso de falha de previsão ambiental ou perturbação de atitude, a camada rápida do DVFS atua autonomamente como barreira de segurança reflexiva inviolável, garantindo que mesmo sob as contingências mais severas o sistema jamais viole os limites de qualificação do hardware.
+\end{enumerate}
+
+\subsection{Confiabilidade, Fadiga Térmica das Soldas BGA e Eficácia Energética Orbital}
+\label{sec:confiabilidade_fadiga_pue}
+
+A viabilidade técnico-econômica de um centro de dados espacial em grande escala depende criticamente da sua capacidade de operar continuamente ao longo de uma vida útil nominal de projeto de \textbf{10 anos sem manutenção tripulada}. Em uma órbita heliossíncrona a 700 km de altitude com período de $98{,}77\text{ minutos}$, o satélite completa aproximadamente $5320\text{ órbitas por ano}$, totalizando mais de \textbf{53.200 ciclos orbitais} ao longo da década operacional.
+
+\subsubsection{Fadiga Termomecânica de Soldas Avançadas (Modelo Coffin-Manson-Engelmaier)}
+
+A ciclicidade térmica induz deformações cisalhantes alternadas nas interconexões microeletrônicas do tipo \textit{Ball Grid Array} (BGA), decorrentes da expansão diferencial entre a pastilha de silício e o substrato cerâmico/orgânico. Para estimar com base empírica qualificada a vida útil em fadiga oligocíclica das esferas de solda isenta de chumbo de classe espacial (liga SAC305: $96{,}5\%\text{ Sn}, 3{,}0\%\text{ Ag}, 0{,}5\%\text{ Cu}$), adota-se o modelo analítico de Coffin-Manson modificado por Engelmaier (IPC-SM-785):
+\begin{equation}
+    N_f = \frac{1}{2} \left( \frac{\Delta \gamma}{2 \varepsilon_f'} \right)^{1/c}
+    \label{eq:coffin_manson_engelmaier}
+\end{equation}
+onde:
+\begin{itemize}[leftmargin=*]
+    \item $N_f$ é o número médio de ciclos térmicos até a iniciação e propagação de trinca crítica na junta de solda;
+    \item $\Delta \gamma$ é a amplitude total da deformação cisalhante inelástica por ciclo térmico:
+    \begin{equation}
+        \Delta \gamma = \frac{L_{die} \cdot \Delta \alpha_{CTE} \cdot \Delta T_j}{2 h_{solder}}
+        \label{eq:deformacao_cisalhante}
+    \end{equation}
+    onde $L_{die} = 28{,}0\text{ mm}$ é a dimensão linear diagonal do encapsulamento multi-die (co-packaged CoWoS), $\Delta \alpha_{CTE} = \alpha_{solder} - \alpha_{Si} = 14{,}0 \times 10^{-6}\text{ K}^{-1}$ é a diferença entre os coeficientes de expansão térmica, $h_{solder} = 0{,}18\text{ mm}$ é a altura nominal das esferas de solda BGA e $\Delta T_j = T_{j,max} - T_{j,min}$ é a excursão térmica cíclica;
+    \item $2 \varepsilon_f' = 0{,}65$ é o coeficiente de ductilidade em fadiga da liga SAC305;
+    \item $c$ é o expoente de fadiga dependente da temperatura média de operação ($T_{mean}$) e da frequência cíclica ($f_{cycle}$):
+    \begin{equation}
+        c = -0{,}442 - 6 \times 10^{-4} T_{mean} + 1{,}74 \times 10^{-2} \ln\left( 1 + f_{cycle} \right)
+        \label{eq:expoente_engelmaier}
+    \end{equation}
+\end{itemize}
+
+Avaliando a Equação~(\ref{eq:coffin_manson_engelmaier}) sob os cenários operacionais da missão:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Cenário de Referência (SSO Dawn-Dusk com Controle Ativo TEMS):} Em virtude da iluminação quase ininterrupta da órbita heliossíncrona e da ação preditiva do TEMS com restrição de slew de clock ($|\Delta f_{clk}| \le 100\text{ MHz/s}$), a oscilação térmica da junção ao longo de cada ciclo de carga é restrita a $\Delta T_j \le 7{,}0^\circ\text{C}$, operando a uma temperatura média de $T_{mean} = 65^\circ\text{C}$ ($338{,}15\text{ K}$). A deformação inelástica por ciclo é de apenas $\Delta \gamma \approx 7{,}62 \times 10^{-3}$, resultando em uma vida em fadiga calculada de:
+    \begin{equation}
+        N_f \approx 1{,}84 \times 10^5\text{ ciclos} \quad \text{[VERIFICÁVEL]}
+    \end{equation}
+    Como o satélite enfrenta $53.200$ órbitas em 10 anos, a margem de segurança contra falha estrutural por fadiga de solda atinge $\mathbf{+245{,}8\%}$ (fator de segurança $> 3{,}4$), assegurando a sobrevivência física plena da carga útil de processamento neural.
+    
+    \item \textbf{Cenário Hostil de Falha (LEO Convencional 500 km sem Controle TEMS):} Em órbita LEO convencional com $35{,}8\text{ minutos}$ de eclipse por órbita sob comutação reativa não amortecida, a oscilação térmica da junção alcança $\Delta T_j \approx 48{,}0^\circ\text{C}$ a cada $94{,}6\text{ minutos}$. Nesse regime severo, a deformação cisalhante salta para $\Delta \gamma \approx 5{,}23 \times 10^{-2}$, fazendo com que a vida útil em fadiga colapse para meros $N_f \approx 5840\text{ ciclos}$. Sob essa condição patológica, as juntas de solda das GPUs periféricas sofrem fratura mecânica por fadiga termomecânica com apenas \textbf{13,2 meses de voo orbital}, inviabilizando economicamente o projeto sem a tecnologia de mitigação desenvolvida.
+\end{enumerate}
+
+A validação dinâmica do controle ativo TEMS sob degrau de inteligência artificial, a eliminação de chaveamento espúrio (\textit{chattering}) e as curvas de confiabilidade termomecânica de solda BGA são consolidadas na Figura~\ref{fig:resposta_tems_precooling}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figuras/figura_4_4_resposta_tems_precooling.png}
+    \caption{Resposta dinâmica do Sistema TEMS com pré-resfriamento orbital preditivo e vida útil em fadiga de soldas BGA: (a1) comparação da temperatura de junção $T_j(t)$ sob degrau de 40~kW de IA entre o controle convencional com chattering e o TEMS com pré-resfriamento preditivo de 90~s, estabilizando o patamar térmico em $76{,}8^\circ\text{C}$; (a2) modulação da frequência de clock $f_{clk}$, demonstrando a eliminação completa do chattering de 800~MHz através da taxa de rampa suave ($|\Delta f| \le 100\text{ MHz/s}$); (b1) perfil de atuação preditiva na bomba centrífuga do circuito MPFL, elevando a vazão de amônia de $1{,}2\text{ kg/s}$ para $3{,}2\text{ kg/s}$ preventivamente; (b2) curva de confiabilidade e vida útil em fadiga oligocíclica de soldas SAC305 (Coffin-Manson-Engelmaier), comprovando vida de $1{,}84 \times 10^5\text{ ciclos}$ em SSO com TEMS ($+245{,}8\%$ de margem para 10 anos) versus colapso prematuro em 13,2 meses em LEO sem TEMS.}
+    \label{fig:resposta_tems_precooling}
+\end{figure}
+
+A decomposição dos quatro subpainéis da Figura~\ref{fig:resposta_tems_precooling} demonstra:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Supressão de Picos por Pré-Resfriamento (Subpainel~a1):} No controle convencional puramente reativo (sem consciência preditiva de missão), a aplicação da carga de $40\text{ kW}$ em $t = 180\text{ s}$ faz a temperatura de junção violar o teto de segurança de $85{,}0^\circ\text{C}$ em segundos, deflagrando ciclos limite de histerese e oscilações bruscas entre $80^\circ\text{C}$ e $85^\circ\text{C}$. Em contrapartida, a camada NMPC do TEMS antecipa a execução do lote neural com horizonte preditivo de $90\text{ s}$ (janela ciano de $t = 90\text{ s}$ a $180\text{ s}$), promovendo o pré-resfriamento forçado da placa fria e dos dies. Quando o lote computacional atinge o barramento, o calor absorve a inércia térmica rebaixada, estabilizando a junção em um patamar controlado de $76{,}8^\circ\text{C}$, perfeitamente contido abaixo do envelope de alarme;
+    
+    \item \textbf{Eliminação de Chattering de Clock (Subpainel~a2):} Sob o controle bang-bang convencional, o DVFS sofre comutações violentas repetitivas entre a frequência nominal ($2{,}1\text{ GHz}$) e o piso de estrangulamento ($0{,}8\text{ GHz}$), degradando o rendimento computacional e induzindo ondulações severas de tensão no barramento de alimentação. Com a atuação coordenada do TEMS, a taxa de variação de frequência é rigorosamente limitada a $|\Delta f_{slew}| \le 100\text{ MHz/s}$, mantendo a frequência estável em $2{,}1\text{ GHz}$ durante toda a janela de processamento de tensores de inteligência artificial;
+    
+    \item \textbf{Atuação Fluídica Preditiva no MPFL (Subpainel~b1):} A bomba centrífuga redundante do circuito de amônia eleva preventivamente a vazão mássica de circulação do patamar de cruzeiro ($1{,}2\text{ kg/s}$) para o teto de resfriamento intensivo ($3{,}2\text{ kg/s}$) exatamente aos $t = 90\text{ s}$, reduzindo a resistência por convecção bifásica nos microcanais antes que a carga elétrica seja ativada;
+    
+    \item \textbf{Confiabilidade e Sobrevivência Estrutural (Subpainel~b2):} A curva de fadiga de Coffin-Manson-Engelmaier em escala logarítmica ilustra o impacto crítico do controle de gradiente térmico sobre as esferas de solda BGA (liga SAC305). Enquanto a órbita LEO convencional desprovida de TEMS impõe $\Delta T_j = 48^\circ\text{C}$ e colapsa as juntas com apenas $5840\text{ ciclos}$ (fratura por cisalhamento em 13,2 meses), a operação em SSO governada pelo TEMS restringe a excursão a $\Delta T_j \le 7^\circ\text{C}$, elevando a vida calculada para $1{,}84 \times 10^5\text{ ciclos}$. Esse valor supera a exigência decenal da missão ($53.200\text{ ciclos}$) com uma margem de segurança de $+245{,}8\%$, assegurando a integridade mecânica de 10 anos sem manutenção tripulada.
+\end{enumerate}
+
+\subsubsection{Métrica de Eficácia de Uso de Energia Orbital \texorpdfstring{($PUE_{orbital}$)}{(PUE-orbital)}}
+
+Em data centers terrestres, o indicador padrão de eficiência energética é a Eficácia do Uso de Energia (\textit{Power Usage Effectiveness} -- PUE), definida pela razão entre a potência total consumida pela infraestrutura e a potência efetivamente entregue aos servidores de tecnologia da informação ($PUE = P_{total} / P_{IT}$). Em instalações terrestres de ponta, sistemas de resfriamento evaporativo e compressão de vapor mecânica operam tipicamente na faixa de $PUE_{terrestre} \approx 1{,}15\text{ a }1{,}35$.
+
+Para plataformas espaciais autônomas, formula-se formalmente o indicador de \textbf{Eficácia Energética Orbital} ($PUE_{orbital}$):
+\begin{align}
+    PUE_{orbital}(t) &= \frac{P_{pv,net}(t)}{P_{IT}(t)} \nonumber \\
+    &= \frac{P_{IT}(t) + P_{MPFL,pump}(t) + P_{loss,GaN}(t) + P_{loss,BESS}(t) + P_{aux}(t) + P_{OISL}(t)}{P_{IT}(t)}
+    \label{eq:pue_orbital_definicao}
+\end{align}
+
+Substituindo os valores nominais do nó unitário de $50\text{ kW}$ em regime de cruzeiro permanente com processamento útil de $P_{IT} = 40{,}0\text{ kW}$:
+\begin{align}
+    PUE_{orbital,nom} &= \frac{40000 + 200 + 1025 + 65 + 350 + 343}{40000} \nonumber \\
+    &= \frac{41983\text{ W}}{40000\text{ W}} \approx \mathbf{1{,}050} \quad \text{[VERIFICÁVEL]}
+    \label{eq:pue_orbital_calculado}
+\end{align}
+Mesmo sob a contingência mais severa de pior caso quente degradado WCH (onde as perdas do conversor GaN crescem para $4444\text{ W}$ com $\eta = 90\%$ e a potência de bombeamento é elevada ao teto de $400\text{ W}$), o índice resultante atinge:
+\begin{equation}
+    PUE_{orbital,WCH} = \frac{40000 + 400 + 4444 + 120 + 450 + 343}{40000} = \frac{45757\text{ W}}{40000\text{ W}} \approx \mathbf{1{,}144}
+    \label{eq:pue_orbital_wch}
+\end{equation}
+
+Esse resultado evidencia a expressiva superioridade de eficiência termodinâmica do processamento neural em ambiente espacial: como a extração e rejeição de calor não demandam compressores frigoríficos mecânicos nem ventiladores de ar forçado — apoiando-se unicamente em bombeamento fluido de baixa potência ($200\text{ W}$) acoplado à radiação direta para o sumidouro cósmico a $3{,}0\text{ K}$ —, o sistema atinge eficácia energética recorde, com $PUE_{orbital}$ de $1{,}05$ a $1{,}14$, superando amplamente os melhores centros de dados terrestres do mundo.
+
+\subsection{Síntese do Capítulo e Diretrizes de Validação Numérica}
+\label{sec:sintese_capitulo4}
+
+Este capítulo estabeleceu com rigor axiomático e fundamentação física a modelagem matemática multifísica que rege a transferência de calor, a dinâmica orbital e a estabilidade eletrotérmica de centros de dados espaciais em escala megawatt. O desenvolvimento consolidou as seguintes contribuições teóricas centrais:
+\begin{enumerate}[label=(\alph*)]
+    \item A dissociação inequívoca entre os regimes orbitais SSO, LEO e GEO, demonstrando quantitativamente que a órbita heliossíncrona *Dawn-Dusk* (700 km) proporciona atenuação superior a $96\%$ na absorção de fluxos terrestres parasitas frente à órbita LEO convencional, permitindo uma redução de $29\%$ na área de radiadores térmicos exigida ($87{,}5\text{ m}^2$ vs. $123{,}3\text{ m}^2$ por nó);
+    \item A formulação fechada da rede térmica nodal acoplada de 5 nós com fluidodinâmica de amônia anidra em circuito LHP/MPFL, mapeando os limites de escoamento e estabelecendo as salvaguardas de projeto contra secamento capilar (\textit{dry-out}) e ejeção de material de interface térmica (\textit{TIM pump-out});
+    \item O equacionamento do modelo de aletas de Grafite Pirolítico Encapsulado (APG), comprovando a viabilidade de atingir $\eta_{fin} \ge 0{,}945$ com redução de $42{,}3\%$ na massa de radiadores em relação a ligas de alumínio;
+    \item A dedução analítica da condição necessária e suficiente de estabilidade contra Fuga Térmica (\textit{Thermal Runaway}), demonstrando que a derivada da corrente de fuga em transistores sub-7~nm impõe um teto estrito à resistência térmica de interface ($R_{th,j-rad} < 0{,}42\text{ K/W}$);
+    \item A concepção da arquitetura de controle hierárquico TEMS, combinando DVFS rápido em nível de die com NMPC preditivo com consciência orbital e mecanismo de pré-resfriamento térmico (\textit{orbital precooling}), viabilizando uma vida útil em fadiga de soldas BGA de $1{,}84 \times 10^5\text{ ciclos}$ (margem de segurança de $+245\%$ para 10 anos) e eficácia energética orbital recorde com $PUE \approx 1{,}050$.
+\end{enumerate}
+
+Os modelos analíticos aqui formulados constituem a base conceitual direta para a parametrização dos scripts de simulação numérica em GNU Octave desenvolvidos no Capítulo~5, onde serão submetidos a ensaios dinâmicos exaustivos de transientes de carga, contingências ambientais e validação de robustez.
