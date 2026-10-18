@@ -51,9 +51,10 @@ P_load_total_cons = (P_IT_nom / eta_conv_cons) + P_OISL_total + P_aux + 120.0; %
 % BESS do No Satelital de 50 kW
 E_bat_nom_kWh = 9.0;    % Capacidade nominal de 9.0 kWh [PROVISORIO]
 E_bat_nom_J = E_bat_nom_kWh * 3.6e6; 
-SoC_min_safe = 0.20;    % SoC minimo operacional (DoD max 80%) [VERIFICAVEL / ECSS]
+SoC_min_safe = 0.20;    % SoC minimo operacional (DoD max 80%) [PROVISORIO / PREMISSA DE PROJETO]
 E_util_J = E_bat_nom_J * (1.0 - SoC_min_safe); % 7.20 kWh utilizaveis ideais
 R_0_vec = [0.032, 0.045, 0.085]; % [Ohm] BOL a EOL [PROVISORIO]
+R_0_eol = 0.085;        % [Ohm] Resistencia interna da bateria em EOL [PROVISORIO]
 
 % Parâmetros de distribuição e filtro
 C_bus_ext = 1.5e-3;   % 1.5 mF
@@ -125,7 +126,7 @@ for i = 1:length(altitudes)
     SoC(1) = 0.95; 
     V_ocv_init = 330.0 + 90.0 * SoC(1);
     is_ecl_1 = (0 <= t_ecl_s);
-    V_bat(1) = V_ocv_init - is_ecl_1 * (P_load_ecl / V_ocv_init) * R_dist_high;
+    V_bat(1) = V_ocv_init - is_ecl_1 * (P_load_ecl / V_ocv_init) * R_0_eol;
     P_solar_avail = 48000.0; % 48 kW disponiveis no barramento em temperatura de equilibrio
     
     for k = 2:length(t_sim)
@@ -151,7 +152,7 @@ for i = 1:length(altitudes)
         
         V_ocv = 330.0 + 90.0 * SoC(k);
         I_bat = is_eclipse * (P_bat / V_ocv);
-        V_bat(k) = V_ocv - I_bat * R_dist_high;
+        V_bat(k) = V_ocv - I_bat * R_0_eol;
     end
     
     subplot(2, 1, 1);

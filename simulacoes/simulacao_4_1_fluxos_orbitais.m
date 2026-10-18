@@ -135,32 +135,53 @@ delta_theta_rad = delta_theta_deg * pi / 180;
 q_sol_pert_bol = 0.08 * G_AM0 * sin(delta_theta_rad);
 q_sol_pert_eol = alpha_s_rad * G_AM0 * sin(delta_theta_rad);
 
-T_rad_nom = 318.15; % 45 C
-T_sink_sso = ((1 - F_rad_E_sso)*T_space^4 + F_rad_E_sso*(q_Earth_nom/sigma_SB))^0.25;
-q_emit_bruta = eps_ir_rad * sigma_SB * (T_rad_nom^4 - T_sink_sso^4);
-q_liq_max = q_emit_bruta * eta_fin - (mean(q_alb_abs_sso) + mean(q_ir_abs_sso));
+% Balanço térmico radiativo rigoroso sem dupla contagem de IR terrestre:
+% Capacidade máxima de rejeição na temperatura de teto do radiador (T_rad = 55 °C = 328.15 K):
+T_rad_lim = 328.15; % 55 °C
+q_emit_lim_eol = eps_ir_rad * sigma_SB * eta_fin * (T_rad_lim^4 - T_space^4);
+q_par_sso_eol = mean(q_alb_abs_sso) + mean(q_ir_abs_sso); % 45.24 W/m^2 absorvido
+q_liq_max_eol = q_emit_lim_eol - q_par_sso_eol;
 
-q_net_pert_bol = q_liq_max - q_sol_pert_bol;
-q_net_pert_eol = q_liq_max - q_sol_pert_eol;
+% Para BOL (alpha_s = 0.08, eps_ir = 0.88):
+q_emit_lim_bol = 0.88 * sigma_SB * eta_fin * (T_rad_lim^4 - T_space^4);
+q_par_sso_bol = 0.88 * q_Earth_nom * F_rad_E_sso;
+q_liq_max_bol = q_emit_lim_bol - q_par_sso_bol;
 
-% Potencia termica total a rejeitar conectada ao livro-razao: Q_int = 41.983,84 W [CALCULADO]
-% Area do radiador: A_rad = 88.6 m^2 (coifa de 5.2 m) [PROVISORIO / PREMISSA DE PROJETO]
-% Delta T chassi-juncao: 25.0 C [PROVISORIO / PREMISSA DE PROJETO]
+q_net_pert_bol = q_liq_max_bol - q_sol_pert_bol;
+q_net_pert_eol = q_liq_max_eol - q_sol_pert_eol;
+
+% Potencia termica total a rejeitar conectada ao livro-razao:
+% Caso Nominal: Q_int = 41.983,84 W [CALCULADO]
+% Caso WCH (Worst-Case Hot EOL): Q_int_wch = 45.757,64 W [CALCULADO]
+% Area do radiador de projeto: A_rad = 88.6 m^2 (coifa de 5.2 m) [CALCULADO / CAPITULO 4]
+% Area alternativa parametrica: A_rad_alt = 92.0 m^2 [ESTUDO DE SENSIBILIDADE]
+% Delta T chassi-juncao: 25.0 °C [PROVISORIO / PREMISSA DE PROJETO]
 A_rad = 88.6; 
-Q_int_total = 41983.84; % [W] [CALCULADO]
+Q_int_total = 41983.84; % [W] Nominal
+Q_int_wch   = 45757.64; % [W] WCH
 q_req = Q_int_total / A_rad; % 473.86 W/m^2
 
 T_rad_eq_eol = zeros(size(delta_theta_deg));
 T_j_eq_eol = zeros(size(delta_theta_deg));
 
 for idx = 1:length(delta_theta_deg)
-    q_par = q_sol_pert_eol(idx) + mean(q_alb_abs_sso) + mean(q_ir_abs_sso);
-    T_val = ((q_req + q_par)/(eps_ir_rad * sigma_SB * eta_fin) + T_sink_sso^4)^0.25;
+    q_par = q_sol_pert_eol(idx) + q_par_sso_eol;
+    % Equilibrio Stefan-Boltzmann exato: eps*sigma*eta*(T_rad^4 - T_space^4) = q_req + q_par
+    T_val = ((q_req + q_par) / (eps_ir_rad * sigma_SB * eta_fin) + T_space^4)^0.25;
     T_rad_eq_eol(idx) = T_val - 273.15;
     T_j_eq_eol(idx) = T_rad_eq_eol(idx) + 25.0; % Delta T chassi-juncao [PROVISORIO]
 end
 
-% Avaliacao dos criterios termicos de projeto (75 C normal, 80 C throttling, 85 C trip):
+% Calculo de sensibilidade para A_rad = 92.0 m^2 e caso WCH (para registro analitico):
+q_req_92 = Q_int_total / 92.0;
+T_rad_92 = ((q_req_92 + q_par_sso_eol) / (eps_ir_rad * sigma_SB * eta_fin) + T_space^4)^0.25 - 273.15;
+T_j_92   = T_rad_92 + 25.0;
+
+q_req_wch = Q_int_wch / A_rad;
+T_rad_wch = ((q_req_wch + q_par_sso_eol) / (eps_ir_rad * sigma_SB * eta_fin) + T_space^4)^0.25 - 273.15;
+T_j_wch   = T_rad_wch + 25.0;
+
+% Avaliacao dos criterios termicos de projeto (75 °C normal, 80 °C throttling, 85 °C trip):
 idx_fail_80 = find(T_j_eq_eol >= 80.0, 1);
 idx_trip_85 = find(T_j_eq_eol >= 85.0, 1);
 if ~isempty(idx_trip_85)
@@ -169,11 +190,16 @@ else
     delta_trip_85 = 0.0;
 end
 
-fprintf('1. Balanco Termico Nominal Estatico EOL (delta_theta = 0):\n');
-fprintf('   -> T_rad calculado = %.2f C (Requisito max: 55.0 C -> VIOLADO em malha aberta EOL)\n', T_rad_eq_eol(1));
-fprintf('   -> T_j calculado   = %.2f C (Requisito normal: 75.0 C -> VIOLADO em malha aberta EOL)\n', T_j_eq_eol(1));
-fprintf('   -> Limiar de Trip (85 C) superado na linha de base em malha aberta (T_j = %.2f C);\n', T_j_eq_eol(1));
-fprintf('   -> Comprova rigorosamente a necessidade imperativa de NMPC com Throttling e controle ativo de atitude.\n\n');
+fprintf('1. Balanco Termico Radiativo EOL sem Dupla Contagem (delta_theta = 0):\n');
+fprintf('   -> Caso Nominal (Q = 41.984 W, A_rad = 88.6 m^2):\n');
+fprintf('      T_rad = %.2f °C (Teto de projeto: 55.0 °C -> Superado em malha aberta)\n', T_rad_eq_eol(1));
+fprintf('      T_j   = %.2f °C (Meta normal: 75.0 °C; Limiar Trip: 85.0 °C -> Superado)\n', T_j_eq_eol(1));
+fprintf('   -> Sensibilidade de Area (A_rad = 92.0 m^2 Nominal):\n');
+fprintf('      T_rad = %.2f °C | T_j = %.2f °C (Excede limiar de Throttling de 80.0 °C)\n', T_rad_92, T_j_92);
+fprintf('   -> Caso Pior Caso Quente WCH (Q = 45.758 W, A_rad = 88.6 m^2):\n');
+fprintf('      T_rad = %.2f °C | T_j = %.2f °C (Supera amplamente o limiar de Trip)\n', T_rad_wch, T_j_wch);
+fprintf('   -> Conclusao: A operacao continua a plena carga em EOL sem controle ativo e termicamente inviavel,\n');
+fprintf('      comprovando numericamente a necessidade mandatória de NMPC com Throttling.\n\n');
 
 % ------------------------------------------------------------------------------
 % 5. CONSTRUCAO DA FIGURA 4.1 COMPOSTA MULTIPAINEL

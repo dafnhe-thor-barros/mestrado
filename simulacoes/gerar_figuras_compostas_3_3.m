@@ -19,7 +19,7 @@ end
 N_s = 108;                  % celulas em serie (108S) [VERIFICAVEL / PROJETO]
 C_n_Ah = 22.52;             % Capacidade nominal por no (Ah) -> 9.0 kWh nominais [PROVISORIO]
 E_nom_kWh = 9.0;            % 9.0 kWh por satelite (Cluster de 20 nos = 180 kWh) [PROVISORIO]
-DoD_max = 0.80;             % 80% DoD maximo (SoC min 20%) conforme ECSS [VERIFICAVEL]
+DoD_max = 0.80;             % 80% DoD maximo (SoC min 20%) [PROVISORIO / PREMISSA DE PROJETO]
 
 % Parametros eletroquimicos de 2a ordem (pack total de 108S) a T_ref = 20 C (293.15 K)
 R_0_ref = 0.045;            % Resistencia ohmica BOL (45 mOhm) [PROVISORIO]
@@ -355,11 +355,11 @@ for k = 1:N_pts
     err_soc(k) = abs(x_est(1) - SoC_real(k)) * 100;
 end
 
-% --- AVALIACAO DE MARGEM CONTRA SUBTENSAO (UVLO) EM FIM DE VIDA (EOL) ---
+% --- AVALIACAO DE COMPORTAMENTO SOBRE SUBTENSAO (UVLO) EM FIM DE VIDA (EOL) ---
 % Ensaio de estresse: Pulso integral de IA (140 A, ~50 kW a 357 V) por 60 s
-% Condicao 1: BOL com SoC = 20% (reserva segura de projeto)
-% Condicao 2: EOL com SoC = 20% (resistencia ohmica e polarizacoes degradadas)
-% Condicao 3: EOL sob esgotamento extremo com SoC = 2% (pior caso de descarga residual)
+% Condicao 1: BOL com SoC = 20% (limite operacional minimo de projeto)
+% Condicao 2: EOL com SoC = 20% (limite operacional minimo com resistencia degradada)
+% Condicao 3: EOL em estresse numerico fora de projeto com SoC = 2% (ensaio extremo fora do envelope)
 t_pulse = 0:0.1:60; % 60 s de pulso de IA
 I_test = 140.0;     % 140 A (~50 kW)
 
@@ -424,7 +424,7 @@ title('(b1) Filtragem de Ruido de Medicao (150 mV_{rms}) e Rastreamento', 'fonts
 legend({'Medicao com Ruido do Sensor', 'Tensao Filtrada pelo AUKF', 'Tensao Real Sem Ruido'}, 'location', 'southeast', 'fontsize', 8);
 xlim([0, 20]); ylim([365, 435]);
 
-% Subpainel (b2): Avaliacao de Margem de Seguranca contra Subtensao (UVLO)
+% Subpainel (b2): Resposta de Subtensao em EOL (Envelope Operacional vs Estresse)
 subplot(2, 2, 4);
 hold on; grid on; box on;
 plot(t_pulse, V_term_bol, 'g-', 'linewidth', 2.0);
@@ -434,8 +434,8 @@ plot([0, 60], [324, 324], 'k:', 'linewidth', 1.8);
 fill([0, 60, 60, 0], [300, 300, 324, 324], [1.0, 0.85, 0.85], 'edgecolor', 'none', 'facealpha', 0.5);
 xlabel('Duracao do Pulso de IA de 50 kW (s)', 'fontsize', 9);
 ylabel('Tensao Instantanea da Bateria (V)', 'fontsize', 9);
-title('(b2) Avaliacao de Margem de Subtensao em EOL (Pulso 140 A / ~50 kW)', 'fontsize', 10, 'fontweight', 'bold');
-legend({'BOL (SoC 20%): Margem > 39 V', 'EOL (SoC 20%): Margem > 28 V', 'EOL Extremo (SoC 2%): Margem Residual > 10 V', 'Limiar Critico de Corte V_{UV} (324 V)'}, 'location', 'northeast', 'fontsize', 8);
+title('(b2) Resposta de Subtensao em EOL (Envelope Operacional vs Estresse Fora de Projeto)', 'fontsize', 10, 'fontweight', 'bold');
+legend({'BOL (SoC 20% - Limite Operacional)', 'EOL (SoC 20% - Limite Operacional)', 'EOL Estresse Fora de Projeto (SoC 2%)', 'Limiar de Corte V_{UV} (324 V)'}, 'location', 'northeast', 'fontsize', 8);
 xlim([0, 60]); ylim([310, 395]);
 
 if ~exist('figuras','dir'), mkdir('figuras'); end; print(fig_3_6, 'figuras/figura_3_6_convergencia_aukf_estresse.png', '-dpng', '-r150');
