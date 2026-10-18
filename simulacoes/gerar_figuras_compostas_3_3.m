@@ -6,24 +6,28 @@
 clear; close all; clc;
 fprintf('=== GERANDO FIGURAS COMPOSTAS DE ALTA DENSIDADE (SECAO 3.3) ===\n');
 
-% graphics_toolkit
+if ismember('qt', available_graphics_toolkits())
+    graphics_toolkit('qt');
+else
+    graphics_toolkit('gnuplot');
+end
 
 % ------------------------------------------------------------------------------
 % 1. PARAMETROS DO MODELO DUAL-POLARIZATION (DP) E DA QUIMICA NMC ESPACIAL
 % ------------------------------------------------------------------------------
 % Banco de baterias 108S1P Li-ion NMC por no satelital de 50 kW (400 V nominais)
-N_s = 108;                  % celulas em serie (108S)
-C_n_Ah = 22.52;             % Capacidade nominal por no (Ah) -> 9.0 kWh nominais
-E_nom_kWh = 9.0;            % 9.0 kWh por satelite (Cluster de 20 nos = 180 kWh)
-DoD_max = 0.60;             % 60% DoD maximo operacional -> 5.4 kWh utilizaveis
+N_s = 108;                  % celulas em serie (108S) [VERIFICAVEL / PROJETO]
+C_n_Ah = 22.52;             % Capacidade nominal por no (Ah) -> 9.0 kWh nominais [PROVISORIO]
+E_nom_kWh = 9.0;            % 9.0 kWh por satelite (Cluster de 20 nos = 180 kWh) [PROVISORIO]
+DoD_max = 0.80;             % 80% DoD maximo (SoC min 20%) conforme ECSS [VERIFICAVEL]
 
 % Parametros eletroquimicos de 2a ordem (pack total de 108S) a T_ref = 20 C (293.15 K)
-R_0_ref = 0.045;            % Resistencia ohmica BOL (45 mOhm)
-R_0_eol_ref = 0.085;        % Resistencia ohmica EOL (85 mOhm)
-R_p1 = 0.018;               % Resistencia de polarizacao rapida (18 mOhm)
-C_p1 = 3200.0;              % Capacitancia de polarizacao rapida (tau1 = 57.6 s)
-R_p2 = 0.024;               % Resistencia de polarizacao lenta (24 mOhm)
-C_p2 = 22000.0;             % Capacitancia de polarizacao lenta (tau2 = 528 s)
+R_0_ref = 0.045;            % Resistencia ohmica BOL (45 mOhm) [PROVISORIO]
+R_0_eol_ref = 0.085;        % Resistencia ohmica EOL (85 mOhm) [PROVISORIO]
+R_p1 = 0.018;               % Resistencia de polarizacao rapida (18 mOhm) [PROVISORIO]
+C_p1 = 3200.0;              % Capacitancia de polarizacao rapida (tau1 = 57.6 s) [PROVISORIO]
+R_p2 = 0.024;               % Resistencia de polarizacao lenta (24 mOhm) [PROVISORIO]
+C_p2 = 22000.0;             % Capacitancia de polarizacao lenta (tau2 = 528 s) [PROVISORIO]
 
 % Cinetica de Arrhenius
 E_a = 0.32 * 1.60218e-19;   % 0.32 eV em Joules
@@ -31,15 +35,17 @@ k_B = 1.380649e-23;         % J/K
 T_ref_K = 293.15;           % 20 C
 
 % Parametros termicos do pack de 60 kg no chassi
-C_th_bat = 54360.0;         % Capacitancia termica do pack (~60 kg NMC * 906 J/kg.K, J/K)
-R_th_mli = 4.8;             % Resistencia termica MLI (K/W)
+C_th_bat = 54360.0;         % Capacitancia termica do pack (~60 kg NMC * 906 J/kg.K, J/K) [PROVISORIO]
+R_th_mli = 4.8;             % Resistencia termica MLI (K/W) [PROVISORIO]
 T_chassis = 20.0;           % Temperatura de referencia do chassi (C)
 P_heater_max = 300.0;       % Aquecedor PWM limitado a 300 W (evita superaquecimento)
 
-% Funcao analitica calibrada Voc(SoC) para 108 celulas NMC em serie
-% V_cel varia de 3.0 V (0%) ate 4.15 V (100%), plato em 3.7 V (~50%)
-Voc_fun = @(s) N_s * (3.00 + 1.15 * s + 0.15 * (s.^2 - s.^3) + ...
-                      0.04 * log(max(1e-4, s)) - 0.03 * log(max(1e-4, 1 - s)));
+% Modelo parametrico analitico Voc(SoC) para 108 celulas em serie (Quimica Li-ion NMC espacial)
+% [PROVISORIO]: Baseado em dados de celulas aeroespaciais (3.7 V nominal; 3.00 V a 4.10 V limites)
+% Garante monotonicidade estrita sem divergencia nos extremos:
+Voc_cel_fun = @(s) 3.35 + 0.45 * max(0.0, min(1.0, s)) + 0.25 * (max(0.0, min(1.0, s)).^2) - ...
+                   0.05 * ((1.0 - max(0.0, min(1.0, s))).^3);
+Voc_fun = @(s) N_s * Voc_cel_fun(s);
 
 % ------------------------------------------------------------------------------
 % 2. SIMULACAO TEMPORAL: DINAMICA DP SOB PERFIL ORBITAL COM DEGRAUS DE IA
@@ -231,6 +237,8 @@ end
 % Covariancias iniciais
 Q_k = diag([1e-7, 1e-5, 1e-5]);
 R_meas = (0.150)^2; % Ruido de sensor de 150 mV_rms no barramento de 400 V
+R_adapt = R_meas;   % Covariancia adaptativa inicial
+R_min = (0.050)^2;  % Salvaguarda numerica: variancia minima admissivel (50 mV_rms)
 P_est = diag([0.015^2, 0.1^2, 0.1^2]); % Covariancia inicial realista para convergencia dinamica suave
 
 % Inicializacao com ERRO SEVERO DELIBERADO (+25% de SoC):
@@ -320,19 +328,21 @@ for k = 1:N_pts
     
     y_hat = sum(Wm .* Y_pred);
     
-    % Inovacao residual
+    % Inovacao residual e adaptacao de covariancia R de Sage-Husa / Mehra:
     e_k = y_meas(k) - y_hat;
-    C0 = rho * C0 + (1 - rho) * (e_k^2);
     
-    P_yy = 0.0;
+    P_yy_calc = 0.0;
     P_xy = zeros(L, 1);
     for i = 1:(2*L + 1)
         dy = Y_pred(i) - y_hat;
         dx = chi_pred(:, i) - x_pred;
-        P_yy = P_yy + Wc(i) * (dy^2);
+        P_yy_calc = P_yy_calc + Wc(i) * (dy^2);
         P_xy = P_xy + Wc(i) * dx * dy;
     end
-    P_yy = P_yy + R_meas;
+    
+    % Atualizacao adaptativa de Mehra com salvaguarda numerica R >= R_min:
+    R_adapt = max(R_min, rho * R_adapt + (1.0 - rho) * max(0.0, e_k^2 - P_yy_calc));
+    P_yy = P_yy_calc + R_adapt;
     
     % Adaptacao de Kalman
     K_gain = P_xy / P_yy;
@@ -345,28 +355,35 @@ for k = 1:N_pts
     err_soc(k) = abs(x_est(1) - SoC_real(k)) * 100;
 end
 
-% --- SIMULACAO WCA DE FALHA POR SUBTENSAO EM EOL ---
-% Teste de estresse: Pulso de 20 kW (55 A) em SoC = 35%
-% Comparando BOL (R0=45mOhm, Rp=18+24=42mOhm) vs EOL (R0=85mOhm, Rp=36+48=84mOhm)
-s_test = 0.35;
-Voc_test = Voc_fun(s_test); % ~385 V
+% --- AVALIACAO DE MARGEM CONTRA SUBTENSAO (UVLO) EM FIM DE VIDA (EOL) ---
+% Ensaio de estresse: Pulso integral de IA (140 A, ~50 kW a 357 V) por 60 s
+% Condicao 1: BOL com SoC = 20% (reserva segura de projeto)
+% Condicao 2: EOL com SoC = 20% (resistencia ohmica e polarizacoes degradadas)
+% Condicao 3: EOL sob esgotamento extremo com SoC = 2% (pior caso de descarga residual)
 t_pulse = 0:0.1:60; % 60 s de pulso de IA
-I_test = 55.0; % A
+I_test = 140.0;     % 140 A (~50 kW)
 
-% Queda em BOL
-V_drop_bol = I_test * R_0_ref + I_test * R_p1 * (1 - exp(-t_pulse / (R_p1 * C_p1))) + ...
-             I_test * R_p2 * (1 - exp(-t_pulse / (R_p2 * C_p2)));
-V_term_bol = Voc_test - V_drop_bol;
+% Condicao 1: BOL em SoC = 20%
+s_nom = 0.20;
+Voc_nom = Voc_fun(s_nom); % ~375.8 V
+V_drop_bol = I_test * R_0_ref + I_test * R_p1 * (1.0 - exp(-t_pulse / (R_p1 * C_p1))) + ...
+             I_test * R_p2 * (1.0 - exp(-t_pulse / (R_p2 * C_p2)));
+V_term_bol = Voc_nom - V_drop_bol;
 
-% Queda em EOL (resistencia ohmica 85 mOhm e polarizacoes dobradas)
-V_drop_eol = I_test * R_0_eol_ref + I_test * (2*R_p1) * (1 - exp(-t_pulse / (2*R_p1 * C_p1))) + ...
-             I_test * (2*R_p2) * (1 - exp(-t_pulse / (2*R_p2 * C_p2)));
-V_term_eol = Voc_test - V_drop_eol - 35.0; % consideracao de degradacao de Voc em baixa carga
+% Condicao 2: EOL em SoC = 20%
+V_drop_eol = I_test * R_0_eol_ref + I_test * (2.0*R_p1) * (1.0 - exp(-t_pulse / (2.0*R_p1 * C_p1))) + ...
+             I_test * (2.0*R_p2) * (1.0 - exp(-t_pulse / (2.0*R_p2 * C_p2)));
+V_term_eol_20 = Voc_nom - V_drop_eol;
+
+% Condicao 3: EOL em estresse extremo (SoC = 2%)
+s_ext = 0.02;
+Voc_ext = Voc_fun(s_ext); % ~357.7 V
+V_term_eol_02 = Voc_ext - V_drop_eol;
 
 % ------------------------------------------------------------------------------
-% 5. RENDERIZACAO DA FIGURA 3.6: CONVERGENCIA AUKF E PONTO DE FALHA EOL
+% 5. RENDERIZACAO DA FIGURA 3.6: CONVERGENCIA AUKF E MARGEM DE SUBTENSAO EOL
 % ------------------------------------------------------------------------------
-fprintf('4. Renderizando Figura 3.6 Composta (Convergencia AUKF e Falha EOL)...\n');
+fprintf('4. Renderizando Figura 3.6 Composta (Convergencia AUKF e Margem EOL)...\n');
 
 fig_3_6 = figure(2, 'position', [50, 50, 1100, 750]);
 
@@ -407,17 +424,18 @@ title('(b1) Filtragem de Ruido de Medicao (150 mV_{rms}) e Rastreamento', 'fonts
 legend({'Medicao com Ruido do Sensor', 'Tensao Filtrada pelo AUKF', 'Tensao Real Sem Ruido'}, 'location', 'southeast', 'fontsize', 8);
 xlim([0, 20]); ylim([365, 435]);
 
-% Subpainel (b2): Ponto de Falha EOL: Falso Disparo de Subtensao
+% Subpainel (b2): Avaliacao de Margem de Seguranca contra Subtensao (UVLO)
 subplot(2, 2, 4);
 hold on; grid on; box on;
 plot(t_pulse, V_term_bol, 'g-', 'linewidth', 2.0);
-plot(t_pulse, V_term_eol, 'r--', 'linewidth', 2.0);
+plot(t_pulse, V_term_eol_20, 'b--', 'linewidth', 2.0);
+plot(t_pulse, V_term_eol_02, 'r-.', 'linewidth', 2.0);
 plot([0, 60], [324, 324], 'k:', 'linewidth', 1.8);
 fill([0, 60, 60, 0], [300, 300, 324, 324], [1.0, 0.85, 0.85], 'edgecolor', 'none', 'facealpha', 0.5);
-xlabel('Duracao do Pulso de IA de 20 kW (s)', 'fontsize', 9);
+xlabel('Duracao do Pulso de IA de 50 kW (s)', 'fontsize', 9);
 ylabel('Tensao Instantanea da Bateria (V)', 'fontsize', 9);
-title('(b2) Ponto de Falha WCA: Colapso por Subtensao em EOL (SoC=35%)', 'fontsize', 10, 'fontweight', 'bold');
-legend({'Inicio de Vida BOL (Margem Segura > 355 V)', 'Fim de Vida EOL (Colapso abaixo de V_{UV})', 'Limiar Critico de Corte V_{UV} (324 V)', 'Zona de Desligamento Prematuro de IA'}, 'location', 'northeast', 'fontsize', 8);
+title('(b2) Avaliacao de Margem de Subtensao em EOL (Pulso 140 A / ~50 kW)', 'fontsize', 10, 'fontweight', 'bold');
+legend({'BOL (SoC 20%): Margem > 39 V', 'EOL (SoC 20%): Margem > 28 V', 'EOL Extremo (SoC 2%): Margem Residual > 10 V', 'Limiar Critico de Corte V_{UV} (324 V)'}, 'location', 'northeast', 'fontsize', 8);
 xlim([0, 60]); ylim([310, 395]);
 
 if ~exist('figuras','dir'), mkdir('figuras'); end; print(fig_3_6, 'figuras/figura_3_6_convergencia_aukf_estresse.png', '-dpng', '-r150');

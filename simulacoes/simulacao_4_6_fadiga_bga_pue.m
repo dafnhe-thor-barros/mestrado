@@ -5,13 +5,15 @@
 %
 % Este script implementa:
 % 1. O modelo analítico de Coffin-Manson generalizado por Engelmaier (IPC-SM-785 / IPC-9701A)
-%    calibrado experimentalmente para a liga de solda isenta de chumbo SAC305.
+%    calibrado com coeficientes da literatura para a liga de solda SAC305.
+%    NOTA EPISTEMICA: Analise parametrica de sensibilidade in silico, sem ensaios fisicos
+%    ou de bancada TVAC no componente real.
 % 2. O modelo térmico de desacoplamento dinâmico entre a junção de silício (die)
 %    e a esfera crítica BGA (DNP).
 % 3. A avaliação da Matriz Fatorial 2x2 isolando os efeitos da órbita (SSO vs. LEO)
 %    e do sistema de controle ativo TEMS (com TEMS vs. sem TEMS).
-% 4. O cálculo determinístico da Eficácia Energética Orbital (PUE_orbital)
-%    conforme a norma ISO/IEC 30134-2:2026 e do rendimento computacional eta_comp.
+% 4. A avaliacao parametrica in silico da Eficacia Energetica Orbital (PUE_orbital, adaptacao
+%    conceitual da ISO/IEC 30134-2 para plataformas espaciais) e rendimento eta_comp.
 % ==============================================================================
 
 clear all;
@@ -101,45 +103,63 @@ end
 fprintf('------------------------------------------------------------------------------------------------------\n\n');
 
 % ------------------------------------------------------------------------------
-% 3. EFICÁCIA DE USO DE ENERGIA ORBITAL (PUE_orbital) - ISO/IEC 30134-2
+% 3. BALANCO ELETRICO, BALANCO TERMICO E ADAPTACAO CONCEITUAL DO PUE ORBITAL
 % ------------------------------------------------------------------------------
-fprintf('3. Balanço de Eficácia Energética Orbital (ISO/IEC 30134-2:2026):\n');
+fprintf('3. Balanco Eletrico, Balanco Termico e Adaptacao Conceitual do PUE Orbital:\n');
 
-P_IT_nom = 40000.0;   % [W] Potência útil de processamento neural (80 dies)
-P_pump_nom = 200.0;   % [W] Bomba centrífuga MPFL amônia
-P_loss_GaN_nom = 1025.0; % [W] Perdas conversor GaN (eta = 97.5%)
-P_loss_BESS_nom = 65.0;  % [W] Resistência interna do banco Li-ion
-P_avionics_nom = 350.0;  % [W] Computador de bordo, ADCS e telemetria
-P_OISL_nom = 343.0;      % [W] 4 transceivers laser ópticos inter-satélite
+% Livro-razao eletrico no barramento de 400 V (Regime Nominal Pleno):
+P_IT_nom = 40000.00;          % [W] Potencia util de processamento neural (80 dies x 500 W) [VERIFICAVEL]
+P_pump_nom = 200.00;          % [W] Bomba centrifuga MPFL amonia [PROVISORIO]
+P_loss_GaN_nom = 1025.64;     % [W] Perdas conversor GaN (eta = 97.5%: 40000/0.975 - 40000) [PROVISORIO]
+P_loss_BESS_nom = 65.00;      % [W] Resistencia interna em flutuacao [CALCULADO]
+P_avionics_nom = 350.00;      % [W] Computador de bordo, ADCS e telemetria [PROVISORIO]
+P_OISL_el_nom = 440.00;       % [W] 4 transceivers laser no barramento [VERIFICAVEL]
 
-P_total_nom = P_IT_nom + P_pump_nom + P_loss_GaN_nom + P_loss_BESS_nom + P_avionics_nom + P_OISL_nom;
-PUE_nom = P_total_nom / P_IT_nom;
+% Total eletrico drenado do barramento:
+P_total_el_nom = P_IT_nom + P_pump_nom + P_loss_GaN_nom + P_loss_BESS_nom + P_avionics_nom + P_OISL_el_nom;
+% P_total_el_nom = 42.080,64 W
 
-% Pior Caso Quente Degradado EOL (WCH)
-P_pump_wch = 400.0;
-P_loss_GaN_wch = 4444.0; % eta = 90.0%
-P_loss_BESS_wch = 120.0;
-P_avionics_wch = 450.0;
-P_OISL_wch = 343.0;
+% Balanco termico interno (dissipacao de calor a ser rejeitada pelo radiador):
+eta_eo = 0.22;                % Rendimento eletro-optico do transmissor laser [PROVISORIO]
+P_opt_irradiada = P_OISL_el_nom * eta_eo; % 96.80 W deixam a fronteira do satelite via feixe optico [CALCULADO]
+Q_OISL_calor = P_OISL_el_nom * (1.0 - eta_eo); % 343.20 W retidos como calor [CALCULADO]
+Q_int_total = P_total_el_nom - P_opt_irradiada;
+% Q_int_total = 42.080,64 - 96,80 = 41.983,84 W (~41.984 W)
 
-P_total_wch = P_IT_nom + P_pump_wch + P_loss_GaN_wch + P_loss_BESS_wch + P_avionics_wch + P_OISL_wch;
-PUE_wch = P_total_wch / P_IT_nom;
+% Adaptacao Conceitual do PUE para Data Center Orbital (sem conformidade normativa):
+PUE_orbital_nom = P_total_el_nom / P_IT_nom; % 42080.64 / 40000 = 1.0520
 
-% Rendimento computacional específico eta_comp (TOPS/W)
+% Pior Caso Quente Degradado EOL (WCH):
+P_pump_wch = 400.00;
+P_loss_GaN_wch = 4444.44;     % eta = 90.0% (40000/0.90 - 40000)
+P_loss_BESS_wch = 120.00;
+P_avionics_wch = 450.00;
+P_OISL_el_wch = 440.00;
+
+P_total_el_wch = P_IT_nom + P_pump_wch + P_loss_GaN_wch + P_loss_BESS_wch + P_avionics_wch + P_OISL_el_wch;
+PUE_orbital_wch = P_total_el_wch / P_IT_nom; % 45854.44 / 40000 = 1.1464
+
+% Rendimento computacional especifico eta_comp (TOPS/W eletrico):
 TOPS_total = 80 * 250.0; % 20.000 TOPS
-eta_comp_nom = TOPS_total / P_total_nom;
-eta_comp_wch = TOPS_total / P_total_wch;
+eta_comp_nom = TOPS_total / P_total_el_nom;
+eta_comp_wch = TOPS_total / P_total_el_wch;
 
-fprintf('   - Regime Nominal (Cruzeiro SSO):\n');
-fprintf('     P_IT: %6.0f W | P_aux+perdas: %5.0f W | P_total: %6.0f W\n', P_IT_nom, P_total_nom - P_IT_nom, P_total_nom);
-fprintf('     -> PUE_orbital nominal: %6.3f\n', PUE_nom);
-fprintf('     -> Rendimento eta_comp: %6.3f TOPS/W\n\n', eta_comp_nom);
+fprintf('   - Livro-Razao Eletrico Nominal (400 V):\n');
+fprintf('     P_IT: %.2f W | Auxiliares+Perdas: %.2f W | Total Eletrico: %.2f W\n', ...
+        P_IT_nom, P_total_el_nom - P_IT_nom, P_total_el_nom);
+fprintf('     -> PUE_orbital nominal: %.4f (Adaptacao conceitual proposta)\n', PUE_orbital_nom);
+fprintf('     -> Rendimento eta_comp: %.3f TOPS/W\n\n', eta_comp_nom);
+
+fprintf('   - Balanco Termico Interno Liquido:\n');
+fprintf('     Total Eletrico: %.2f W - Feixe Laser Emitido: %.2f W = Calor Interno: %.2f W (~41.984 W)\n\n', ...
+        P_total_el_nom, P_opt_irradiada, Q_int_total);
 
 fprintf('   - Pior Caso Quente Degradado EOL (WCH):\n');
-fprintf('     P_IT: %6.0f W | P_aux+perdas: %5.0f W | P_total: %6.0f W\n', P_IT_nom, P_total_wch - P_IT_nom, P_total_wch);
-fprintf('     -> PUE_orbital WCH:     %6.3f\n', PUE_wch);
-fprintf('     -> Rendimento eta_comp: %6.3f TOPS/W\n\n', eta_comp_wch);
+fprintf('     P_IT: %.2f W | Auxiliares+Perdas: %.2f W | Total Eletrico: %.2f W\n', ...
+        P_IT_nom, P_total_el_wch - P_IT_nom, P_total_el_wch);
+fprintf('     -> PUE_orbital WCH:     %.4f\n', PUE_orbital_wch);
+fprintf('     -> Rendimento eta_comp: %.3f TOPS/W\n\n', eta_comp_wch);
 
 fprintf('==============================================================================\n');
-fprintf('  SIMULAÇÃO CONCLUÍDA COM SUCESSO - MODELOS DETERMINÍSTICOS VALIDADOS\n');
+fprintf('  SIMULACAO 4.6 CONCLUIDA COM SUCESSO (ANALISE PARAMETRICA)\n');
 fprintf('==============================================================================\n');

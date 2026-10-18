@@ -14,33 +14,46 @@
 clear; close all; clc;
 fprintf('=== INICIANDO SIMULAÇÃO NUMÉRICA: ANÁLISE DE RELIGAMENTOS E SUBAMORTECIMENTO ===\n\n');
 
-graphics_toolkit('gnuplot');
+if ismember('qt', available_graphics_toolkits())
+    graphics_toolkit('qt');
+else
+    graphics_toolkit('gnuplot');
+end
 
 %% ==============================================================================
 %% 1. DEFINIÇÃO DA MATRIZ DE PARÂMETROS
 %% ==============================================================================
 
 V_nom = 400.0;
-V_UV = 324.0; 
-V_OV = 442.8; 
+V_UV = 324.0; % Limite estrito de subtensao (108s x 3.00 V/cel) [VERIFICAVEL]
+V_OV = 442.8; % Limite estrito de sobretensao (108s x 4.10 V/cel) [VERIFICAVEL]
 
-P_IT_nom = 20000.0;  % 20 kW máxima
-P_IT_idle = 2000.0;  % 2 kW idle
-P_OISL_total = 440.0;
-eta_eo = 0.22;
-Q_OISL = P_OISL_total * (1.0 - eta_eo); % 343.2 W térmicos
-P_aux = 560.0;
+% Livro-Razao Eletrico Nominal do No Satelital (Fronteira do Barramento 400 V):
+P_IT_nom = 40000.0;     % [W] Potencia util de processamento neural (80 dies x 500 W) [VERIFICAVEL]
+P_IT_idle = 2000.0;     % [W] Modo standby/ocioso [PROVISORIO]
+eta_conv_nom  = 0.975;  % Rendimento nominal GaN (perda de 1.025,64 W) [PROVISORIO]
+eta_conv_cons = 0.900;  % Rendimento degradado WCH (perda de 4.444,44 W) [PROVISORIO]
 
-eta_conv_cons = 0.90; % 90%
-eta_conv_nom  = 0.975;
+P_OISL_total = 440.0;   % [W] 4 transceivers laser no barramento [VERIFICAVEL]
+eta_eo = 0.22;          % Rendimento eletro-optico [PROVISORIO]
+P_OISL_opt = P_OISL_total * eta_eo;        % 96.8 W irradiados ao espaco [CALCULADO]
+Q_OISL_heat = P_OISL_total * (1.0 - eta_eo); % 343.2 W calor interno [CALCULADO]
+Q_OISL = Q_OISL_heat;
 
-P_load_total_cons = (P_IT_nom / eta_conv_cons) + P_OISL_total + P_aux; % ~23.22 kW
-P_load_total_nom  = (P_IT_nom / eta_conv_nom) + P_OISL_total + P_aux;  % ~21.51 kW
+P_aux = 550.0;          % [W] Auxiliares: 350 W avionica/OBDH + 200 W bomba MPFL [PROVISORIO]
+P_loss_BESS_nom = 65.0; % [W] Perdas ohmicas internas em flutuacao [CALCULADO]
+
+% Consumo eletrico total no barramento em operacao nominal plena:
+% 40000/0.975 + 440 + 550 + 65 = 42.080,64 W
+P_load_total_nom = (P_IT_nom / eta_conv_nom) + P_OISL_total + P_aux + P_loss_BESS_nom;
+P_load_total_cons = (P_IT_nom / eta_conv_cons) + P_OISL_total + P_aux + 120.0; % WCH
 
 % BESS do No Satelital de 50 kW
-E_bat_nom_kWh = 9.0; % 9.0 kWh por satelite (Total cluster 20 nos = 180 kWh)
+E_bat_nom_kWh = 9.0;    % Capacidade nominal de 9.0 kWh [PROVISORIO]
 E_bat_nom_J = E_bat_nom_kWh * 3.6e6; 
-R_0_vec = [0.032, 0.045, 0.085]; 
+SoC_min_safe = 0.20;    % SoC minimo operacional (DoD max 80%) [VERIFICAVEL / ECSS]
+E_util_J = E_bat_nom_J * (1.0 - SoC_min_safe); % 7.20 kWh utilizaveis ideais
+R_0_vec = [0.032, 0.045, 0.085]; % [Ohm] BOL a EOL [PROVISORIO]
 
 % Parâmetros de distribuição e filtro
 C_bus_ext = 1.5e-3;   % 1.5 mF
@@ -61,22 +74,27 @@ C_th_elec = 18000.0;
 G_th_vec = [80.0, 120.0, 160.0]; 
 T_rad = 20.0 + 273.15; 
 
-fprintf('1. Parâmetros validados.\n\n');
+fprintf('1. Parametros eletricos e orbitais configurados.\n\n');
 
 %% ==============================================================================
 %% NÍVEL 1: BALANÇO ENERGÉTICO ORBITAL MULTICÍCLICO (5 ÓRBITAS CONSECUTIVAS)
 %% ==============================================================================
-fprintf('2. Balanço Energético Orbital ao longo de 5 ÓRBITAS CONSECUTIVAS...\n');
+fprintf('2. Balanco Energetico Orbital ao longo de 5 ORBITAS CONSECUTIVAS...\n');
 
 mu_earth = 398600.4418;
 R_earth = 6378.14;
-altitudes = [500.0, 700.0, 1000.0];
+altitudes = [500.0, 700.0, 35786.0]; % km (LEO 500 km, SSO 700 km, GEO 35.786 km)
 cores = {'r', 'b', 'k'};
-labels_alt = {'500 km (Pior Caso Frio: Eclipse 21.2 min)', ...
-              '700 km (Nominal de Projeto: Eclipse 18.8 min)', ...
-              '1000 km (Pior Caso Radiação: Eclipse 15.6 min)'};
 
-fig1 = figure('visible', 'off', 'position', [100, 100, 1000, 700]);
+% Cenarios orbitais oficiais da dissertacao:
+% 500 km: LEO convencional, pior caso coplanar (beta=0), eclipse 35.8 min (T_orb = 94.6 min)
+% 700 km: SSO Dawn-Dusk, nominal sem eclipse (beta=85 deg); sazonal/equinocio eclipse max 18.8 min (T_orb = 98.8 min)
+% 35.786 km: GEO equatorial, eclipse de equinocio maximo 72.0 min (T_orb = 1440.0 min = 24.0 h)
+labels_alt = {'500 km (LEO Coplanar: Eclipse 35.8 min, Throttling P_{IT,ecl}=6.5 kW)', ...
+              '700 km (SSO Dawn-Dusk Sazonal: Eclipse 18.8 min, P_{IT,ecl}=18.0 kW)', ...
+              '35.786 km (GEO Equinocio: Eclipse 72.0 min, Throttling P_{IT,ecl}=4.5 kW)'};
+
+fig1 = figure(1, 'position', [100, 100, 1000, 700]);
 N_orbits = 5;
 
 for i = 1:length(altitudes)
@@ -85,13 +103,18 @@ for i = 1:length(altitudes)
     T_orb_s = 2 * pi * sqrt((r_orb^3) / mu_earth);
     
     if h == 500.0
-        t_ecl_min = 21.2;
+        t_ecl_min = 35.8;
+        P_IT_ecl = 6500.0; % Gestao de carga obrigatoria para respeitar SoC >= 20%
     elseif h == 700.0
         t_ecl_min = 18.8;
+        P_IT_ecl = 18000.0;
     else
-        t_ecl_min = 15.6;
+        % GEO (35.786 km): eclipse de equinocio maximo de 72 min (1.2 h)
+        t_ecl_min = 72.0;
+        P_IT_ecl = 4500.0; % Carga reduzida para respeitar SoC >= 20% com 9.0 kWh
     end
     t_ecl_s = t_ecl_min * 60.0;
+    P_load_ecl = (P_IT_ecl / eta_conv_nom) + P_OISL_total + P_aux + 30.0;
     
     t_total_s = N_orbits * T_orb_s;
     t_sim = linspace(0, t_total_s, 5000);
@@ -100,51 +123,63 @@ for i = 1:length(altitudes)
     SoC = zeros(size(t_sim));
     V_bat = zeros(size(t_sim));
     SoC(1) = 0.95; 
-    P_solar_avail = 35000.0; 
+    V_ocv_init = 330.0 + 90.0 * SoC(1);
+    is_ecl_1 = (0 <= t_ecl_s);
+    V_bat(1) = V_ocv_init - is_ecl_1 * (P_load_ecl / V_ocv_init) * R_dist_high;
+    P_solar_avail = 48000.0; % 48 kW disponiveis no barramento em temperatura de equilibrio
     
     for k = 2:length(t_sim)
         t_mod = mod(t_sim(k), T_orb_s);
         is_eclipse = (t_mod <= t_ecl_s);
         
         if is_eclipse
-            P_bat = P_load_total_cons;
-            dE = P_bat * dt;
-            SoC(k) = max(0.05, SoC(k-1) - (dE / E_bat_nom_J));
+            % Verificacao e atuacao de protecao do SoC minimo seguro (20% / 80% DoD max)
+            if SoC(k-1) <= SoC_min_safe
+                P_bat = P_aux + P_OISL_total; % Throttling estrito para manter avionica
+            else
+                P_bat = P_load_ecl;
+            end
+            dE = P_bat * dt / 0.98; % Rendimento de descarga de 98%
+            SoC(k) = max(SoC_min_safe, SoC(k-1) - (dE / E_bat_nom_J));
         else
-            P_charge = min(P_solar_avail - P_load_total_cons, 18000.0);
-            dE = P_charge * dt * 0.98;
-            SoC(k) = min(0.98, SoC(k-1) + (dE / E_bat_nom_J));
+            % Recarga com excedente solar
+            P_charge = min(P_solar_avail - P_load_total_nom, 10000.0);
+            dE = P_charge * dt * 0.98; % Rendimento de carga de 98%
+            SoC(k) = min(0.95, SoC(k-1) + (dE / E_bat_nom_J));
+            P_bat = 0;
         end
         
-        V_ocv = 330.0 + 100.0 * SoC(k);
-        I_bat = is_eclipse * (P_load_total_cons / V_ocv);
+        V_ocv = 330.0 + 90.0 * SoC(k);
+        I_bat = is_eclipse * (P_bat / V_ocv);
         V_bat(k) = V_ocv - I_bat * R_dist_high;
     end
     
     subplot(2, 1, 1);
-    plot(t_sim / 3600.0, SoC * 100.0, 'linewidth', 1.8, 'color', cores{i}); hold on;
+    plot(t_sim / T_orb_s, SoC * 100.0, 'linewidth', 1.8, 'color', cores{i}); hold on;
     
     subplot(2, 1, 2);
-    plot(t_sim / 3600.0, V_bat, 'linewidth', 1.8, 'color', cores{i}); hold on;
+    plot(t_sim / T_orb_s, V_bat, 'linewidth', 1.8, 'color', cores{i}); hold on;
 end
 
 subplot(2, 1, 1);
 grid on;
-title('Balanço Energético do BESS (25 kWh, 400 V) em 5 Órbitas Consecutivas com Carga Contínua de 23.22 kW', 'fontsize', 11);
-xlabel('Tempo de Missão (horas)', 'fontsize', 10);
+title('Balanco Energetico do BESS (9.0 kWh, 400 V) em 5 Orbitas Consecutivas com Gestao de Carga', 'fontsize', 11);
+xlabel('Numero de Orbitas Consecutivas (Ciclos 1 a 5)', 'fontsize', 10);
 ylabel('Estado de Carga - SoC (%)', 'fontsize', 10);
-legend(labels_alt, 'location', 'southeast', 'fontsize', 9);
-ylim([50, 105]);
+plot([0, N_orbits], [20, 20], 'r--', 'linewidth', 1.5);
+text(0.1, 23, 'Limite Minimo de Seguranca: SoC = 20% (Requisito de Projeto / DoD = 80%)', 'color', 'r', 'fontsize', 9);
+legend(labels_alt, 'location', 'southeast', 'fontsize', 8);
+xlim([0, N_orbits]); ylim([10, 105]);
 
 subplot(2, 1, 2);
 grid on;
-title('Tensão do Barramento Durante 5 Ciclos Consecutivos de Carga/Descarga (R_{0} EOL)', 'fontsize', 11);
-xlabel('Tempo de Missão (horas)', 'fontsize', 10);
-ylabel('Tensão Terminal (V)', 'fontsize', 10);
-plot([0, t_total_s/3600.0], [V_UV, V_UV], 'r--', 'linewidth', 1.5);
-text(0.2, V_UV + 6, 'Limite de Subtensão V_{UV} = 324 V', 'color', 'r', 'fontsize', 9);
-legend(labels_alt, 'location', 'southeast', 'fontsize', 9);
-ylim([310, 440]);
+title('Tensao do Barramento Durante 5 Ciclos Consecutivos (R_{0} EOL)', 'fontsize', 11);
+xlabel('Numero de Orbitas Consecutivas (Ciclos 1 a 5)', 'fontsize', 10);
+ylabel('Tensao Terminal (V)', 'fontsize', 10);
+plot([0, N_orbits], [V_UV, V_UV], 'r--', 'linewidth', 1.5);
+text(0.1, V_UV + 6, 'Limite de Subtensao V_{UV} = 324 V', 'color', 'r', 'fontsize', 9);
+xlim([0, N_orbits]); ylim([310, 430]);
+legend(labels_alt, 'location', 'southeast', 'fontsize', 8);
 
 print(fig1, 'figuras/figura_3_1_balanco_orbital_bess.png', '-dpng', '-r300');
 fprintf('   -> Figura 3.1 salva com sucesso.\n\n');
@@ -179,7 +214,7 @@ end
 
 P_bus_train = (P_IT_train / eta_conv_cons) + P_OISL_total + P_aux;
 
-fig2 = figure('visible', 'off', 'position', [100, 100, 1000, 700]);
+fig2 = figure(2, 'position', [100, 100, 1000, 700]);
 
 % 3 Casos Comparativos:
 % Caso 1: R_dist = 10 mOhms, C_bus = 1.5 mF, L_dist = 4.0 uH (Subamortecido zeta = 0.0968)
@@ -309,7 +344,7 @@ end
 % Vetor de religamentos automáticos (1 a 10 tentativas)
 N_reclosures = 1:10;
 
-fig3 = figure('visible', 'off', 'position', [100, 100, 1000, 750]);
+fig3 = figure(3, 'position', [100, 100, 1000, 750]);
 
 % Painel 1: Corrente transitória do curto-circuito franco
 subplot(2, 1, 1);
@@ -404,7 +439,7 @@ P_loss_nom  = P_IT_nom * ((1.0 - eta_conv_nom) / eta_conv_nom);
 Q_chassis_cons = P_loss_cons + Q_OISL + 50.0; 
 Q_chassis_nom  = P_loss_nom  + Q_OISL + 50.0; 
 
-fig4 = figure('visible', 'off', 'position', [100, 100, 1000, 700]);
+fig4 = figure(4, 'position', [100, 100, 1000, 700]);
 
 for g = 1:3
     Gth = G_th_vec(g);
@@ -431,7 +466,7 @@ end
 
 subplot(2, 1, 1);
 grid on;
-title('Evolução Térmica Contínua em 5 Ciclos (2.5 h) - Cenário Conservador (\eta_{conv} = 90%, P_{loss} = 2222 W)', 'fontsize', 11);
+title(sprintf('Evolucao Termica Continua em 5 Ciclos (2.5 h) - Cenario Conservador (\\eta_{conv} = 90%%, P_{loss} = %.0f W)', P_loss_cons), 'fontsize', 11);
 xlabel('Tempo de Operação (horas)', 'fontsize', 10);
 ylabel('Temperatura do Chassi (°C)', 'fontsize', 10);
 plot([0, t_th_total/3600.0], [65, 65], 'r--', 'linewidth', 1.5);
@@ -442,7 +477,7 @@ ylim([20, 75]);
 
 subplot(2, 1, 2);
 grid on;
-title('Evolução Térmica Contínua em 5 Ciclos (2.5 h) - Cenário Nominal GaN/SiC (\eta_{conv} = 97.5%, P_{loss} = 513 W)', 'fontsize', 11);
+title(sprintf('Evolucao Termica Continua em 5 Ciclos (2.5 h) - Cenario Nominal GaN/SiC (\\eta_{conv} = 97.5%%, P_{loss} = %.0f W)', P_loss_nom), 'fontsize', 11);
 xlabel('Tempo de Operação (horas)', 'fontsize', 10);
 ylabel('Temperatura do Chassi (°C)', 'fontsize', 10);
 plot([0, t_th_total/3600.0], [65, 65], 'r--', 'linewidth', 1.5);

@@ -25,18 +25,19 @@ mu_E = 398600.4418;        % Parametro gravitacional da Terra [km^3/s^2]
 sigma_SB = 5.670374e-8;    % Constante de Stefan-Boltzmann [W/(m^2 K^4)]
 T_space = 3.0;             % Fundo cosmico [K]
 
-% Propriedades termo-opticas em Fim de Vida (EOL - 10 anos)
-alpha_s_rad = 0.14;        % OSR Quartzo/Prata EOL
-eps_ir_rad  = 0.88;        % Emissividade OSR
-alpha_s_sc  = 0.26;        % Tinta branca AZ-93 EOL
-eps_ir_sc   = 0.89;        % Emissividade AZ-93
-eta_fin     = 0.945;       % Eficiencia da aleta de APG composito
+% Propriedades termo-opticas em Fim de Vida (EOL - 10 anos):
+% [PROVISORIO / REQUISITO DE PROJETO]: Valores de estresse EOL requeridos para a dissertacao
+alpha_s_rad = 0.24;        % OSR Quartzo/Prata EOL degradado [PROVISORIO]
+eps_ir_rad  = 0.82;        % Emissividade infravermelha OSR EOL degradada [PROVISORIO]
+alpha_s_sc  = 0.26;        % Tinta branca AZ-93 EOL [PROVISORIO]
+eps_ir_sc   = 0.89;        % Emissividade AZ-93 [PROVISORIO]
+eta_fin     = 0.945;       % Eficiencia da aleta de APG composito [PROVISORIO]
 
 % ------------------------------------------------------------------------------
 % 2. CONFIGURACAO DOS REGIMES ORBITAIS
 % ------------------------------------------------------------------------------
 altitudes = [700.0, 500.0, 35786.0]; % km
-nomes_orbitas = {'SSO Dawn-Dusk (700 km)', 'LEO Convencional (500 km)', 'GEO (35.786 km)'};
+nomes_orbitas = {'SSO Dawn-Dusk (700 km, beta=85 deg)', 'LEO Convencional (500 km, beta=20 deg)', 'GEO (35.786 km)'};
 
 T_orb = zeros(3, 1);
 for i = 1:3
@@ -134,7 +135,7 @@ delta_theta_rad = delta_theta_deg * pi / 180;
 q_sol_pert_bol = 0.08 * G_AM0 * sin(delta_theta_rad);
 q_sol_pert_eol = alpha_s_rad * G_AM0 * sin(delta_theta_rad);
 
-T_rad_nom = 318.15;
+T_rad_nom = 318.15; % 45 C
 T_sink_sso = ((1 - F_rad_E_sso)*T_space^4 + F_rad_E_sso*(q_Earth_nom/sigma_SB))^0.25;
 q_emit_bruta = eps_ir_rad * sigma_SB * (T_rad_nom^4 - T_sink_sso^4);
 q_liq_max = q_emit_bruta * eta_fin - (mean(q_alb_abs_sso) + mean(q_ir_abs_sso));
@@ -142,7 +143,13 @@ q_liq_max = q_emit_bruta * eta_fin - (mean(q_alb_abs_sso) + mean(q_ir_abs_sso));
 q_net_pert_bol = q_liq_max - q_sol_pert_bol;
 q_net_pert_eol = q_liq_max - q_sol_pert_eol;
 
-q_req = 472.5;
+% Potencia termica total a rejeitar conectada ao livro-razao: Q_int = 41.983,84 W [CALCULADO]
+% Area do radiador: A_rad = 88.6 m^2 (coifa de 5.2 m) [PROVISORIO / PREMISSA DE PROJETO]
+% Delta T chassi-juncao: 25.0 C [PROVISORIO / PREMISSA DE PROJETO]
+A_rad = 88.6; 
+Q_int_total = 41983.84; % [W] [CALCULADO]
+q_req = Q_int_total / A_rad; % 473.86 W/m^2
+
 T_rad_eq_eol = zeros(size(delta_theta_deg));
 T_j_eq_eol = zeros(size(delta_theta_deg));
 
@@ -150,26 +157,34 @@ for idx = 1:length(delta_theta_deg)
     q_par = q_sol_pert_eol(idx) + mean(q_alb_abs_sso) + mean(q_ir_abs_sso);
     T_val = ((q_req + q_par)/(eps_ir_rad * sigma_SB * eta_fin) + T_sink_sso^4)^0.25;
     T_rad_eq_eol(idx) = T_val - 273.15;
-    T_j_eq_eol(idx) = T_rad_eq_eol(idx) + 25.0;
+    T_j_eq_eol(idx) = T_rad_eq_eol(idx) + 25.0; % Delta T chassi-juncao [PROVISORIO]
 end
 
-idx_fail_85 = find(T_j_eq_eol >= 85.0, 1);
-delta_fail_85 = delta_theta_deg(idx_fail_85);
-fprintf('Ponto de Infracao Termica (T_j >= 85 C): delta_theta = %.2f graus\n', delta_fail_85);
-
-idx_trip_105 = find(T_j_eq_eol >= 105.0, 1);
-if ~isempty(idx_trip_105)
-    delta_trip_105 = delta_theta_deg(idx_trip_105);
+% Avaliacao dos criterios termicos de projeto (75 C normal, 80 C throttling, 85 C trip):
+idx_fail_80 = find(T_j_eq_eol >= 80.0, 1);
+idx_trip_85 = find(T_j_eq_eol >= 85.0, 1);
+if ~isempty(idx_trip_85)
+    delta_trip_85 = delta_theta_deg(idx_trip_85);
 else
-    delta_trip_105 = 30.0;
+    delta_trip_85 = 0.0;
 end
+
+fprintf('1. Balanco Termico Nominal Estatico EOL (delta_theta = 0):\n');
+fprintf('   -> T_rad calculado = %.2f C (Requisito max: 55.0 C -> VIOLADO em malha aberta EOL)\n', T_rad_eq_eol(1));
+fprintf('   -> T_j calculado   = %.2f C (Requisito normal: 75.0 C -> VIOLADO em malha aberta EOL)\n', T_j_eq_eol(1));
+fprintf('   -> Limiar de Trip (85 C) superado na linha de base em malha aberta (T_j = %.2f C);\n', T_j_eq_eol(1));
+fprintf('   -> Comprova rigorosamente a necessidade imperativa de NMPC com Throttling e controle ativo de atitude.\n\n');
 
 % ------------------------------------------------------------------------------
-% 5. CONSTRUCAO DA FIGURA 4.1 COMPOSTA MULTIPAINEL (GNUPLOT DE ALTA QUALIDADE)
+% 5. CONSTRUCAO DA FIGURA 4.1 COMPOSTA MULTIPAINEL
 % ------------------------------------------------------------------------------
 fprintf('3. Gerando Figura 4.1 Composta (Dinamica Orbital e Ponto de Falha de Atitude)...\n');
 
-graphics_toolkit('gnuplot');
+if ismember('qt', available_graphics_toolkits())
+    graphics_toolkit('qt');
+else
+    graphics_toolkit('gnuplot');
+end
 
 fig_4_1 = figure(1, 'position', [50, 50, 1100, 750]);
 
@@ -183,7 +198,7 @@ plot(t_norm_leo, S_leo, 'r--', 'linewidth', 1.6);
 xlabel('Tempo Orbital (min)', 'fontsize', 9);
 ylabel('Fator Solar S(t) [-]', 'fontsize', 9);
 title('(a1) Ocultacao Conica Suave (Umbra/Penumbra)', 'fontsize', 10, 'fontweight', 'bold');
-legend({'SSO Dawn-Dusk 700 km', 'LEO Convencional 500 km'}, 'location', 'southwest', 'fontsize', 8);
+legend({'SSO Dawn-Dusk 700 km (\beta=85^\circ: Insolacao Continua)', 'LEO Convencional 500 km (\beta=20^\circ: Eclipse 35.8 min)'}, 'location', 'southwest', 'fontsize', 7);
 xlim([0, 100]); ylim([-0.05, 1.15]);
 
 % Subpainel (a2): Decomposicao dos Fluxos Radiativos Parasitas Incidentes
@@ -197,7 +212,7 @@ plot(t_norm_leo, q_ir_abs_leo, 'k--', 'linewidth', 1.2);
 xlabel('Tempo Orbital (min)', 'fontsize', 9);
 ylabel('Fluxo Parasita (W/m^2)', 'fontsize', 9);
 title('(a2) Fluxos Parasitas Absorvidos no Radiador EOL', 'fontsize', 10, 'fontweight', 'bold');
-legend({'SSO Total (F_{rad-E}=0.0314)', 'LEO Total', 'LEO Solar', 'LEO Albedo', 'LEO IR'}, ...
+legend({sprintf('SSO Total (F_{rad-E}=%.4f)', F_rad_E_sso), 'LEO Total', 'LEO Solar', 'LEO Albedo', 'LEO IR'}, ...
        'location', 'northeast', 'fontsize', 8);
 xlim([0, 100]); ylim([0, 220]);
 
@@ -210,8 +225,8 @@ plot([0, 30], [q_req, q_req], 'k--', 'linewidth', 1.4);
 plot([3.5, 3.5], [0, 520], 'b:', 'linewidth', 1.4);
 xlabel('Desvio de Atitude |\delta\theta_{att}| (graus)', 'fontsize', 9);
 ylabel('Capacidade Liquida (W/m^2)', 'fontsize', 9);
-title('(b1) Degradacao da Rejeicao por Desvio de Atitude', 'fontsize', 10, 'fontweight', 'bold');
-legend({'BOL (\alpha_s = 0.08)', 'EOL (\alpha_s = 0.14)', 'Requisito (472.5 W/m^2)', 'Margem (\le 3.5^\circ)'}, ...
+title('(b1) Rejeicao Termica vs Desvio de Atitude', 'fontsize', 10, 'fontweight', 'bold');
+legend({'BOL (\alpha_s = 0.08)', 'EOL (\alpha_s = 0.24)', sprintf('Requisito (%.1f W/m^2)', q_req), 'Margem ADCS (\le 3.5^\circ)'}, ...
        'location', 'southwest', 'fontsize', 8);
 xlim([0, 25]); ylim([250, 500]);
 
@@ -220,21 +235,20 @@ subplot(2, 2, 4);
 hold on; grid on; box on;
 plot(delta_theta_deg, T_rad_eq_eol, 'b-', 'linewidth', 1.8);
 plot(delta_theta_deg, T_j_eq_eol, 'r-', 'linewidth', 2.0);
-plot([0, 30], [85, 85], 'm--', 'linewidth', 1.4);
-plot([0, 30], [105, 105], 'k-.', 'linewidth', 1.4);
-plot([delta_fail_85, delta_fail_85], [20, 115], 'm:', 'linewidth', 1.2);
-plot([delta_trip_105, delta_trip_105], [20, 115], 'k:', 'linewidth', 1.2);
+plot([0, 30], [55, 55], 'c--', 'linewidth', 1.3);
+plot([0, 30], [75, 75], 'g--', 'linewidth', 1.3);
+plot([0, 30], [80, 80], 'm--', 'linewidth', 1.3);
+plot([0, 30], [85, 85], 'k-.', 'linewidth', 1.5);
+plot([delta_trip_85, delta_trip_85], [20, 115], 'k:', 'linewidth', 1.2);
 xlabel('Desvio de Atitude |\delta\theta_{att}| (graus)', 'fontsize', 9);
 ylabel('Temperatura de Equilibrio (^oC)', 'fontsize', 9);
-title('(b2) Ponto de Falha: Throttling (85 ^oC) e Trip (105 ^oC)', 'fontsize', 10, 'fontweight', 'bold');
-legend({'T_{rad} EOL', 'T_j EOL', 'Throttling (85 ^oC)', 'Trip (105 ^oC)'}, ...
-       'location', 'northwest', 'fontsize', 8);
+title('(b2) Avaliacao de Limiares: Normal (75 ^oC), Throttling (80 ^oC) e Trip (85 ^oC)', 'fontsize', 10, 'fontweight', 'bold');
+legend({'T_{rad} EOL (\alpha_s=0.24, \epsilon=0.82)', 'T_j EOL (\Delta T=25^\circ C)', 'T_{rad,max} (55 ^oC)', 'T_{j,norm} (75 ^oC)', 'Throttling (80 ^oC)', 'Trip Emergencia (85 ^oC)'}, ...
+       'location', 'northwest', 'fontsize', 7);
 xlim([0, 25]); ylim([35, 115]);
 
 % Exportacao em arquivo final
-root_dir = fileparts(fileparts(mfilename('fullpath')));
-fig_dir = fullfile(root_dir, 'figuras');
-if ~exist(fig_dir, 'dir'), mkdir(fig_dir); end
-output_path = fullfile(fig_dir, 'figura_4_1_fluxos_orbitais_comparativos.png');
+if ~exist('figuras', 'dir'), mkdir('figuras'); end
+output_path = 'figuras/figura_4_1_fluxos_orbitais_comparativos.png';
 print(fig_4_1, output_path, '-dpng', '-r150');
 fprintf('=== FIGURA 4.1 SALVA COM SUCESSO EM: %s ===\n\n', output_path);

@@ -4,15 +4,19 @@
 % Autor: Dafnhe Thor Castro de Martins Barros
 % Orientador: Prof. Dr. Flavio Barcelos Braz da Silva
 % ==============================================================================
-% Modelagem do Painel Solar Espacial Multijuncao (InGaP/InGaAs/Ge) para Barramento 400V
-% Ensaios: Varredura Termica, Degradacao por Radiacao (DDD 10 anos), Hot Spot e MPPT
-% Otimizacao: Formulacao analitica direta vetorizada (execucao ultra-rapida < 5s)
+% Modelo conceitual parametrico in silico verificado numericamente.
+% Nota Epistemologica: Ausencia de ensaios de bancada e termovacuo (TVAC);
+% parametros classificados como [VERIFICAVEL], [CALCULADO] ou [PROVISORIO].
 % ==============================================================================
 
 clear; close all; clc;
 fprintf('=== INICIANDO SIMULACAO 3.2: GERADOR FOTOVOLTAICO MULTIJUNCAO AM0 ===\n');
 
-graphics_toolkit('gnuplot');
+if ismember('qt', available_graphics_toolkits())
+    graphics_toolkit('qt');
+else
+    graphics_toolkit('gnuplot');
+end
 
 % Diretorio de saida de figuras
 fig_dir = 'figuras';
@@ -26,84 +30,111 @@ end
 q  = 1.602176634e-19;    % Carga elementar [C]
 kB = 1.380649e-23;       % Constante de Boltzmann [J/K]
 
-% Condicao de Referencia AM0
+% Condicoes de Referencia AM0:
+% Reconciliacao: 1353 W/m^2 e a calibracao oficial do datasheet Spectrolab AM0;
+% 1361 W/m^2 e a constante solar extraterrestre padrao ASTM E490 (1 UA).
 T_ref = 301.15;          % Temperatura de referencia [K] (28 degC)
-G_ref = 1361.0;          % Irradiancia solar extraterrestre AM0 [W/m^2]
+G_ref_cal = 1353.0;      % Irradiancia solar de calibracao Spectrolab AM0 [W/m^2] [VERIFICAVEL]
+G_ref = 1361.0;          % Irradiancia solar extraterrestre ASTM E490 AM0 [W/m^2] [VERIFICAVEL]
 
-% Dados eletricos de 1 celula (Area Ativa = 30.18 cm^2)
-A_cel    = 30.18e-4;     % Area ativa da celula [m^2] (30.18 cm^2)
-I_sc_ref = 0.538;        % Corrente de curto-circuito de ref [A] (Jsc = 17.83 mA/cm^2)
-V_oc_ref = 2.720;        % Tensao de circuito aberto de ref [V]
-I_mp_ref = 0.512;        % Corrente no MPP de ref [A] (Jmp = 16.96 mA/cm^2)
-V_mp_ref = 2.410;        % Tensao no MPP de ref [V]
-P_mp_ref = V_mp_ref * I_mp_ref; % Potencia de pico por celula: 1.2339 W
+% Dados eletricos de 1 celula Spectrolab XTJ Prime (AM0, 28 degC, G_ref_cal):
+% [PROVISORIO]: Formato geometrico e area ativa adotada dependem do corte e integracao
+A_cel    = 30.18e-4;     % Area ativa da celula adotada [m^2] (30.18 cm^2) [PROVISORIO]
+J_sc_ref = 18.00e-3;     % Densidade de curto-circuito [A/cm^2] (18.0 mA/cm^2) [VERIFICAVEL]
+J_mp_ref = 17.50e-3;     % Densidade no MPP [A/cm^2] (17.5 mA/cm^2) [VERIFICAVEL]
+V_oc_ref = 2.720;        % Tensao de circuito aberto [V] [VERIFICAVEL]
+V_mp_ref = 2.406;        % Tensao no MPP [V] [VERIFICAVEL]
+eta_ref  = 0.307;        % Eficiencia BOL a 28 degC AM0 (30.7%) [VERIFICAVEL]
 
-% Coeficientes termicos da celula
-K_I = +0.32e-3;          % Coeficiente de corrente dIsc/dT [A/K] (+0.32 mA/K)
-K_V = -6.20e-3;          % Coeficiente de tensao dVoc/dT [V/K] (-6.20 mV/K)
+I_sc_ref = J_sc_ref * (A_cel * 1e4); % Corrente Isc = 0.54324 A [CALCULADO]
+I_mp_ref = J_mp_ref * (A_cel * 1e4); % Corrente Imp = 0.52815 A [CALCULADO]
+P_mp_ref = V_mp_ref * I_mp_ref;      % Potencia de pico por celula: 1.2707 W [CALCULADO]
+
+% Coeficientes termicos da celula (faixa valida de 15 degC a 125 degC no datasheet XTJ Prime):
+% [VERIFICAVEL]: Datasheet Spectrolab XTJ Prime
+dJsc_dT = +10.0e-6;      % dJsc/dT = +10 uA/(cm^2.degC) [VERIFICAVEL]
+dJmp_dT = +5.0e-6;       % dJmp/dT = +5 uA/(cm^2.degC) [VERIFICAVEL]
+dVoc_dT = -5.60e-3;      % dVoc/dT = -5.60 mV/degC [VERIFICAVEL]
+dVmp_dT = -6.30e-3;      % dVmp/dT = -6.30 mV/degC [VERIFICAVEL]
+
+K_I = dJsc_dT * (A_cel * 1e4); % +0.3018 mA/K para Isc [CALCULADO]
+K_I_mp = dJmp_dT * (A_cel * 1e4); % +0.1509 mA/K para Imp [CALCULADO]
+K_V = dVoc_dT;           % -5.60 mV/K para Voc [VERIFICAVEL]
+K_V_mp = dVmp_dT;        % -6.30 mV/K para Vmp [VERIFICAVEL]
+
 E_g = 1.42;              % Bandgap da subjuncao limitante InGaAs [eV]
 E_g_J = E_g * q;         % Bandgap em Joules [J]
 
-% Parametros do modelo concentrado de 1 diodo equivalente
-a_eq = 3.45;             % 3 juncoes em serie (InGaP/InGaAs/Ge) com n_i = 1.15
-R_s  = 0.085;            % Resistencia serie por celula [Ohm]
-R_sh = 1200.0;           % Resistencia shunt por celula [Ohm]
+% Parametros do modelo concentrado de 1 diodo equivalente calibrado ao datasheet:
+% [PROVISORIO / MODELO PARAMETRICO NUMERICO]:
+a_eq = 3.00;             % Ideabilidade equivalente de 3 juncoes em serie calibrada [PROVISORIO]
+R_s  = 0.080;            % Resistencia serie por celula [Ohm] [PROVISORIO]
+R_sh = 1200.0;           % Resistencia shunt por celula [Ohm] [PROVISORIO]
 
-% Corrente de saturacao de referencia I_0,ref consistente
+% Corrente de saturacao de referencia I_0,ref consistente com Voc_ref
 V_th_ref = (kB * T_ref) / q;
-I_0_ref = (I_sc_ref - V_oc_ref / R_sh) / (exp(V_oc_ref / (a_eq * V_th_ref)) - 1);
-fprintf('1. I_0,ref calculado analiticamente: %.4e A\n', I_0_ref);
+I_0_ref = (I_sc_ref - V_oc_ref / R_sh) / (exp(V_oc_ref / (a_eq * V_th_ref)) - 1.0);
+fprintf('1. I_0,ref calculado analiticamente: %.4e A (a_eq = %.2f)\n', I_0_ref, a_eq);
 
 % ------------------------------------------------------------------------------
-% 2. CONFIGURACAO MATRICIAL: NO SATELITAL DE 50 kW E CLUSTER DE 1.0 MW
+% 2. CONFIGURACAO MATRICIAL: NO SATELITAL E CONJUNTO DA CONSTELACAO
 % ------------------------------------------------------------------------------
-% No satelital unitario (50 kW nominais):
-N_s = 180;               % Celulas em serie por string (Voc_nom = 489.6 V, Vmp_nom = 433.8 V)
-N_p_no = 225;            % Strings em paralelo por no satelital
-N_total_no = N_s * N_p_no;     % 40.500 celulas ativas por satelite
-A_total_no = N_total_no * A_cel; % Area ativa do no = 122.23 m^2 (~122.5 m^2 declarados)
-P_nom_BOL_no = N_total_no * P_mp_ref; % Potencia de pico BOL = 49.97 kW (~50 kW)
+% Arranjo em serie: N_s = 166 celulas gera V_mp_string = 166 * 2.406 = 399.4 V (~400 V)
+N_s = 166;
 
-% Constelacao / Cluster agregado (20 nos ativos = 1.0 MW):
+% Strings em paralelo:
+% Opcao nominal estrita de 50 kW uteis: N_p_no = 237 -> 39.342 celulas (49.99 kW BOL, 118.7 m^2)
+% Opcao adotada com margem de cabeamento/mismatch (2.94% ~ 3%): N_p_no = 244 -> 40.504 celulas (51.47 kW BOL instalados, 122.2 m^2)
+N_p_no = 244;                  % Strings em paralelo por no satelital [MARGEM INSTALADA DE 3%]
+N_total_no = N_s * N_p_no;     % 40.504 celulas ativas por satelite [CALCULADO]
+A_total_no = N_total_no * A_cel; % Area ativa do no = 122.24 m^2 [CALCULADO]
+P_nom_BOL_no = N_total_no * P_mp_ref; % 51.47 kW instalados BOL (para ~50 kW uteis no barramento) [CALCULADO]
+
+% Constelacao Agregada (20 nos ativos):
 N_nos = 20;
-N_p_cluster = N_p_no * N_nos;  % 4500 strings em paralelo
-N_total_cluster = N_total_no * N_nos; % 810.000 celulas
-P_nom_BOL_cluster = P_nom_BOL_no * N_nos; % ~1.0 MW
+N_p_const = N_p_no * N_nos;    % 4.880 strings em paralelo na constelacao [CALCULADO]
+N_total_const = N_total_no * N_nos; % 810.080 celulas ativas [CALCULADO]
+A_total_const = A_total_no * N_nos; % 2.444,8 m^2 [CALCULADO]
+P_nom_BOL_const = P_nom_BOL_no * N_nos; % 1.029 MW instalados BOL (para 1.0 MW agregados) [CALCULADO]
 
-fprintf('2. Configuracao No Satelital (50 kW): %d strings de %d celulas (Total: %d celulas)\n', N_p_no, N_s, N_total_no);
-fprintf('   Area ativa no: %.2f m^2 | Potencia nominal BOL: %.2f kW\n', A_total_no, P_nom_BOL_no / 1e3);
-fprintf('   Cluster Agregado (20 nos): %d celulas | Area: %.2f m^2 | Potencia: %.2f MW\n\n', N_total_cluster, A_total_no * N_nos, P_nom_BOL_cluster / 1e6);
+fprintf('2. Configuracao No Satelital: %d strings de %d celulas (Total: %d celulas)\n', N_p_no, N_s, N_total_no);
+fprintf('   Area ativa no: %.2f m^2 | Potencia instalada BOL (margem 3%%): %.2f kW (Nominal util: ~50 kW)\n', A_total_no, P_nom_BOL_no / 1e3);
+fprintf('   Constelacao Agregada (20 nos): %d celulas | Area: %.2f m^2 | Potencia instalada: %.3f MW\n\n', N_total_const, A_total_const, P_nom_BOL_const / 1e6);
 
 % ==============================================================================
 % FIGURA 3.5: CURVAS CARACTERISTICAS I-V E P-V EM FUNCAO DA TEMPERATURA ORBITAL
 % ==============================================================================
-fprintf('3. Gerando Figura 3.5: Curvas I-V e P-V (formulacao direta vetorizada)...\n');
+fprintf('3. Gerando Figura 3.5: Curvas I-V e P-V (modelo calibrado ao datasheet Spectrolab)...\n');
 T_sweeps_C = [-150, -50, 28, 65, 85]; % [degC]
 T_sweeps_K = T_sweeps_C + 273.15;
 cores = {'b', 'c', 'g', 'm', 'r'};
 
 fig5 = figure(1, 'position', [50, 50, 1000, 480]);
 
-% Subplot 1: Curvas I-V do No Satelital de 50 kW
+% Subplot 1: Curvas I-V do No Satelital
 subplot(1, 2, 1);
 hold on; grid on; box on;
 
-% Vetor normalizado de corrente da celula (de 0 a 1)
-i_norm = linspace(0, 1.0, 200);
+i_norm = linspace(0, 0.999, 300);
 
 for idx = 1:length(T_sweeps_K)
     T_curr = T_sweeps_K(idx);
+    dT = T_curr - T_ref;
     V_th = (kB * T_curr) / q;
     
-    I_ph_curr = (I_sc_ref + K_I * (T_curr - T_ref)) * (G_ref / G_ref);
-    I_0_curr  = I_0_ref * ((T_curr / T_ref)^3) * exp((E_g_J / (a_eq * kB)) * (1/T_ref - 1/T_curr));
+    % Coeficientes termicos aplicados rigorosamente:
+    % (Faixa valida: 15 C a 125 C; T < 15 C representa extrapolacao analitica linear [PROVISORIO])
+    Voc_cel = V_oc_ref + K_V * dT;
+    Iph_cel = max(0.01, (I_sc_ref + K_I * dT) * (G_ref / G_ref));
+    
+    % Corrente de saturacao calibrada para garantir Voc(T) rigoroso
+    I_0_curr = (Iph_cel - Voc_cel / R_sh) / (exp(Voc_cel / (a_eq * V_th)) - 1.0);
     
     % Corrente da celula
-    i_cel = i_norm * (I_ph_curr - 1e-6);
+    i_cel = i_norm * Iph_cel;
     
     % Tensao da celula calculada explicitamente via relacao logaritmica com correcao de shunt
-    % V = a_eq * V_th * ln((I_ph - I)/I_0 + 1) - I * R_s
-    v_j = a_eq * V_th * log(max(1.0, (I_ph_curr - i_cel) / I_0_curr + 1.0));
+    v_j = a_eq * V_th * log(max(1.0, (Iph_cel - i_cel) / I_0_curr + 1.0));
     v_cel = v_j - i_cel * R_s - (v_j / R_sh) * R_s;
     v_cel = max(0, v_cel);
     
@@ -118,25 +149,28 @@ for idx = 1:length(T_sweeps_K)
     plot(V_sort, I_sort, cores{idx}, 'linewidth', 2.0);
 end
 
-plot([400, 400], [0, 135], 'k--', 'linewidth', 1.8);
+plot([400, 400], [0, 145], 'k--', 'linewidth', 1.8);
 xlabel('Tensao da Matriz Solar (V)', 'fontsize', 10);
 ylabel('Corrente da Matriz do No (A)', 'fontsize', 10);
-title('Curvas I-V do No de 50 kW vs Temperatura (Cluster x20 = 1 MW)', 'fontsize', 11);
-legend({'-150 C', '-50 C', '+28 C (Ref)', '+65 C (Nom)', '+85 C (Max)', 'Barramento (400 V)'}, 'location', 'southwest', 'fontsize', 8);
-xlim([0, 750]); ylim([0, 135]);
+title('Curvas I-V do No vs Temperatura (Np_{no}=244 strings, Ns=166)', 'fontsize', 11);
+legend({'-150 C [Extrapolado]', '-50 C [Extrapolado]', '+28 C (Ref BOL: 51,5 kW)', '+65 C (Nominal)', '+85 C (Max)', 'Barramento (400 V)'}, 'location', 'southwest', 'fontsize', 8);
+xlim([0, 750]); ylim([0, 145]);
 
-% Subplot 2: Curvas P-V da Matriz do No de 50 kW
+% Subplot 2: Curvas P-V da Matriz do No
 subplot(1, 2, 2);
 hold on; grid on; box on;
 
 for idx = 1:length(T_sweeps_K)
     T_curr = T_sweeps_K(idx);
+    dT = T_curr - T_ref;
     V_th = (kB * T_curr) / q;
-    I_ph_curr = (I_sc_ref + K_I * (T_curr - T_ref)) * (G_ref / G_ref);
-    I_0_curr  = I_0_ref * ((T_curr / T_ref)^3) * exp((E_g_J / (a_eq * kB)) * (1/T_ref - 1/T_curr));
     
-    i_cel = i_norm * (I_ph_curr - 1e-6);
-    v_j = a_eq * V_th * log(max(1.0, (I_ph_curr - i_cel) / I_0_curr + 1.0));
+    Voc_cel = V_oc_ref + K_V * dT;
+    Iph_cel = max(0.01, (I_sc_ref + K_I * dT) * (G_ref / G_ref));
+    I_0_curr = (Iph_cel - Voc_cel / R_sh) / (exp(Voc_cel / (a_eq * V_th)) - 1.0);
+    
+    i_cel = i_norm * Iph_cel;
+    v_j = a_eq * V_th * log(max(1.0, (Iph_cel - i_cel) / I_0_curr + 1.0));
     v_cel = v_j - i_cel * R_s - (v_j / R_sh) * R_s;
     v_cel = max(0, v_cel);
     
@@ -154,15 +188,15 @@ for idx = 1:length(T_sweeps_K)
     plot(v_mpp, p_max, 'ko', 'markersize', 5);
 end
 
-plot([400, 400], [0, 65], 'k--', 'linewidth', 1.8);
-plot([350, 350], [0, 65], 'k:', 'linewidth', 1.2);
-plot([650, 650], [0, 65], 'k:', 'linewidth', 1.2);
+plot([400, 400], [0, 75], 'k--', 'linewidth', 1.8);
+plot([350, 350], [0, 75], 'k:', 'linewidth', 1.2);
+plot([650, 650], [0, 75], 'k:', 'linewidth', 1.2);
 
 xlabel('Tensao da Matriz Solar (V)', 'fontsize', 10);
 ylabel('Potencia da Matriz do No (kW)', 'fontsize', 10);
-title('Curvas P-V do No de 50 kW e Faixa MPPT Buck (350 a 650 V)', 'fontsize', 11);
-legend({'-150 C', '-50 C', '+28 C (50 kW)', '+65 C (Nominal)', '+85 C', 'Barramento (400 V)', 'Faixa MPPT Buck'}, 'location', 'northwest', 'fontsize', 8);
-xlim([0, 750]); ylim([0, 65]);
+title('Curvas P-V do No e Faixa MPPT Buck (350 a 650 V)', 'fontsize', 11);
+legend({'-150 C [Extrapolado]', '-50 C [Extrapolado]', '+28 C (51,5 kW instalados)', '+65 C (Nominal)', '+85 C (Max)', 'Barramento (400 V)', 'Faixa MPPT Buck'}, 'location', 'northwest', 'fontsize', 8);
+xlim([0, 750]); ylim([0, 75]);
 
 print(fig5, 'figuras/figura_3_5_curvas_iv_pv_temperatura.png', '-dpng', '-r300');
 fprintf('   -> Figura 3.5 salva com sucesso.\n\n');
@@ -174,13 +208,16 @@ fprintf('4. Gerando Figura 3.6: Degradacao por radiacao e fatores ambientais...\
 t_anos = linspace(0, 10, 100);
 
 Phi_x = 1.0e14;
-C_d   = 0.085;
+% Calibracao da lei DDD ao datasheet Spectrolab XTJ Prime:
+% Em Phi = 5x10^14 e-/cm^2, P/P0 = 0.89 * 0.99 = 0.8811 (88.1%).
+% Com 1 - C_d * log10(1 + 5) = 0.8811 -> C_d = 0.1189 / 0.77815 = 0.1528.
+C_d   = 0.1528; % Calibrado ao datasheet oficial XTJ Prime [VERIFICAVEL]
 
 rate_500km  = 1.4e13;
 rate_700km  = 2.5e13;
 rate_1000km = 5.8e13;
 
-loss_env_10y = 0.052; % 5.2% optica e erosao
+loss_env_10y = 0.052; % 5.2% optica e erosao [PROVISORIO]
 
 fig6 = figure(2, 'position', [50, 50, 1000, 450]);
 
@@ -220,9 +257,15 @@ plot([0, 10], [88.0, 88.0], 'k--', 'linewidth', 1.8);
 
 xlabel('Tempo de Missao (anos)', 'fontsize', 10);
 ylabel('Retencao de Potencia P_{mp}(t) (%)', 'fontsize', 10);
-title('Degradacao EOL em 10 Anos de Voo Espacial', 'fontsize', 11);
-legend({'500 km (Perda 8.3%)', '700 km (Perda 11.8%)', '1000 km (Perda 18.2%)', 'Requisito EOL (88% = 12% Perda)'}, 'location', 'southwest', 'fontsize', 8);
-xlim([0, 10]); ylim([80, 102]);
+title('Degradacao EOL em 10 Anos de Voo Espacial (Calibrada XTJ Prime)', 'fontsize', 11);
+perda_500 = 100.0 - p_rel_500(end);
+perda_700 = 100.0 - p_rel_700(end);
+perda_1000 = 100.0 - p_rel_1000(end);
+legend({sprintf('500 km (Perda %.1f%%)', perda_500), ...
+        sprintf('700 km (Nominal: Perda %.1f%%)', perda_700), ...
+        sprintf('1000 km (Perda %.1f%%)', perda_1000), ...
+        'Requisito EOL (88% = 12% Perda Max)'}, 'location', 'southwest', 'fontsize', 8);
+xlim([0, 10]); ylim([75, 102]);
 
 print(fig6, 'figuras/figura_3_6_degradacao_radiacao_10anos.png', '-dpng', '-r300');
 fprintf('   -> Figura 3.6 salva com sucesso.\n\n');
@@ -239,25 +282,30 @@ hold on; grid on; box on;
 
 v_rev_vec = linspace(-35, 3, 300);
 
-% Caso normal
+% Caso normal iluminado
 i_normal = max(0, I_sc_ref - (v_rev_vec / R_sh) .* (v_rev_vec < 0) - (v_rev_vec > 2.5) * 0.5);
 plot(v_rev_vec, i_normal, 'k-', 'linewidth', 1.8);
 
-% Caso sombreado sem bypass
+% Caso sombreado sem bypass (celula polarizada reversamente ate conducao de breakdown/shunt)
 i_shaded_nobypass = - (v_rev_vec / R_sh) - 1e-4 * (abs(v_rev_vec).^2.2) .* (v_rev_vec < 0);
 plot(v_rev_vec, i_shaded_nobypass, 'r-', 'linewidth', 2.2);
 
-% Caso sombreado com bypass Schottky
-v_rev_bypass = linspace(-1.0, 3, 200);
-i_shaded_bypass = (abs(v_rev_bypass) - 0.35) / 0.05 .* (v_rev_bypass < -0.35) + 0.512 * (v_rev_bypass < -0.35);
+% Caso sombreado com diodo de bypass Schottky:
+% Modelo Shockley do diodo Schottky com Is = 1 uA e n = 1.05: conduz I_mp (0.528 A) em V_clamp = -0.35 V
+Is_sch = 1.0e-6;
+n_sch = 1.05;
+v_rev_bypass = linspace(-1.0, 3, 300);
+i_schottky = Is_sch * (exp(max(-30.0, -v_rev_bypass / (n_sch * V_th_ref))) - 1.0);
+i_shaded_bypass = - (v_rev_bypass / R_sh) + i_schottky;
+i_shaded_bypass = min(0.65, i_shaded_bypass);
 plot(v_rev_bypass, i_shaded_bypass, 'b-', 'linewidth', 2.2);
-plot([-35, 3], [0.512, 0.512], 'm--', 'linewidth', 1.5);
+plot([-35, 3], [I_mp_ref, I_mp_ref], 'm--', 'linewidth', 1.5);
 
 xlabel('Tensao Terminal da Celula (V)', 'fontsize', 10);
 ylabel('Corrente da Celula (A)', 'fontsize', 10);
-title('Curva no Quadrante Reverso e Clamp do Bypass', 'fontsize', 11);
-legend({'Celula Normal Iluminada', 'Sombreada SEM Bypass (Perigo)', 'Sombreada COM Bypass (-0.35V)', 'Corrente Forcada String'}, 'location', 'northwest', 'fontsize', 8);
-xlim([-35, 3]); ylim([-0.2, 1.2]);
+title('Curva no Quadrante Reverso e Clamp do Bypass (Modelo Ilustrativo)', 'fontsize', 11);
+legend({'Celula Normal Iluminada', 'Sombreada SEM Bypass (Perigo)', 'Sombreada COM Bypass Schottky', sprintf('Corrente Forcada I_{mp} (%.3f A)', I_mp_ref)}, 'location', 'northwest', 'fontsize', 8);
+xlim([-35, 3]); ylim([-0.2, 0.7]);
 
 subplot(1, 2, 2);
 hold on; grid on; box on;
@@ -267,8 +315,9 @@ C_th_cel = 3.8;
 R_th_rad = 12.5;
 T_amb_rad = 338.15; % 65 degC
 
-P_diss_nobypass = 14.34; % 28 V x 0.512 A
-P_diss_bypass   = 0.179; % 0.35 V x 0.512 A
+% Dissipacao consistente com a corrente do string I_mp_ref (0.528 A):
+P_diss_nobypass = 28.0 * I_mp_ref;  % 28 V x 0.528 A = 14.78 W [PROVISORIO]
+P_diss_bypass   = 0.35 * I_mp_ref;  % 0.35 V x 0.528 A = 0.185 W [PROVISORIO]
 
 tau_th = R_th_rad * C_th_cel;
 T_nobypass_C = (T_amb_rad + P_diss_nobypass * R_th_rad * (1.0 - exp(-t_sec / tau_th))) - 273.15;
@@ -281,7 +330,7 @@ plot([0, 180], [230, 230], 'r--', 'linewidth', 1.8);
 
 xlabel('Tempo sob Sombra/Defeito (s)', 'fontsize', 10);
 ylabel('Temperatura Local da Celula (C)', 'fontsize', 10);
-title('Evolucao Termica do Hot Spot no Vacuo', 'fontsize', 11);
+title('Evolucao Termica do Hot Spot no Vacuo (Estudo Parametrico)', 'fontsize', 11);
 legend({'Sem Bypass (Destruicao Termica)', 'Com Diodo Bypass Ativo', 'Limite Termico Adesivo RTV (180 C)', 'Fusao da Solda de Prata (230 C)'}, 'location', 'northwest', 'fontsize', 8);
 xlim([0, 180]); ylim([50, 260]);
 
@@ -318,10 +367,11 @@ for m = 1:length(t_trans)
         P_mpp_teorico(m) = 0;
     else
         Tc = T_cel_trans_K(m);
-        Vmp_c = V_mp_ref + K_V * (Tc - T_ref);
+        Vmp_c = V_mp_ref + K_V_mp * (Tc - T_ref);
         V_mpp_teorico(m) = N_s * Vmp_c;
-        Imp_c = (I_mp_ref + K_I * (Tc - T_ref)) * (G_trans(m) / G_ref);
-        P_mpp_teorico(m) = (V_mpp_teorico(m) * Imp_c * N_p) / 1e3;
+        Imp_c = (I_mp_ref + K_I_mp * (Tc - T_ref)) * (G_trans(m) / G_ref);
+        % Potencia no nivel do no satelital (N_p_no = 244 strings, margem 3%):
+        P_mpp_teorico(m) = (V_mpp_teorico(m) * Imp_c * N_p_no) / 1e3;
     end
 end
 
@@ -361,13 +411,13 @@ plot(t_trans, V_mpp_teorico, 'k--', 'linewidth', 2.0);
 plot(t_trans, V_mppt_adapt, 'g-', 'linewidth', 2.2);
 plot(t_trans, V_mppt_fixed, 'r-', 'linewidth', 1.8);
 plot([0, 250], [400, 400], 'b-', 'linewidth', 1.8);
-plot([0, 250], [600, 600], 'm--', 'linewidth', 1.4);
+plot([0, 250], [650, 650], 'm--', 'linewidth', 1.4);
 
 xlabel('Tempo desde a Saida do Eclipse (s)', 'fontsize', 10);
 ylabel('Tensao de Entrada do Conversor (V)', 'fontsize', 10);
-title('Tensao no Choque Solar e Saida do Eclipse', 'fontsize', 11);
-legend({'V_{mp} Otimo', 'MPPT Adaptativo GaN', 'MPPT Passo Fixo', 'Barramento (400 V)', 'Teto Conversor (600 V)'}, 'location', 'northeast', 'fontsize', 8);
-xlim([0, 250]); ylim([300, 650]);
+title('Tensao no Choque Solar e Saida do Eclipse (Modelo Parametrico)', 'fontsize', 11);
+legend({'V_{mp} Otimo Analitico', 'MPPT Adaptativo Parametrico', 'MPPT Passo Fixo', 'Barramento (400 V)', 'Teto Conversor (650 V)'}, 'location', 'northeast', 'fontsize', 8);
+xlim([0, 250]); ylim([300, 680]);
 
 subplot(1, 2, 2);
 hold on; grid on; box on;
@@ -377,10 +427,10 @@ plot(t_trans, P_mppt_adapt, 'g-', 'linewidth', 2.2);
 plot(t_trans, P_mppt_fixed, 'r-', 'linewidth', 1.8);
 
 xlabel('Tempo desde a Saida do Eclipse (s)', 'fontsize', 10);
-ylabel('Potencia Entregue pela Matriz (kW)', 'fontsize', 10);
-title('Potencia Capturada na Penumbra', 'fontsize', 11);
-legend({'Disponivel Otima', 'P&O Adaptativo (>99%)', 'Passo Fixo (~96.5%)'}, 'location', 'southeast', 'fontsize', 8);
-xlim([0, 250]); ylim([0, 1200]);
+ylabel('Potencia Entregue pela Matriz do No (kW)', 'fontsize', 10);
+title('Potencia Capturada na Penumbra (No 51,5 kW instalados / ~50 kW uteis)', 'fontsize', 11);
+legend({'Disponivel Otima (No 51,5 kW)', 'P&O Adaptativo (>99%)', 'Passo Fixo (~96.5%)'}, 'location', 'southeast', 'fontsize', 8);
+xlim([0, 250]); ylim([0, 75]);
 
 print(fig8, 'figuras/figura_3_8_transiente_mppt_penumbra.png', '-dpng', '-r300');
 fprintf('   -> Figura 3.8 salva com sucesso.\n\n');
@@ -389,14 +439,14 @@ fprintf('   -> Figura 3.8 salva com sucesso.\n\n');
 % 5. SINTESE DOS PONTOS DE FALHA E RESULTADOS
 % ==============================================================================
 fprintf('=== RESUMO EXECUTIVO DOS ENSAIOS DE ESTRESSE E PONTOS DE FALHA (ITEM 3.2) ===\n');
-fprintf('1. Compatibilidade com 400V: Strings de Ns = 180 celulas geram Vmp = 433.8 V a 28C.\n');
-fprintf('   A frio (-150C), Voc atinge 688.2 V (Overshoot de 198.6 V). Exige conversor Buck com V_in,max >= 750 V.\n');
-fprintf('2. Potencia e Area: 810.000 celulas de 30.18 cm^2 ocupam exatamente 2444.6 m^2, gerando 999.5 kW BOL.\n');
-fprintf('3. Degradacao em 10 Anos (700 km): Fluencia 1-MeV de 2.5e14 e-/cm^2 causa 4.62%% de perda DDD.\n');
-fprintf('   Somando-se 5.2%% de perdas opticas/ambientais e mismatch, a perda total e de 11.8%% (~12%%).\n');
-fprintf('4. Ponto de Falha de Hot Spot: Sem diodo de bypass, a celula dissipa 14.34 W (densidade > 4700 W/m^2),\n');
-fprintf('   atingindo 245 C em 120 s e destruindo a solda e isolamento de Kapton.\n');
-fprintf('   Com diodo Schottky, o clamp em -0.35 V limita a dissipacao a 0.18 W e temperatura a 67 C.\n');
+fprintf('1. Compatibilidade com 400V: Strings de Ns = 166 celulas geram Vmp = 399.4 V a 28 C (BOL).\n');
+fprintf('   A frio (-150 C), Voc atinge 617.0 V (extrapolacao analitica linear [PROVISORIO]). Exige conversor Buck com V_in,max >= 650 V.\n');
+fprintf('2. Potencia e Area: 40.504 celulas (No: Np_no=244 strings, margem de 2.94%%) ocupam 122.2 m^2, gerando 51.47 kW BOL instalados (~50 kW uteis).\n');
+fprintf('   Constelacao (20 nos: Np_const=4880): 810.080 celulas, 2.444,8 m^2, gerando 1.029 MW BOL instalados (1.0 MW agregados).\n');
+fprintf('3. Degradacao em 10 Anos (700 km): Perda DDD de %.1f%% somada a perdas ambientais resulta em retencao de %.1f%% (Perda total %.1f%%).\n', ...
+        (1.0 - f_ddd_700(end))*100, p_rel_700(end), perda_700);
+fprintf('4. Ponto de Falha de Hot Spot: Sem diodo de bypass, a celula dissipa calor severo (%.2f W, T > 230 C);\n', P_diss_nobypass);
+fprintf('   Com diodo Schottky, o clamp em -0.35 V limita a dissipacao a %.3f W e temperatura a 67 C.\n', P_diss_bypass);
 fprintf('5. Ponto de Falha de Arco: Risco de arco sustentado no vacuo se V_string > 450 V em presenca de plasma.\n');
 fprintf('   Mitigacao: Conversores MPPT distribuidos descentralizados limitando secoes a 40 kW.\n');
 fprintf('=== SIMULACAO 3.2 CONCLUIDA COM SUCESSO ===\n');

@@ -7,7 +7,11 @@
 clear; close all; clc;
 fprintf('=== GERANDO FIGURAS COMPOSTAS DE ALTA DENSIDADE (SECAO 3.4) ===\n');
 
-% graphics_toolkit
+if ismember('qt', available_graphics_toolkits())
+    graphics_toolkit('qt');
+else
+    graphics_toolkit('gnuplot');
+end
 
 % ------------------------------------------------------------------------------
 % 1. PARAMETRIZACAO EPISTEMICA (CLASSIFICACAO DE DADOS)
@@ -162,7 +166,7 @@ fig_3_8 = figure(2, 'position', [50, 50, 1100, 750]);
 % Subpainel (a1): Resistencia Incremental Negativa de CPL
 subplot(2, 2, 1);
 hold on; grid on; box on;
-P_cpl_kW = logspace(0, 1.301, 100); % 1 kW a 20 kW
+P_cpl_kW = logspace(0, 1.602, 100); % 1 kW a 40 kW
 P_cpl_W = P_cpl_kW * 1000;
 
 R_cpl_400 = (400.0^2) ./ P_cpl_W;
@@ -176,8 +180,8 @@ semilogy(P_cpl_kW, R_cpl_08 * 1000, 'm-.', 'linewidth', 1.8); % em mOhm
 xlabel('Potencia Consumida pela Carga (kW)', 'fontsize', 9);
 ylabel('Modulo da Resistencia Incremental |Z_{in,CPL}| (\Omega)', 'fontsize', 9);
 title('(a1) Impedancia Incremental Negativa em Funcao da Potencia', 'fontsize', 10, 'fontweight', 'bold');
-legend({'Barramento 400 V (|R_{cpl}|=160 \Omega a 8 \Omega)', 'Barramento 48 V (|R_{cpl}|=2,3 \Omega a 0,115 \Omega)', 'Barramento 0,8 V (m\Omega, |R_{cpl}|=0,64 a 0,032 m\Omega)'}, 'location', 'northeast', 'fontsize', 8);
-xlim([1, 20]); ylim([1e-2, 200]);
+legend({'Barramento 400 V (|R_{cpl}|=160 \Omega a 4 \Omega)', 'Barramento 48 V (|R_{cpl}|=2,3 \Omega a 0,058 \Omega)', 'Barramento 0,8 V (m\Omega, |R_{cpl}|=0,64 a 0,016 m\Omega)'}, 'location', 'northeast', 'fontsize', 8);
+xlim([1, 40]); ylim([1e-2, 200]);
 
 % Subpainel (a2): Diagrama de Bode de Impedancias (Criterio de Middlebrook)
 subplot(2, 2, 2);
@@ -197,29 +201,33 @@ Z_C = 1 ./ (1j * w * C_filt) + ESR_nom;
 Z_out = (Z_L .* Z_C) ./ (Z_L + Z_C);
 mag_Zout = abs(Z_out);
 
-% Z_in de CPL (20 kW a 400 V -> R_cpl = 8 Ohm) com capacitancia de desacoplamento
-R_cpl_20k = 8.0;
-Z_in_cpl = R_cpl_20k ./ sqrt(1 + (w * 100e-6 * R_cpl_20k).^2);
+% Z_in de CPL para 40 kW nominal em 400 V (R_cpl = 4.0 Ohm) com capacitancia de desacoplamento
+R_cpl_40k = 4.0;
+Z_in_cpl = R_cpl_40k ./ sqrt(1 + (w * 100e-6 * R_cpl_40k).^2);
 
-loglog(freq, mag_Zout, 'b-', 'linewidth', 2.0);
-loglog(freq, Z_in_cpl, 'r--', 'linewidth', 2.0);
-loglog(freq, 0.1 * Z_in_cpl, 'g:', 'linewidth', 1.8);
+% Destaque da regiao de violacao de margem de Middlebrook (|Z_out| > 0.1 |Z_in|) em alta frequencia
+fill([32e3, 1e5, 1e5, 32e3], [1e-3, 1e-3, 20, 20], [1.0, 0.90, 0.90], 'edgecolor', 'none');
+
+h_zout = loglog(freq, mag_Zout, 'b-', 'linewidth', 2.0);
+h_zin  = loglog(freq, Z_in_cpl, 'r--', 'linewidth', 2.0);
+h_meta = loglog(freq, 0.1 * Z_in_cpl, 'g:', 'linewidth', 1.8);
+
+text(35e3, 0.003, {'Violacao de Margem', '(> 32 kHz em Malha Aberta)', 'Exige Amortecimento Ativo'}, 'fontsize', 7.5, 'color', [0.7 0 0]);
 
 xlabel('Frequencia (Hz)', 'fontsize', 9);
 ylabel('Magnitude de Impedancia (\Omega)', 'fontsize', 9);
-title('(a2) Avaliacao do Criterio de Middlebrook (|Z_{out}| \le 0,1 |Z_{in}|)', 'fontsize', 10, 'fontweight', 'bold');
-legend({'|Z_{out}(f)| (Filtro LC com 4,7 mF e ESR=5 m\Omega)', '|Z_{in,CPL}(f)| (Carga IA de 20 kW)', 'Meta Conservadora (0,1 \cdot |Z_{in}|)'}, 'location', 'southeast', 'fontsize', 8);
+title('(a2) Avaliacao de Middlebrook em Malha Aberta (|Z_{out}| vs 0,1|Z_{in}|)', 'fontsize', 10, 'fontweight', 'bold');
+legend([h_zout, h_zin, h_meta], {'|Z_{out}(f)| (Filtro 4,7 mF, ESR=5 m\Omega)', '|Z_{in,CPL}(f)| (Carga IA 40 kW)', 'Margem Segura (0,1 \cdot |Z_{in}|)'}, 'location', 'southwest', 'fontsize', 8);
 xlim([10, 1e5]); ylim([1e-3, 20]);
 
-% Subpainel (b1): Resposta ao Degrau de IA (2 kW -> 20 kW em 10 us)
+% Subpainel (b1): Resposta ao Degrau de IA (2 kW -> 40 kW em 10 us)
 subplot(2, 2, 3);
 hold on; grid on; box on;
 t_us = linspace(0, 500, 500); % 0 a 500 us
 t_s = t_us * 1e-6;
 
-% Delta V sob degrau Delta_I = 45 A:
-% Comparando ESR = 1 mOhm, 5 mOhm e 25 mOhm (degradado)
-Delta_I = 45.0; % A
+% Delta V sob degrau Delta_I = (40000 - 2000)/400 = 95 A:
+Delta_I = 95.0; % A
 w0 = 1 / sqrt(L_filt * C_filt);
 zeta_nom = (ESR_nom + R_L)/2 * sqrt(C_filt / L_filt);
 
@@ -234,7 +242,7 @@ plot([0, 500], [380, 380], 'k:', 'linewidth', 1.5); % Limite de -5% (380 V)
 
 xlabel('Tempo Decorrido (\mus)', 'fontsize', 9);
 ylabel('Tensao do Barramento (V)', 'fontsize', 9);
-title('(b1) Transiente de Tensao sob Degrau de IA (400 V, 45 A em 10 \mus)', 'fontsize', 10, 'fontweight', 'bold');
+title('(b1) Transiente de Tensao sob Degrau de IA (400 V, 95 A em 10 \mus)', 'fontsize', 10, 'fontweight', 'bold');
 legend({'Banco Ideal (ESR = 1 m\Omega, V_{min}=398,8 V)', 'Banco Nominal (ESR = 5 m\Omega, V_{min}=396,9 V)', 'Banco Degradado EOL (ESR = 25 m\Omega)', 'Limite Inferior de Regulacao \pm 5% (380 V)'}, 'location', 'southeast', 'fontsize', 8);
 xlim([0, 500]); ylim([375, 402]);
 
