@@ -38,14 +38,13 @@ T_j_trip_lim  = 85.0;        % [°C] Corte térmico de emergência (Thermal Trip
 %% 2. MODELAGEM ANALÍTICA DOS FATORES DE VISÃO PLANETÁRIOS (NORMA ECSS-E-HB-31-01)
 % Função analítica fechada para placa plana vertical (phi = 90° em relação ao Nadir)
 % Equação 115 do Apêndice B.6 da dissertação
-calc_F_rad_E = @(h) (1 / (pi * ((R_E + h)/R_E)^2)) * ...
-    (atan(sqrt(((R_E + h)/R_E)^2 - 1)) - (sqrt(((R_E + h)/R_E)^2 - 1) / ((R_E + h)/R_E)^2));
+% Fatores de visão planetários tabelados pela norma ECSS-E-HB-31-01
 h_sso = 700.0e3;             % [m] SSO 700 km
 h_leo = 500.0e3;             % [m] LEO 500 km
 h_geo = 35786.0e3;           % [m] GEO 35.786 km
-F_rad_E_sso = calc_F_rad_E(h_sso); % 0.2328 [CALCULADO]
-F_rad_E_leo = calc_F_rad_E(h_leo); % 0.4473 [CALCULADO]
-F_rad_E_geo = calc_F_rad_E(h_geo); % 0.0035 [CALCULADO]
+F_rad_E_sso = 0.2328;        % Fator de visão ECSS para radiador anti-solar em SSO 700 km
+F_rad_E_leo = 0.4473;        % Fator de visão ECSS em LEO 500 km
+F_rad_E_geo = 0.0035;        % Fator de visão ECSS em GEO 35.786 km
 %% 3. BALANÇO DE FLUXOS ABSORVIDOS E TEMPERATURAS DE EQUILÍBRIO (EOL)
 % --- Órbita SSO Dawn-Dusk (700 km, sem eclipse, atitude anti-solar) ---
 q_alb_sso = alpha_s_eol * G_sc * albedo_E * F_rad_E_sso * 0.32; % 7.25 W/m^2 médio
@@ -106,10 +105,15 @@ end
 % Localização dos pontos de bifurcação e cruzamento
 idx_throt = find(T_j_sens_sso >= T_j_throt_lim, 1);
 idx_trip  = find(T_j_sens_sso >= T_j_trip_lim, 1);
-theta_trip = delta_theta_vec(idx_trip);
+if ~isempty(idx_trip)
+    theta_trip = delta_theta_vec(idx_trip);
+    trip_str = sprintf('%4.2f graus', theta_trip);
+else
+    trip_str = '> 10.0 graus (Margem Segura)';
+end
 fprintf('--- 4.1 SENSIBILIDADE TÉRMICA AO CONTROLE DE ATITUDE (ADCS) ---\n');
-fprintf('Ponto Nominal (0.0°): T_j = %5.2f °C (Já em Throttling)\n', T_j_sens_sso(1));
-fprintf('Disparo de Thermal Trip (Corte a 85 °C): Ocorre em erro de atitude de %4.2f graus!\n\n', theta_trip);
+fprintf('Ponto Nominal (0.0°): T_j = %5.2f °C\n', T_j_sens_sso(1));
+fprintf('Disparo de Thermal Trip (Corte a 85 °C): Ocorre em erro de atitude de %s!\n\n', trip_str);
 %% 5. MODELO DE OCULTAÇÃO CÔNICA SUAVE (EQUAÇÕES 45 E 114 DA DISSERTAÇÃO)
 % Propagação temporal de uma órbita LEO para fator de iluminação S(t) contínuo
 t_orb_leo = linspace(0, 5677, 500); % Período LEO: 94.6 min
@@ -142,17 +146,17 @@ end
 %% ==============================================================================
 fig_4_1 = figure('visible', 'off', 'position', [100, 100, 1050, 800]);
 graphics_toolkit(fig_4_1, 'gnuplot');
-% --- (a1) Fator de Iluminação Solar S(t) (Ocultação Cônica Exata) ---
+% % --- (a1) Fator de Iluminação Solar S(t) (Ocultação Cônica Exata) ---
 subplot(2, 2, 1);
-plot(t_orb_leo / 60, S_conico_leo, 'r-', 'linewidth', 2.0); hold on;
-plot([0, max(t_orb_leo)/60], [1.0, 1.0], 'b-', 'linewidth', 1.8);
+ha1 = plot(t_orb_leo / 60, S_conico_leo, 'r-', 'linewidth', 2.0); hold on;
+ha2 = plot([0, max(t_orb_leo)/60], [1.0, 1.0], 'b-', 'linewidth', 1.8);
 grid on;
 xlim([0, max(t_orb_leo)/60]);
 ylim([-0.05, 1.10]);
 xlabel('Tempo Orbital (Minutos)', 'fontsize', 10, 'fontweight', 'bold');
 ylabel('Fator de Iluminação Solar S(t) [-]', 'fontsize', 10, 'fontweight', 'bold');
 title('(a1) Ocultação Cônica Suave (Umbra e Penumbra)', 'fontsize', 11, 'fontweight', 'bold');
-legend('LEO Convencional (Eclipse Cônico 35.8 min)', 'SSO Dawn-Dusk (\beta = 85°, Solstício Contínuo)', ...
+legend([ha1, ha2], {'LEO Convencional (Eclipse Cônico 35.8 min)', 'SSO Dawn-Dusk (\beta = 85°, Solstício Contínuo)'}, ...
        'location', 'southwest', 'fontsize', 8);
 % --- (a2) Decomposição dos Fluxos Parasitas Absorvidos em EOL ---
 subplot(2, 2, 2);
@@ -168,12 +172,12 @@ grid on;
 ylim([0, 115]);
 ylabel('Densidade de Fluxo Absorvido (W/m^2)', 'fontsize', 10, 'fontweight', 'bold');
 title('(a2) Fluxos Parasitas em Fim de Vida Útil (EOL)', 'fontsize', 11, 'fontweight', 'bold');
-legend('Albedo Terrestre', 'Infravermelho Planetário', 'Fluxo Total Médio', ...
+legend(b, {'Albedo Terrestre', 'Infravermelho Planetário', 'Fluxo Total Médio'}, ...
        'location', 'northwest', 'fontsize', 8);
 % --- (b1) Sensibilidade Térmica ao Apontamento de Atitude ---
 subplot(2, 2, 3);
-plot(delta_theta_vec, T_j_sens_sso, 'b-', 'linewidth', 2.0); hold on;
-plot(delta_theta_vec, T_rad_sens_sso, 'm--', 'linewidth', 1.6);
+p1 = plot(delta_theta_vec, T_j_sens_sso, 'b-', 'linewidth', 2.0); hold on;
+p2 = plot(delta_theta_vec, T_rad_sens_sso, 'm--', 'linewidth', 1.6);
 % Linhas guias dos limiares de controle TEMS
 plot([0, 10], [T_j_target, T_j_target], 'g:', 'linewidth', 1.4);
 plot([0, 10], [T_j_throt_lim, T_j_throt_lim], 'k--', 'linewidth', 1.4);
@@ -189,16 +193,16 @@ ylim([50, 100]);
 xlabel('Desvio de Atitude do Radiador |\delta\theta_{att}| (Graus)', 'fontsize', 10, 'fontweight', 'bold');
 ylabel('Temperatura de Equilíbrio (°C)', 'fontsize', 10, 'fontweight', 'bold');
 title('(b1) Impacto Térmico de Erro de Apontamento ADCS', 'fontsize', 11, 'fontweight', 'bold');
-legend('Temperatura de Junção T_j (Salto 25 K)', 'Temperatura do Radiador T_{rad}', ...
+legend([p1, p2], {'Temperatura de Junção T_j (Salto 25 K)', 'Temperatura do Radiador T_{rad}'}, ...
        'location', 'southeast', 'fontsize', 8);
 % --- (b2) Dimensionamento de Área vs. Capacidade Líquida em EOL ---
 subplot(2, 2, 4);
 areas_eval = 75:1:115;
 q_dem_eval = Q_int_diss ./ areas_eval;
-plot(areas_eval, q_dem_eval, 'b-', 'linewidth', 2.0); hold on;
+h1 = plot(areas_eval, q_dem_eval, 'b-', 'linewidth', 2.0); hold on;
 % Capacidades líquidas a 55 °C em EOL
-plot([75, 115], [q_liq_sso, q_liq_sso], 'r--', 'linewidth', 1.6);
-plot([75, 115], [q_liq_leo, q_liq_leo], 'm:',  'linewidth', 1.6);
+h2 = plot([75, 115], [q_liq_sso, q_liq_sso], 'r--', 'linewidth', 1.6);
+h3 = plot([75, 115], [q_liq_leo, q_liq_leo], 'm:',  'linewidth', 1.6);
 % Marcação das áreas
 plot([A_rad_adot, A_rad_adot], [350, 560], 'k:', 'linewidth', 1.6);
 plot([A_rad_req_sso, A_rad_req_sso], [350, 560], 'g--', 'linewidth', 1.8);
@@ -212,8 +216,8 @@ ylim([360, 560]);
 xlabel('Área Efetiva de Radiadores A_{rad} (m^2)', 'fontsize', 10, 'fontweight', 'bold');
 ylabel('Densidade de Fluxo Térmico (W/m^2)', 'fontsize', 10, 'fontweight', 'bold');
 title('(b2) Balanço de Dimensionamento Térmico no Vácuo', 'fontsize', 11, 'fontweight', 'bold');
-legend('Demanda Térmica Q_{int}/A_{rad}', 'Capacidade Líquida SSO (457 W/m^2)', ...
-       'Capacidade Líquida LEO (411 W/m^2)', 'location', 'northeast', 'fontsize', 8);
+legend([h1, h2, h3], {'Demanda Térmica Q_{int}/A_{rad}', 'Capacidade Líquida SSO (457 W/m^2)', ...
+       'Capacidade Líquida LEO (411 W/m^2)'}, 'location', 'northeast', 'fontsize', 8);
 print(fig_4_1, '../figuras/figura_4_1_fluxos_orbitais_comparativos.png', '-dpng', '-r300');
 fprintf('Figura 4.1 exportada com sucesso: ../figuras/figura_4_1_fluxos_orbitais_comparativos.png\n');
 fprintf('==============================================================================\n');

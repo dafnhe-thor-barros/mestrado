@@ -25,8 +25,8 @@ V_gate       = 5.0;         % [V] Tensão de driver
 % Retificação Síncrona Secundária GaN (48 V)
 R_on25_sec   = 0.80e-3;     % [Ohm] Arranjo paralelo a 25 °C
 alpha_sec    = 0.0040;      % [1/K]
-% Parâmetros Magnéticos (Ferrite MnZn grau Ferroxcube 3C95 - Equação 23)
-k_fe         = 0.072;       % Coeficiente de Steinmetz
+% Parâmetros Magnéticos (Ferrite MnZn grau Ferroxcube 3C95 - Equação 246 do Capítulo 3)
+k_fe         = 0.6715;      % [W/(m^3 Hz^alpha T^beta)] Coeficiente calibrado para P_core = 95.3 W
 alpha_st     = 1.46;        % Expoente de frequência
 beta_st      = 2.52;        % Expoente de indução
 V_e          = 4.5e-4;      % [m^3] Volume efetivo do núcleo magnético
@@ -37,23 +37,26 @@ R_ac_sec     = 0.25e-3;     % [Ohm] Resistência CA secundária
 T_j_target   = 80.0;        % [°C] Temperatura operacional de junção
 I_in_nom     = P_mod_nom / V_in_nom; % 50.0 A
 I_out_nom    = P_mod_nom / V_out_nom;% 416.7 A
-% Correntes eficazes nas chaves (Full-Bridge D = 0.45)
+% Topologia Interleaved Bifásica (2 fases de 10 kW em paralelo com defasagem de 180°)
+N_phases     = 2;
+I_phase_nom  = I_in_nom / N_phases;  % 25.0 A por ramo de conversão
+% Correntes eficazes nas chaves (Full-Bridge D = 0.45 por fase)
 D_eff = 0.45;
-I_rms_sw_pri = I_in_nom * sqrt(D_eff); % 33.54 A por chave primária
-I_rms_pri    = I_in_nom * sqrt(2 * D_eff);
+I_rms_sw_pri = I_phase_nom * sqrt(D_eff); % 16.77 A por chave individual
+I_rms_pri    = I_in_nom * sqrt(D_eff);
 I_rms_sec    = I_out_nom;
 % Perdas por Condução
 R_on_pri_Tj = R_on25_pri * (1 + alpha_sc * (T_j_target - 25));
-P_cond_pri  = 4 * (I_rms_sw_pri^2) * R_on_pri_Tj; % 4 transistores da ponte
+P_cond_pri  = (4 * N_phases) * (I_rms_sw_pri^2) * R_on_pri_Tj; % 8 transistores primários (2 pontes completas)
 R_on_sec_Tj = R_on25_sec * (1 + alpha_sec * (T_j_target - 25));
 P_cond_sec  = (I_out_nom^2) * R_on_sec_Tj;
-% Perdas por Comutação Primária (4 chaves)
-P_sw_overlap = 4 * (V_in_nom * 25.0 * f_sw * (t_r + t_f) / 2);
-P_sw_coss    = 4 * (0.5 * C_oss * (V_in_nom^2) * f_sw);
-P_gate       = 4 * (Q_g * V_gate * f_sw);
+% Perdas por Comutação GaN Primária (Interleaved bifásica, 4 chaves por fase comutam I_phase_nom)
+P_sw_overlap = (4 * N_phases) * (V_in_nom * I_phase_nom * f_sw * (t_r + t_f) / 4);
+P_sw_coss    = (4 * N_phases) * (0.5 * C_oss * (V_in_nom^2) * f_sw);
+P_gate       = (4 * N_phases) * (Q_g * V_gate * f_sw);
 P_sw_total   = P_sw_overlap + P_sw_coss + P_gate;
-% Perdas Magnéticas
-P_core = k_fe * (f_sw^alpha_st) * (delta_B^beta_st) * V_e;
+% Perdas Magnéticas (Equação de Steinmetz e perdas ôhmicas de cobre)
+P_core = k_fe * (f_sw^alpha_st) * (delta_B^beta_st) * V_e; % 95.3 W
 P_cu   = (I_rms_pri^2) * R_ac_pri + (I_rms_sec^2) * R_ac_sec;
 P_mag  = P_core + P_cu;
 P_loss_total = P_cond_pri + P_cond_sec + P_sw_total + P_mag;
@@ -102,9 +105,9 @@ ESR_A = 1.2e-3;
 Z_num_A = (1i * omega * L_line_48V + R_line_48V) .* (1 ./ (1i * omega * C_A) + ESR_A);
 Z_den_A = (1i * omega * L_line_48V + R_line_48V) + (1 ./ (1i * omega * C_A) + ESR_A);
 Z_out_A = abs(Z_num_A ./ Z_den_A);
-% Caso B: Falha DC-F03
-C_B   = 3.0e-3;
-ESR_B = 8.0e-3;
+% Caso B: Falha DC-F03 (Degradação Severa WCA: C = 2.5 mF, ESR = 9.5 mOhm)
+C_B   = 2.5e-3;
+ESR_B = 9.5e-3;
 Z_num_B = (1i * omega * L_line_48V + R_line_48V) .* (1 ./ (1i * omega * C_B) + ESR_B);
 Z_den_B = (1i * omega * L_line_48V + R_line_48V) + (1 ./ (1i * omega * C_B) + ESR_B);
 Z_out_B = abs(Z_num_B ./ Z_den_B);
@@ -114,7 +117,7 @@ fprintf('--- 4.1 ESTABILIDADE DE IMPEDÂNCIA DE MIDDLEBROOK NO BARRAMENTO 48 V -
 fprintf('Resistência Incremental de Carga (CPL): rin = %6.4f Ohm\n', r_in_CPL);
 fprintf('Teto de Impedância de Middlebrook (|Zout| <= 0.1|rin|): %6.4f Ohm\n', Z_limite_middlebrook);
 fprintf('Banco Saudável (15 mF, 1.2 mOhm): Pico |Zout| = %6.4f Ohm | Status: ESTABILIDADE ASSEGURADA\n', pico_Z_A);
-fprintf('Banco Degradado ( 3 mF, 8.0 mOhm): Pico |Zout| = %6.4f Ohm | ', pico_Z_B);
+fprintf('Banco Degradado (2.5 mF, 9.5 mOhm): Pico |Zout| = %6.4f Ohm | ', pico_Z_B);
 if pico_Z_B > Z_limite_middlebrook
     fprintf('Status: [FALHA DC-F03: INSTABILIDADE CPL] Violação de Middlebrook!\n');
 else

@@ -102,16 +102,21 @@
 #### 3.2 Catálogo de Parâmetros dos Conversores DC-DC
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $V_{bus,prim}$ | Tensão nominal do barramento primário solar | $800$ | $\text{V}$ | Arquitetura HVDC para redução de massa de cabos |
+| $V_{bus,prim}$ | Tensão nominal do barramento primário HVDC | $400$ | $\text{V}$ | Faixa regulada de $324{,}0\text{ V}$ (UVLO) a $442{,}8\text{ V}$ (OV) |
 | $V_{bus,sec}$ | Tensão do barramento intermediário do rack | $48$ | $\text{V}$ | Barramento padrão de data centers modernos (Open Compute) |
 | $V_{core}$ | Tensão de alimentação lógica das GPUs/TPUs | $0{,}75 - 1{,}10$ | $\text{V}$ | Ajustável via DVFS nos conversores PoL |
 | $f_{sw}$ | Frequência de chaveamento dos conversores | $150$ | $\text{kHz}$ | Otimização de volume de magnéticos vs. perdas $P_{sw}$ |
-| $R_{on,25}$ | Resistência de condução do chaveador GaN a 25°C | $18$ | $\text{m}\Omega$ | Transistores GaN de alta tensão (650V-900V) |
+| $R_{on,25}$ | Resistência de condução do chaveador GaN a 25°C | $18$ | $\text{m}\Omega$ | Transistores GaN de alta tensão (650V) |
 | $\alpha_{sc}$ | Coeficiente térmico de resistência do GaN | $0{,}0065$ | $\text{K}^{-1}$ | Crescimento de $R_{on}$ sob aquecimento |
 | $t_r, t_f$ | Tempos de subida e descida de chaveamento | $12, \, 15$ | $\text{ns}$ | Comutação ultra-rápida |
 | $C_{oss}$ | Capacitância de saída parasita do semicondutor | $120$ | $\text{pF}$ | Carga capacitiva comutada |
-| $\eta_{conv,nom}$ | Rendimento nominal do conversor primário | $97{,}8$ | $\%$ | Medido na faixa nominal de potência |
-| $C_{bus}$ | Capacitância de amortecimento do barramento | $4{,}7$ | $\text{mF}$ | Bancos de tântalo/cerâmicos espaciais para filtrar $\text{kA}/\mu\text{s}$ |
+| $\eta_{conv,nom}$ | Rendimento nominal do conversor primário | $97{,}7$ | $\%$ | Medido em plena carga ($20\text{ kW}$) |
+| $C_{bus}$ | Capacitância de amortecimento do barramento 400 V | $4{,}7$ | $\text{mF}$ | Bancos cerâmicos/filme espaciais ($1{,}5\text{ mF}$ em WCA) |
+| $I^2t_{lim,sic}$ | Limite adiabático de fusão do SiC MOSFET (SSPC) | $1500$ | $\text{A}^2\text{s}$ | Norma ECSS-E-ST-20-20C / MIL-HDBK-338B |
+| $t_{trip,crit}$ | Retardo crítico WCA para atingir limite adiabático | $74{,}8$ | $\mu\text{s}$ | **Conclusão Técnica 1** ($L=4\,\mu\text{H}, C=1{,}5\,\text{mF}$) |
+| $V_{spike,max}$ | Tensão máxima de ruptura dielétrica $V_{ds}$ | $1200$ | $\text{V}$ | Tensão de breakdown do semicondutor SiC |
+| $t_{trip,v1200}$ | Retardo de abertura que rompe 1200 V sem clamp | $1{,}00$ | $\mu\text{s}$ | **Conclusão Técnica 2** ($1000\text{ ns}$ sob $\tau_{ext}=0{,}5\,\mu\text{s}$) |
+| $\tau_{ext,min}$ | Tempo mínimo de extinção suave (*soft turn-off*) | $31{,}1$ | $\mu\text{s}$ | Evita $V_{ds} > 1200\text{ V}$ para $I_{peak} = 6{,}21\text{ kA}$ |
 
 ---
 
@@ -132,19 +137,20 @@
 #### 4.2 Catálogo de Parâmetros da Bateria (Química Li-ion NMC Espacial)
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $C_{n,total}$ | Capacidade nominal do banco de baterias | $180$ | $\text{kWh}$ | Dimensionado para sustentação e picos em SSO |
-| $V_{bat,nom}$ | Tensão nominal do banco de baterias | $750$ | $\text{V}$ | Associação 200S2P de células prismáticas |
-| $R_{0,ref}$ | Resistência ôhmica interna total a 25°C | $35$ | $\text{m}\Omega$ | Células de alta densidade de corrente de descarga |
+| $E_{bat,nom}$ | Energia nominal instalada por nó satelital | $9{,}0$ | $\text{kWh}$ | $32{,}4\text{ MJ}$ por satélite ($180\text{ kWh}$ no cluster de 20 nós) |
+| $C_{n,Ah}$ | Capacidade nominal equivalente do pack | $22{,}52$ | $\text{Ah}$ | Células NMC espaciais de alta energia específica |
+| $V_{bat,nom}$ | Tensão nominal do banco de baterias | $400$ | $\text{V}$ | Associação 108S1P de células NMC ($324\text{ V}$ a $442{,}8\text{ V}$) |
+| $R_{0,ref}$ | Resistência ôhmica interna total a 20°C (BOL) | $45$ | $\text{m}\Omega$ | Equivale a $32\text{ m}\Omega$ a 30°C sob $E_a = 0{,}32\text{ eV}$ ($85\text{ m}\Omega$ em EOL) |
 | $R_{p1}$ | Resistência de polarização rápida (transferência) | $18$ | $\text{m}\Omega$ | Dinâmica de dupla camada eletroquímica |
 | $C_{p1}$ | Capacitância de polarização rápida | $3200$ | $\text{F}$ | Constante de tempo $\tau_1 \approx 57{,}6\text{ s}$ |
 | $R_{p2}$ | Resistência de polarização lenta (difusão de fase) | $24$ | $\text{m}\Omega$ | Difusão de íons de lítio no estado sólido |
 | $C_{p2}$ | Capacitância de polarização lenta | $22000$ | $\text{F}$ | Constante de tempo $\tau_2 \approx 528\text{ s}$ |
-| $E_a$ | Energia de ativação eletroquímica | $0{,}32$ | $\text{eV}$ | Calibração experimental para LiNiMnCoO2 |
+| $E_a$ | Energia de ativação eletroquímica | $0{,}32$ | $\text{eV}$ | Calibração experimental para LiNiMnCoO2 ($5{,}127\times 10^{-20}\text{ J}$) |
 | $T_{bat,min}$ | Limite inferior de controle térmico nominal | $+10$ | $^\circ\text{C}$ | Prevenção de deposição de lítio (*lithium plating*) |
-| $T_{bat,max}$ | Limite superior de controle térmico nominal | $+25$ | $^\circ\text{C}$ | Minimização de degradação da camada SEI |
-| $P_{heater,max}$ | Potência máxima dos aquecedores de sobrevivência | $2{,}5$ | $\text{kW}$ | Resistores térmicos acionados por termostato |
+| $T_{bat,max}$ | Limite superior de controle térmico nominal | $+25$ | $^\circ\text{C}$ | Minimização de degradação da camada SEI (máximo tolerado: $+35^\circ\text{C}$) |
+| $P_{heater,max}$ | Potência máxima dos aquecedores de sobrevivência | $300$ | $\text{W}$ | 3 resistores de 100 W PWM termostatizados na placa fria do pack |
 | $R_{th,MLI}$ | Resistência térmica equivalente do isolamento MLI | $4{,}8$ | $\text{K/W}$ | 20 camadas de Mylar aluminizado a vácuo |
-| $\eta_c$ | Rendimento de Coulomb | $0{,}992$ | -- | Fator de reversibilidade eletroquímica |
+| $\eta_c$ | Rendimento coulométrico de recarga | $0{,}995$ | -- | Fator de reversibilidade eletroquímica |
 
 ---
 

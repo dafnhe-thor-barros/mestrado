@@ -165,8 +165,12 @@ for k = 1:length(t_hs)-1
     T_hs_com_K(k+1) = T_hs_com_K(k) + dT_com;
 end
 
+idx_180 = find(T_hs_sem_K >= (180.0 + 273.15), 1);
+t_180_s = t_hs(idx_180);
+
 fprintf('--- 4.1 RESPOSTA TERMICA DE HOT SPOT NO VACUO (STEFAN-BOLTZMANN) ---\n');
-fprintf('Sem Bypass Schottky: Temperatura de Pico = %5.1f degC (Destrutivo > 180 degC)\n', max(T_hs_sem_K)-273.15);
+fprintf('Sem Bypass Schottky: Temperatura de Pico = %5.1f degC (Destrutivo > 180 degC atingido em %4.1f s)\n', ...
+    max(T_hs_sem_K)-273.15, t_180_s);
 fprintf('Com Bypass Schottky: Temperatura Estabilizada = %5.1f degC (Operacao Segura)\n\n', max(T_hs_com_K)-273.15);
 
 %% 5. MALHA DINAMICA DO MPPT ADAPTATIVO (P&O-AP) A 150 kHz NA SAIDA DO ECLIPSE
