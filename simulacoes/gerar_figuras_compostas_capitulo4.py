@@ -380,6 +380,7 @@ def gerar_figura_4_2():
                    f'Soma da rede: {deltaT_total_rede:.1f} K; o modelo lumped usa 25 K.\nIncompatibilidade entre parametrizações ainda não reconciliada.',
                    transform=axs[1, 1].transAxes, va='top', fontsize=8,
                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='0.5', alpha=0.9))
+    axs[1, 1].set_ylim([0, 24])
     axs[1, 1].grid(True, axis='y', linestyle=':', alpha=0.7)
 
     out_path = os.path.join(OUTPUT_DIR, 'figura_4_2_dinamica_rede_nodal_estresse.png')

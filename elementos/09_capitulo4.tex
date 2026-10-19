@@ -321,10 +321,11 @@ sujeita às condições de contorno de Dirichlet na raiz condutora e de Neumann 
 \end{equation}
 
 Como o gradiente térmico ao longo da aleta de APG é pequeno em virtude de sua elevadíssima condutividade ($k_{eff} = 1275\text{ W/(m}\cdot\text{K)}$), lineariza-se a troca radiativa quártica através da expansão em série de Taylor em torno da temperatura média da raiz ($T_{root}$):
-\begin{equation}
-    T^4(x)-T_{space}^4 = (T(x)-T_{space})(T(x)+T_{space})(T^2(x)+T_{space}^2) \approx h_{rad}(T(x)-T_{space}), \quad h_{rad}=\varepsilon_{ir}\sigma(T_{root}+T_{space})(T_{root}^2+T_{space}^2)\approx1{,}512\text{ W/(m}^2\text{K)}
+\begin{align}
+    T^4(x)-T_{space}^4 &= (T(x)-T_{space})(T(x)+T_{space})(T^2(x)+T_{space}^2) \approx h_{rad}(T(x)-T_{space}) \nonumber \\
+    h_{rad} &= \varepsilon_{ir}\sigma(T_{root}+T_{space})(T_{root}^2+T_{space}^2)\approx1{,}512\text{ W/(m}^2\text{K)}
     \label{eq:coeficiente_linearizado_hrad}
-\end{equation}
+\end{align}
 A integração analítica fechada da equação diferencial linearizada resulta no perfil hiperbólico de temperatura $\theta(x) = \theta_{root} \cosh[m (L_{fin} - x)] / \cosh(m L_{fin})$, definindo a eficiência de aleta radiativa ($\eta_{fin}$):
 \begin{equation}
     \eta_{fin,ideal} = \frac{\tanh(m L_{fin})}{m L_{fin}}, \qquad m = \sqrt{\frac{2 h_{rad}}{k_{eff} t_{fin}}} = \sqrt{\frac{2 \cdot 1{,}512}{1275 \cdot 0{,}0020}} \approx 1{,}089\text{ m}^{-1}
@@ -493,7 +494,7 @@ Banda de Histerese Térmica Anti-Chattering & $\Delta T_{hyst}$ & $3{,}0^\circ\t
 
 A camada rápida atua em nível de die semicondutor e conversores GaN PoL de ponto de carga com período de amostragem de controle sub-milissegundo ($\Delta t_{fast} \le 1{,}0\text{ ms}$). O seu objetivo primário é conter excursões térmicas de alta frequência provocadas por degraus de ativação de tensores lógicos.
 
-A lei de atuação do DVFS modula o vetor de ponto operacional $u_{fast}[k] = [f_{clk}[k], V_{core}[k]]^T$ a partir da leitura filtrada dos diodos térmicos internos do die ($T_j$), seguindo a relação de mapeamento de tensão-frequência do fabricante ($V_{core} = V_{core,min} + \lambda_{DVFS} (f_{clk} - f_{clk,min})$). Para evitar instabilidades de ciclo limite e chaveamento espúrio (\textit{chattering}), implementa-se uma banda de histerese finita com dois limiares desacoplados:
+A lei de atuação do DVFS modula o vetor de controle de ponto de operação $u_{fast}[k] = [f_{clk}[k], V_{core}[k]]^T$ a partir da leitura filtrada dos diodos térmicos do die ($T_j$), seguindo a curva de mapeamento de tensão-frequência do fabricante ($V_{core} = V_{core,min} + \lambda_{DVFS} (f_{clk} - f_{clk,min})$). Para evitar instabilidades de ciclo limite e comutação espúria (\textit{chattering}), implementa-se uma banda de histerese finita com dois limiares desacoplados:
 \begin{equation}
     f_{clk}[k] = 
     \begin{cases}
@@ -577,7 +578,7 @@ Diferentemente de formulações simplificadas que assumem arbitrariamente que a 
 \end{equation}
 onde $k_{att} = 0{,}85$ [PROVISÓRIO] é o fator de desacoplamento térmico dinâmico proporcionado pelo espalhador de calor de cobre e pela capacitância térmica do substrato, e $\Delta T_{cp}$ é a excursão da placa fria.
 
-Para estimar a vida útil em fadiga oligocíclica das esferas de solda SAC305 ($96{,}5\%\text{ Sn}, 3{,}0\%\text{ Ag}, 0{,}5\%\text{ Cu}$), adota-se o modelo de Coffin-Manson generalizado por Engelmaier (IPC-SM-785; IPC-9701A; SYED, 2004; ZHANG; CHEN; SUN, 2024):
+Para estimar a vida útil em fadiga oligocíclica das esferas de solda de liga SAC305 ($96{,}5\%\text{ Sn}$, $3{,}0\%\text{ Ag}$, $0{,}5\%\text{ Cu}$), adota-se o modelo de Coffin-Manson generalizado por Engelmaier (IPC-SM-785; IPC-9701A; SYED, 2004; ZHANG; CHEN; SUN, 2024):
 \begin{equation}
     N_f = \frac{1}{2} \left( \frac{\Delta \gamma_{eff}}{2 \varepsilon_f'} \right)^{1/c}, \quad \Delta \gamma_{eff} = F \cdot \frac{L_{DNP} \cdot \Delta \alpha_{CTE} \cdot \Delta T_{solder}}{h_{solder}}
     \label{eq:coffin_manson_engelmaier}
@@ -719,7 +720,7 @@ A Tabela~\ref{tab:fmeca_limiares_sistemicos} sintetiza a Matriz FMECA de Limiare
 \textbf{ADCS-F01} & Desapontamento Solar do Radiador & $|\delta\theta| \ge 2{,}62^\circ$ & Fluxo solar incide no radiador; $q_{ext} > 541\text{ W/m}^2$; $T_{rad} \ge 60^\circ\text{C}$ & \textit{Thermal trip} para $P_{IT} = 0\text{ W}$; modo seguro; manobra de restauração pelo ADCS \\
 \textbf{ORB-F02} & Decaimento Orbital Acentuado & $h \le 500\text{ km}$ & Calor de albedo/IR da Terra excede capacidade radiativa ($P_{rej} < 36{,}5\text{ kW}$) & Throttling contínuo para $f_{clk} \le 1{,}52\text{ GHz}$; corte de eclipse para $6{,}5\text{ kW}$ \\
 \textbf{RAD-F03} & Incursão em Cinturão de Van Allen & $h \ge 1231\text{ km}$ & Fluência $> 10^{14}\text{ e}^-/\text{cm}^2/\text{ano}$; geração PV degrada para $< 37{,}4\text{ kW}$ & Redução da janela de processamento útil; suspensão de treinamento neural denso \\
-\textbf{TIM-F04} & Degradação de Interface Die-Base & $R_{12} \ge 0{,}15\text{ K/W}$ & Desgaseificação/descolamento de TIM; $\Delta T_{die} > 25^\circ\text{C}$ sob plena carga & Clamping do DVFS no piso de $1{,}0\text{ GHz}$; alerta de saúde ao agendador do cluster \\
+\textbf{TIM-F04} & Degradação de Interface Die-Base & $R_{12} \ge 0{,}15\text{ K/W}$ & Desgaseificação / descolamento de TIM; $\Delta T_{die} > 25^\circ\text{C}$ sob plena carga & Clamping do DVFS no piso de $1{,}0\text{ GHz}$; alerta de saúde ao agendador do cluster \\
 \textbf{LHP-F05} & Secagem Capilar (\textit{Dry-out}) & $R_{34} \ge 0{,}10\text{ K/W}$ & Bloqueio de vapor ou falta de recarga capilar no evaporador LHP & Redução escalonada de carga em degraus de 5~kW até restabelecer refluxo bifásico \\
 \textbf{BAT-F06} & Sobrecarga em Eclipse Orbital & $SoC \le 20{,}0\%$ & Demanda de IA sem recarga consome reserva crítica ($DoD > 80\%$) & Deslastro de tensores neurais; manutenção exclusiva de aviônica ($560\text{ W}$) \\
 \textbf{ET-F07}  & Curto-Circuito sob Retardo WCA & $t_{trip} \ge 100\ \mu\text{s}$ & Energia $I^2t = 2461{,}7\text{ A}^2\text{s}$ rompe limite adiabático ($1500\text{ A}^2\text{s}$) & Desarme instantâneo por SSPC; bloqueio rígido (\textit{lockout}) de religamentos \\ \hline

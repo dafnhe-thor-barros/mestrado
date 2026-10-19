@@ -297,7 +297,11 @@ O fator de visão geométrico $F_{k-E}$ para uma superfície plana com inclinaç
     F_{k-E}(h, \phi_k) = 
     \begin{cases}
         \frac{1}{H^2} \cos \phi_k, & \text{se } 0 \le \phi_k \le \frac{\pi}{2} - \theta_m \\[0.15cm]
-        \frac{1}{2} - \frac{1}{\pi} \arcsin\left( \frac{\sqrt{H^2 - 1}}{H \sin \phi_k} \right) + \frac{\cos \phi_k}{\pi H^2} \arccos\left( \sqrt{H^2 - 1} \cot \phi_k \right) - \frac{\sqrt{H^2 - 1}}{\pi H^2} \sqrt{1 - H^2 \cos^2 \phi_k}, & \text{se } |\phi_k - \frac{\pi}{2}| \le \theta_m \\[0.15cm]
+        \begin{aligned}
+            &\frac{1}{2} - \frac{1}{\pi} \arcsin\left( \frac{\sqrt{H^2 - 1}}{H \sin \phi_k} \right) \\
+            &\quad + \frac{\cos \phi_k}{\pi H^2} \arccos\left( \sqrt{H^2 - 1} \cot \phi_k \right) \\
+            &\quad - \frac{\sqrt{H^2 - 1}}{\pi H^2} \sqrt{1 - H^2 \cos^2 \phi_k},
+        \end{aligned} & \text{se } \left|\phi_k - \frac{\pi}{2}\right| \le \theta_m \\[0.45cm]
         0{,}0, & \text{se } \phi_k > \frac{\pi}{2} + \theta_m
     \end{cases}
 \end{equation}
@@ -305,9 +309,10 @@ O fator de visão geométrico $F_{k-E}$ para uma superfície plana com inclinaç
 \subsubsection*{B.7 Modelo BSIM de Corrente de Fuga Sublimiar de Transistores Nanométricos}
 
 A dependência termodinâmica da corrente de fuga por tunelamento e emissão termoiônica em transistores FinFET e GAA sub-7~nm é expressa pela formulação de referência BSIM:
-\begin{equation}
-    P_{leak}(T_j, V_{core}) = V_{core} I_{leak,0}(V_{core}) \left( \frac{T_j}{T_{ref}} \right)^2 \exp\left[ \frac{-q \left( V_{th0} - \kappa_T (T_j - T_{ref}) \right)}{\eta_{sub} k_B T_j} \right] \left[ 1 - \exp\left( -\frac{q V_{core}}{k_B T_j} \right) \right]
-\end{equation}
+\begin{align}
+    P_{leak}(T_j, V_{core}) &= V_{core} I_{leak,0}(V_{core}) \left( \frac{T_j}{T_{ref}} \right)^2 \exp\left[ \frac{-q \left( V_{th0} - \kappa_T (T_j - T_{ref}) \right)}{\eta_{sub} k_B T_j} \right] \nonumber \\
+    &\quad \times \left[ 1 - \exp\left( -\frac{q V_{core}}{k_B T_j} \right) \right]
+\end{align}
 com parâmetros $V_{th0} \approx 0{,}28\text{ V}$, $\kappa_T \approx 1{,}10\text{ mV/K}$ e $\eta_{sub} \approx 1{,}25$.
 
 \vspace{0.8cm}

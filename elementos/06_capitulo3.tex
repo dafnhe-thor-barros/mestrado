@@ -24,10 +24,10 @@ Para uma infraestrutura modular em cluster orbital, a comunicação e sincroniza
 A definição do material condutor obedece ao compromisso de redução de massa de lançamento. Comparando condutores de Cobre Eletrolítico ($Cu$, densidade $\delta_{Cu} = 8{,}96\text{ g/cm}^3$, $\rho_{Cu} = 1{,}72 \times 10^{-8}\ \Omega\cdot\text{m}$) com ligas de Alumínio Aeronáutico ($Al$ 6061-T6, densidade $\delta_{Al} = 2{,}70\text{ g/cm}^3$, $\rho_{Al} = 2{,}82 \times 10^{-8}\ \Omega\cdot\text{m}$), a relação analítica de massa para uma mesma resistência elétrica total (cuja dedução passo a passo é apresentada no Apêndice~B.1) comprova que o condutor de alumínio proporciona uma redução líquida de 50{,}6\% na massa total de cablagem frente ao cobre ($M_{Al}/M_{Cu} \approx 0{,}494$), justificando a sua adoção conforme as normas NASA-SP-8005 (NASA, 1972) e ECSS-Q-ST-70-08C (ECSS, 2017). Adotou-se o cabo AWG 4 ($21{,}15\text{ mm}^2$, capacidade nominal de 80~A no vácuo) com comprimento de chicote interno de $L_{cabo} = 4{,}5\text{ m}$ ($R_{dist,nom} = 14\text{ m}\Omega$, variando no pior caso degradado EOL a $90^\circ\text{C}$ até $R_{dist} = 50\text{ m}\Omega$). A indutância parasita distribuída (NASA-HDBK-4007A) é de $L_{dist,nom} = 1{,}8\ \mu\text{H}$, atingindo no pior caso de laço de chicote $L_{dist} = 4{,}0\ \mu\text{H}$.
 
 O banco de baterias (\textit{Battery Energy Storage System} -- BESS) possui topologia de 108 células Li-ion NMC em série ($108\text{S}1\text{P}$ de $22{,}5\text{ Ah}$), capacidade nominal unitária de $E_{bat,no} = 9{,}0\text{ kWh}$ ($399{,}6\text{ V}$ nominais, massa de $60\text{ kg}$) e faixa operacional entre $V_{UV} = 324\text{ V}$ ($3{,}0\text{ V/célula}$, corte crítico por subtensão) e $V_{OV} = 442{,}8\text{ V}$ ($4{,}1\text{ V/célula}$, teto de sobretensão) (NASA, 2021). A resistência interna do banco $R_0$, balizada por ensaios de qualificação espacial (JUN et al., 2020), foi parametrizada em três níveis: $32\text{ m}\Omega$ (BOL quente a $30^\circ\text{C}$), $45\text{ m}\Omega$ (nominal a $20^\circ\text{C}$) e $85\text{ m}\Omega$ (EOL frio a $5^\circ\text{C}$). A dinâmica do Estado de Carga ($SoC$) e a tensão terminal instantânea $V_{bus}(t)$ são regidas por:
-\begin{equation}
-    \frac{dSoC(t)}{dt} = \begin{cases} -\dfrac{P_{bat}(t)}{\eta_{dis} E_{bat,nom}}, & P_{bat}(t) \ge 0 \quad \text{(descarga)} \\[0.15cm] -\dfrac{\eta_{ch} P_{bat}(t)}{E_{bat,nom}}, & P_{bat}(t) < 0 \quad \text{(carga)} \end{cases}, \quad V_{bus}(t) = V_{oc}(SoC,T_{bat}) - I_{bat}(t)\left[R_0+R_{dist}\right] - V_{p1}(t)-V_{p2}(t)
-    \label{eq:bess_dinamica}
-\end{equation}
+\begin{align}
+    \frac{dSoC(t)}{dt} &= \begin{cases} -\dfrac{P_{bat}(t)}{\eta_{dis} E_{bat,nom}}, & P_{bat}(t) \ge 0 \quad \text{(descarga)} \\[0.2cm] -\dfrac{\eta_{ch} P_{bat}(t)}{E_{bat,nom}}, & P_{bat}(t) < 0 \quad \text{(carga)} \end{cases} \label{eq:bess_dinamica} \\
+    V_{bus}(t) &= V_{oc}(SoC,T_{bat}) - I_{bat}(t)\left[R_0+R_{dist}\right] - V_{p1}(t)-V_{p2}(t) \label{eq:vbus_bess_dinamica}
+\end{align}
 Adota-se $P_{bat}>0$ na descarga e $P_{bat}<0$ na carga, com $I_{bat}>0$ na descarga. Na integração contínua, $E_{bat,nom}$ deve estar em joules, $P_{bat}$ em watts e $t$ em segundos; $\eta_{ch}$ e $\eta_{dis}$ permanecem parâmetros até serem sustentados por fonte ou dados de célula. A expressão de $V_{bus}$ inclui a resistência interna do pack, a resistência de distribuição e os estados de polarização do modelo DP.
 
 \subsubsection{Dinâmica Transitória sob Degraus de IA e Estabilidade CPL}
@@ -276,10 +276,10 @@ sendo $r_{in,400V} = -8{,}00\,\Omega$ em 400~V, $r_{in,48V} = -0{,}115\,\Omega$ 
     \label{eq:criterio_middlebrook}
 \end{equation}
 com $GM \ge 10$. A impedância de saída $Z_{out}(s)$ e o requisito mínimo de capacitância para amortecimento de degraus de IA são:
-\begin{equation}
-    Z_{out}(s) = \frac{(s L_{dist} + R_{dist})(s C_{bus} ESR + 1)}{s^2 L_{dist} C_{bus} + s (L_{dist} + R_{dist} C_{bus} ESR) + 1}, \quad C_{bus,min} \ge \max\left( \frac{L_{dist}}{R_{dist}^2}, \, \frac{L_{dist} \Delta I^2}{V_{nom}^2 - V_{min}^2}, \, \frac{L_{dist} P_{CPL}^2}{V_{bus}^4} \right)
-    \label{eq:zout_bus}
-\end{equation}
+\begin{align}
+    Z_{out}(s) &= \frac{(s L_{dist} + R_{dist})(s C_{bus} ESR + 1)}{s^2 L_{dist} C_{bus} + s (L_{dist} + R_{dist} C_{bus} ESR) + 1} \label{eq:zout_bus} \\
+    C_{bus,min} &\ge \max\left( \frac{L_{dist}}{R_{dist}^2}, \, \frac{L_{dist} \Delta I^2}{V_{nom}^2 - V_{min}^2}, \, \frac{L_{dist} P_{CPL}^2}{V_{bus}^4} \right) \label{eq:cbus_min_formula}
+\end{align}
 
 A Figura~\ref{fig:estabilidade_cpl_banco} apresenta a análise de Middlebrook e a dinâmica transitória sob degraus de IA.
 

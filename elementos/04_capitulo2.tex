@@ -150,7 +150,7 @@ A literatura científica recente apresenta quatro grandes famílias para estimat
 \begin{enumerate}
     \item \textbf{Métodos Empíricos (Contagem de Coulomb e Tabela OCV):} Sofrem de desvio cumulativo (\textit{drift}) por ruído de sensores de corrente e exigem longos períodos de repouso (1~h a 4~h) para relaxação da tensão de circuito aberto, inviáveis em servidores de operação ininterrupta.
     \item \textbf{Modelos Eletroquímicos de Primeiros Princípios (P2D e SPM):} Apresentam máxima fidelidade físico-química, mas sua discretização espacial demanda centenas de variáveis de estado, inviabilizando a execução em tempo real em processadores espaciais tolerantes a radiação (e.g., RAD750 a 133~MHz).
-    \item \textbf{Redes Neurais e Aprendizado Profundo Puro (LSTM, GRU, Transformers):} Comportam-se como caixas-pretas estatísticas que podem divergir bruscamente ou prever valores espúrios diante de anomalias espaciais inéditas, arriscando o suprimento de energia do satélite.
+    \item \textbf{Redes Neurais e Aprendizado Profundo (LSTM, GRU e Transformers):} Comportam-se como caixas-pretas estatísticas que podem divergir bruscamente ou prever valores espúrios diante de anomalias espaciais inéditas, arriscando o suprimento de energia do satélite.
     \item \textbf{Filtros Gaussianos Não Lineares Adaptativos (AUKF):} O Filtro de Kalman Unscented propaga $2L+1$ pontos sigma determinísticos através da não linearidade da curva $V_{oc}(SoC)$, capturando a média e a covariância com precisão de 3ª ordem sem cálculo de derivadas Jacobianas. A incorporação de fator de esquecimento adaptativo recalibra online as matrizes de covariância frente à deriva térmica e ao envelhecimento (FENG et al., 2022, p. 44522).
 \end{enumerate}
 
