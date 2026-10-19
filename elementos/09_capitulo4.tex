@@ -129,7 +129,7 @@ A absorção e a emissão radiativas dependem das propriedades termo-ópticas da
 \hline
 \textbf{Superfície da Espaçonave} & \textbf{Material / Acabamento Espacial} & $\mathbf{\alpha_{s,BOL}}$ & $\mathbf{\alpha_{s,EOL}}$ & $\mathbf{\varepsilon_{ir}}$ & $\mathbf{\alpha_s/\varepsilon}$ (EOL) & \textbf{Referência / Norma} \\ \hline
 Painéis Radiadores Térmicos & Espelhos Ópticos Solares (OSR Quartzo/Prata) & $0{,}08$ & $0{,}24$ & $0{,}88$ (BOL); $0{,}82$ (EOL) & $0{,}293$ (EOL) & Premissa EOL do script [PROVISÓRIO]; sem curva de envelhecimento \\
-Carcaça Externa Estrutural & Tinta Branca Cerâmica de Silicato (AZ-93) & $0{,}15$ & $0{,}26$ & $0{,}91$ & $0{,}286$ & NASA-SP-8005; AZ Technology \\
+Carcaça Externa Estrutural & Tinta Branca Cerâmica de Silicato (AZ-93) & $0{,}15$ & $0{,}26$ & $0{,}91$ & $0{,}286$ & ECSS-E-HB-31-01; AZ Technology \\
 Isolamento Passivo (MLI Externa) & Filme Kapton Aluminizado com VDA (1 mil) & $0{,}38$ & $0{,}48$ & $0{,}76$ & $0{,}632$ & Sheldahl Space Materials (2020) \\
 Coverglass dos Painéis Solares & Borosilicato Ceriado CMG ($100\ \mu\text{m}$) MgF$_2$ & $0{,}90$ & $0{,}92$ & $0{,}85$ & $1{,}082$ & Qioptiq Space Power Optics (2022) \\
 Bordas e Trilhos Estruturais & Alumínio Anodizado Duro Al 6061-T6 & $0{,}42$ & $0{,}55$ & $0{,}82$ & $0{,}671$ & ECSS-Q-ST-70-08C (ECSS, 2017) \\ \hline
@@ -298,7 +298,7 @@ A potência ambiental parasita total absorvida ($P_{abs,amb}$) decompõe-se rigo
 \end{align}
 onde $A_{sol,proj}(t) = A_{rad} \cdot \max(0, \, \hat{\mathbf{n}}_{rad} \cdot \hat{\mathbf{s}}(t))$ é a área efetiva projetada normal ao vetor solar. Na atitude nominal estática em órbita heliossíncrona *Dawn-Dusk*, a normal do radiador aponta permanentemente para o semiplano anti-solar ($\hat{\mathbf{n}}_{rad} \cdot \hat{\mathbf{s}} \le 0$), anulando $A_{sol,proj} = 0\text{ m}^2$ em regime nominal.
 
-\subsubsection{Condução Bidimensional em Aletas de APG Anisotrópico e Eficiência \texorpdfstring{($\eta_{fin}$)}{(eta_fin)}}
+\subsubsection{Condução Bidimensional em Aletas de APG Anisotrópico e Eficiência \texorpdfstring{($\eta_{fin}$)}{(eta-fin)}}
 
 O transporte de calor entre os tubos coletores do condensador bifásico de amônia e as extremidades emissoras do radiador depende da condução sólida bidimensional nas aletas. Diferentemente de metais isotrópicos homogêneos, adota-se uma estrutura avançada de \textbf{Grafite Pirolítico Encapsulado} (\textit{Annealed Pyrolytic Graphite} -- APG). O APG exibe condutividade térmica planar extraordinária no plano basal cristalográfico ($k_{xx} = k_{yy} = k_{in-plane} \ge 1500\text{ W/(m}\cdot\text{K)}$), mas baixa condutividade transversal através das lamelas de grafeno ($k_{zz} = k_{through-plane} \approx 10\text{ W/(m}\cdot\text{K)}$).
 
@@ -442,12 +442,39 @@ A corrente de fuga sublimiar é modulada termicamente por emissão termoiônica 
 \end{equation}
 com $P_{leak,ref}(V_{core}) = I_{leak,ref} V_{core} (V_{core}/V_{core,nom})^2$, sendo $\beta_T = 0{,}0285\text{ K}^{-1}$ [PROVISÓRIO].
 
-A estabilidade de equilíbrio de primeira ordem ($P_{chip}(T_j^*) = \dot{Q}_{out}(T_j^*)$) sob extração $\dot{Q}_{out} = (T_j - T_{sink})/R_{th,j-sink}$ com dependência de transporte capilar $R_{th,j-sink}(Q) = R_{th,0} [1 + (Q/Q_{max,cap})^4]$ impõe a condição estrita de Lyapunov para amortecimento:
+A dinâmica de equilíbrio eletrotérmico na junção dos transistores é governada pela equação de conservação diferencial:
+\begin{equation}
+    C_{th} \frac{dT_j(t)}{dt} = P_{dyn}(V_{core}, f_{clk}) + P_{leak}(T_j, V_{core}) - \dot{Q}_{out}(T_j)
+    \label{eq:dinamica_juncao_lyapunov}
+\end{equation}
+No ponto de operação de equilíbrio $T_j^*$, a potência total gerada iguala a taxa de extração: $P_{dyn} + P_{leak}(T_j^*) = \dot{Q}_{out}(T_j^*)$. Definindo o estado de perturbação térmica local $\Delta T(t) = T_j(t) - T_j^*$, a dinâmica do erro de temperatura assume a forma:
+\begin{equation}
+    C_{th} \frac{d(\Delta T)}{dt} = \left[ P_{leak}(T_j^* + \Delta T) - P_{leak}(T_j^*) \right] - \left[ \dot{Q}_{out}(T_j^* + \Delta T) - \dot{Q}_{out}(T_j^*) \right]
+\end{equation}
+
+Para demonstrar a estabilidade assintótica local do ponto de operação segundo o Método Direto de Lyapunov, estabelece-se a função candidata de Lyapunov quadrática:
+\begin{equation}
+    V(\Delta T) = \frac{1}{2} C_{th} (\Delta T)^2 > 0, \quad \forall \Delta T \neq 0
+    \label{eq:funcao_lyapunov_candidata}
+\end{equation}
+que é estritamente definida positiva e radialmente ilimitada. A derivada temporal de $V(\Delta T)$ calculada ao longo das trajetórias dinâmicas do sistema diferencial é dada por:
+\begin{align}
+    \dot{V}(\Delta T) &= \Delta T \cdot C_{th} \frac{d(\Delta T)}{dt} \nonumber \\
+    &= \Delta T \left\{ \left[ P_{leak}(T_j^* + \Delta T) - P_{leak}(T_j^*) \right] - \left[ \dot{Q}_{out}(T_j^* + \Delta T) - \dot{Q}_{out}(T_j^*) \right] \right\}
+\end{align}
+Expandindo a geração e a extração em série de Taylor de primeira ordem em torno de $T_j^*$, tem-se $P_{leak}(T_j^* + \Delta T) - P_{leak}(T_j^*) \approx \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{T_j^*} \Delta T$ e $\dot{Q}_{out}(T_j^* + \Delta T) - \dot{Q}_{out}(T_j^*) \approx \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} \Delta T$, resultando em:
+\begin{equation}
+    \dot{V}(\Delta T) \approx \left( \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{T_j^*} - \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} \right) (\Delta T)^2
+    \label{eq:derivada_lyapunov_taylor}
+\end{equation}
+Pelo Teorema de Estabilidade de Lyapunov, a condição necessária e suficiente para estabilidade assintótica local ($\dot{V}(\Delta T) < 0, \, \forall \Delta T \neq 0$) exige que o coeficiente diferencial seja estritamente negativo:
 \begin{equation}
     \left. \frac{\partial P_{chip}}{\partial T_j} \right|_{T_j^*} < \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} = \frac{1/R_{th}}{1+\frac{(T_j^*-T_{sink})}{R_{th}^{2}}\left.\frac{dR_{th}}{d\dot Q_{out}}\right|_*} \quad \text{[DEPENDENTE DO MODELO]}
     \label{eq:criterio_estabilidade_box}
 \end{equation}
-Para as condições nominais ($T_j^* = 70^\circ\text{C}$, $V_{core} = 0{,}85\text{ V}$, $P_{leak} \approx 3{,}6\text{ kW}$), o gradiente de fuga é $\partial P_{leak}/\partial T_j = \beta_T P_{leak} \approx 102{,}6\text{ W/K}$, muito inferior à condutância nominal agregada de $860{,}2\text{ W/K}$ (80 dies em paralelo), garantindo estabilidade. Sob falha severa ($R_{th}$ elevado para $\ge 0{,}35\text{ K/W}$ por degradação de TIM ou dry-out), a condutância cai para $\le 228{,}5\text{ W/K}$. Caso $T_j$ atinja $95^\circ\text{C}$ ($P_{leak} \approx 7{,}4\text{ kW}$), o gradiente sobe para $210{,}9\text{ W/K}$, aproximando-se do limiar de bifurcação de \textit{thermal runaway}.
+garantindo que qualquer perturbação térmica decaia exponencialmente para zero. Sob resistência térmica constante ($dR_{th}/d\dot{Q} = 0$), a desigualdade reduz-se à condição clássica $\partial P_{leak}/\partial T_j < 1/R_{th} = G_{th}$.
+
+Para as condições nominais ($T_j^* = 70^\circ\text{C}$, $V_{core} = 0{,}85\text{ V}$, $P_{leak} \approx 3{,}6\text{ kW}$), o gradiente de fuga é $\partial P_{leak}/\partial T_j = \beta_T P_{leak} \approx 102{,}6\text{ W/K}$, muito inferior à condutância nominal agregada de $860{,}2\text{ W/K}$ (80 dies em paralelo), garantindo estabilidade incondicional ($\dot{V} < 0$). Sob falha severa ($R_{th}$ elevado para $\ge 0{,}35\text{ K/W}$ por degradação de TIM ou dry-out), a condutância cai para $\le 228{,}5\text{ W/K}$. Caso $T_j$ atinja $95^\circ\text{C}$ ($P_{leak} \approx 7{,}4\text{ kW}$), o gradiente sobe para $210{,}9\text{ W/K}$, aproximando-se da bifurcação em que $\dot{V} > 0$ e o sistema entra em \textit{thermal runaway} divergente.
 
 A violação do envelope de temperatura deflagra as proteções: (a) \textit{thermal throttling} gradual antes de $80^\circ\text{C}$ (reduzindo $f_{clk}$ de $1{,}8$ para $1{,}0\text{ GHz}$); (b) \textit{thermal trip} rígido em $T_{crit} = 85{,}0^\circ\text{C}$ para modo seguro. A Figura~\ref{fig:estabilidade_runaway_lhp} ilustra o crescimento exponencial da fuga, a bifurcação de runaway sob tensão turbo ($1{,}05\text{ V}$) e o mapa de estabilidade no plano $V_{core} \times R_{th,crit}$.
 
@@ -722,8 +749,8 @@ A Tabela~\ref{tab:fmeca_limiares_sistemicos} sintetiza a Matriz FMECA de Limiare
 \textbf{RAD-F03} & Incursão em Cinturão de Van Allen & $h \ge 1231\text{ km}$ & Fluência $> 10^{14}\text{ e}^-/\text{cm}^2/\text{ano}$; geração PV degrada para $< 37{,}4\text{ kW}$ & Redução da janela de processamento útil; suspensão de treinamento neural denso \\
 \textbf{TIM-F04} & Degradação de Interface Die-Base & $R_{12} \ge 0{,}15\text{ K/W}$ & Desgaseificação / descolamento de TIM; $\Delta T_{die} > 25^\circ\text{C}$ sob plena carga & Clamping do DVFS no piso de $1{,}0\text{ GHz}$; alerta de saúde ao agendador do cluster \\
 \textbf{LHP-F05} & Secagem Capilar (\textit{Dry-out}) & $R_{34} \ge 0{,}10\text{ K/W}$ & Bloqueio de vapor ou falta de recarga capilar no evaporador LHP & Redução escalonada de carga em degraus de 5~kW até restabelecer refluxo bifásico \\
-\textbf{BAT-F06} & Sobrecarga em Eclipse Orbital & $SoC \le 20{,}0\%$ & Demanda de IA sem recarga consome reserva crítica ($DoD > 80\%$) & Deslastro de tensores neurais; manutenção exclusiva de aviônica ($560\text{ W}$) \\
-\textbf{ET-F07}  & Curto-Circuito sob Retardo WCA & $t_{trip} \ge 100\ \mu\text{s}$ & Energia $I^2t = 2461{,}7\text{ A}^2\text{s}$ rompe limite adiabático ($1500\text{ A}^2\text{s}$) & Desarme instantâneo por SSPC; bloqueio rígido (\textit{lockout}) de religamentos \\ \hline
+\textbf{BAT-F06} & Sobrecarga em Eclipse Orbital (BAT-F01) & Falha de \textit{throttling} / carga plena de 20 kW em eclipse & Demanda de 12,27 kWh excede os 9,0 kWh do BESS; esgotamento do SoC e colapso de subtensão em 19,9 min & Modulação compulsória pelo TEMS: teto de 6,5 kW em LEO ($SoC_{min} = 50{,}5\%$), 18 kW em SSO e 4,5 kW em GEO; corte por UVLO em 324 V \\
+\textbf{ET-F07}  & Curto-Circuito sob Retardo WCA e Sobretensão de Corte & $t_{trip} > 74{,}8\ \mu\text{s}$ ou corte sem TVS ($\tau_{ext} < 31{,}1\ \mu\text{s}$) & Em $100\ \mu\text{s}$, $I^2t = 2461{,}7\text{ A}^2\text{s} > 1500\text{ A}^2\text{s}$ (fusão SiC); em corte não-controlado, $V_{spike} > 1200\text{ V}$ já aos $1{,}0\ \mu\text{s}$ & Desarme analógico rápido ($t_{trip} \le 15\ \mu\text{s}$, $I^2t \le 145{,}5\text{ A}^2\text{s}$); \textit{lockout} de religamentos; TVS em 550 V e \textit{soft turn-off} \\ \hline
 \end{tabular}%
 }
 \end{table}

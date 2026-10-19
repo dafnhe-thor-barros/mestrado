@@ -134,6 +134,7 @@ fprintf('Retencao Fotovoltaica aos 10 Anos (SSO 700 km): %5.2f %% | Potencia EOL
 
 %% 4. CONTINGENCIA DE HOT SPOT POR STEFAN-BOLTZMANN EXATO NO VACUO
 % Celula sombreada polarizada em reversa pela corrente da string
+% Part Number de Referência: Spectrolab XTJ Prime 30.18 cm^2 (Ge/GaAs/InGaP, Tripla Junção)
 V_break_cel = -28.0;      % [V] Tensao de avalanche reversa
 V_schottky  = -0.35;      % [V] Queda de tensao direta do diodo Schottky de bypass
 I_string    = I_mp_ref;   % [A] 0.53127 A
@@ -142,8 +143,12 @@ P_diss_sem = abs(V_break_cel) * I_string; % [W] 14.875 W
 P_diss_com = abs(V_schottky)  * I_string; % [W] 0.1859 W
 
 eps_cel = 0.85;           % Emissividade infravermelha de ambas as faces
-C_th_cel = 3.8;           % [J/K] Capacitancia termica da celula
-T_space = 3.0;            % [K] Fundo cosmico frio no vacuo profundo
+C_th_cel = 3.8;           % [J/K] Capacitancia termica da celula (massa 2.5 g + coverglass cerio-dopado)
+T_space = 3.0;            % [K] Fundo cosmico frio no vacuo profundo (ECSS-E-ST-31C)
+% Observação de balanço radiativo: Sob oclusão geométrica direta (antena/mastro), a incidência
+% ambiental difusa residual (albedo e IR terrestre) absorvida pela célula é da ordem de miliwatts
+% (q_amb_abs << P_diss_sem), de modo que a dissipação Joule reversa de avalanche (14.875 W) domina
+% amplamente a dinâmica de aquecimento, conduzindo ao pico assintótico de 201.7 °C e trip em 69.5 s.
 
 dt_hs = 0.1;              % [s] Passo de integracao
 t_hs = 0:dt_hs:180;       % [s] Ensaio de 3 minutos

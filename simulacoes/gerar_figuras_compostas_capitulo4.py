@@ -395,6 +395,17 @@ def gerar_figura_4_2():
 def gerar_figura_4_3():
     print("Gerando Figura 4.3: Co-design Eletrotérmico e Limite de Lyapunov...")
 
+    # Formulação Rigorosa do Critério de Estabilidade de Lyapunov:
+    # Equação térmica nodal da junção: C_th * dT_j/dt = P_leak(T_j) + P_dyn - G_th * (T_j - T_sink)
+    # Ponto de equilíbrio T_j,eq: P_leak(T_j,eq) + P_dyn = G_th * (T_j,eq - T_sink)
+    # Erro de perturbação: Delta T = T_j - T_j,eq
+    # Função candidata de Lyapunov: V(Delta T) = (1/2) * C_th * (Delta T)^2 > 0 para todo Delta T != 0
+    # Derivada temporal: dV/dt = Delta T * (P_leak(T_j) - P_leak(T_j,eq) - G_th * Delta T)
+    # Por expansão em série de Taylor: P_leak(T_j) - P_leak(T_j,eq) approx (dP_leak/dT) * Delta T
+    # dV/dt approx (dP_leak/dT - G_th) * (Delta T)^2
+    # Condição de estabilidade assintótica segundo Lyapunov (dV/dt < 0):
+    # dP_leak/dT < G_th = 1 / R_th_eq (Margem de estabilidade positiva)
+
     # Parâmetros BSIM calibrados sub-7nm (Seção 4.4):
     beta_T = 0.0285 # K^-1
     T_ref = 25.0 + 273.15 # K

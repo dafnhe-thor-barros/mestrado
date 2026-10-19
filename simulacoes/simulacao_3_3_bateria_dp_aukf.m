@@ -133,6 +133,7 @@ fprintf('Faixa Térmica do Pack: %4.1f °C a %4.1f °C (Faixa Operacional Segura
 
 %% 3. ESTIMADOR ADAPTATIVO AUKF (UNSCENTED KALMAN FILTER) VS. COULOMB COUNTING
 fprintf('--- 3.1 VALIDAÇÃO DO ALGORITMO AUKF MATRICIAL COM CONVERGÊNCIA RÁPIDA ---\n');
+rng(42); % Fixação determinística de semente pseudo-aleatória (Auditoria Técnica)
 dt_kf = 1.0;
 t_kf = 0:dt_kf:1200; % 20 minutos de ensaio dinâmico
 N_kf = length(t_kf);

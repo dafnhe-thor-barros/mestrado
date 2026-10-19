@@ -147,6 +147,7 @@ fprintf('Figura 3.5 exportada com sucesso: ../figuras/figura_3_5_dinamica_dp_ele
 %% ==============================================================================
 %% 2. IMPLEMENTAÇÃO MATRICIAL REAL DO ESTIMADOR AUKF (TRANSFORMADA UNSCENTED)
 %% ==============================================================================
+rng(42); % Fixação determinística de semente pseudo-aleatória (Auditoria Técnica)
 dt_kf = 1.0;
 t_kf = 0:dt_kf:1200;
 N_kf = length(t_kf);
