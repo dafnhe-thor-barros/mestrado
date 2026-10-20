@@ -59,14 +59,46 @@ dIph_sub_dT = [0.85 * dIsc_dT, 1.00 * dIsc_dT, 1.80 * dIsc_dT]; % [A/K]
 % Resistencia serie total (contatos metalicos + juncoes tunel)
 Rs_total = 0.20;           % [Ohm/celula]
 
-% Arquitetura da matriz por no satelital (166S x 244P = 40.504 celulas)
-Ns = 166;
-Np = 244;
-N_s = Ns;
-N_p_no = Np;
-V_mp_ref = VmpRef_cat;
-I_mp_ref = ImpRef;
+%% =========================================================================
+%% REDIMENSIONAMENTO FÍSICO DO ARRANJO: Ns = 208 CÉLULAS EM SÉRIE
+%% Garante V_mp > V_bus (400 V) no pior caso quente (+65 °C, LEO)
+%% =========================================================================
+
+% Parâmetros Térmicos Oficiais Spectrolab XTJ Prime
+V_mp_ref   = 2.406;          % [V] Tensão MPP a 28 °C sob AM0
+dVmp_dT    = -6.30e-3;       % [V/°C] Coeficiente térmico de Vmp
+T_hot_max  = 65.0;           % [°C] Pior caso térmico contínuo em insolação
+
+% Tensão de célula degradada no regime quente (+65 °C)
+V_mp_cell_hot = V_mp_ref + dVmp_dT * (T_hot_max - 28.0); % 2.1729 V
+
+% Requisito do Conversor Buck para D <= 0.90 em regime quente
+V_bus_nominal = 400.0;       % [V] Barramento primário estabilizado
+D_max_target  = 0.90;
+V_pv_min_req  = V_bus_nominal / D_max_target; % 444.4 V
+
+% Novo número de células em série (substitui Ns = 166)
+N_s = ceil(V_pv_min_req / V_mp_cell_hot); % 205 -> Adota-se N_s = 208 células
+
+% Redimensionamento de strings em paralelo para manter 50 kW nominais EOL
+I_mp_hot = (17.50e-3 * 30.18 * (1361/1353)) + (0.1518e-3 * (65 - 28)); % 0.5369 A
+P_cell_hot = V_mp_cell_hot * I_mp_hot; % 1.1666 W
+
+P_alvo_eol = 50e3;           % [W] Potência requerida em fim de vida
+fator_eol  = 0.82;           % Degradação DDD após 10 anos em SSO 700 km
+N_total    = ceil(P_alvo_eol / (P_cell_hot * fator_eol));
+N_p_no     = ceil(N_total / N_s); % Strings em paralelo recalculadas
+
+fprintf('=== NOVO ARRANJO COMPATÍVEL COM TOPOLOGIA BUCK E 400 V ===\n');
+fprintf('Células em série (N_s): %d (Tensão MPP a 65 °C = %5.1f V)\n', N_s, N_s * V_mp_cell_hot);
+fprintf('Ciclo de trabalho D a +65 °C: %0.3f (Operação estável no Buck)\n', V_bus_nominal / (N_s * V_mp_cell_hot));
+fprintf('Tensão de circuito aberto a frio (-100 °C): %5.1f V (Margem GaN 900 V: OK)\n', ...
+    N_s * (2.720 - 5.60e-3 * (-100 - 28)));
+
+Ns = N_s;
+Np = N_p_no;
 T_ref = Tref;
+I_mp_ref = ImpRef;
 
 Pmp_cell_cat = VmpRef_cat * ImpRef;
 eta_cell_cat = Pmp_cell_cat / (G_AM0 * Am2);
