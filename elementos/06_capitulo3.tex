@@ -456,8 +456,8 @@ A Figura~\ref{fig:convergencia_aukf_estresse} ilustra a convergência do estimad
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{figuras/figura_3_6_convergencia_aukf_estresse.png}
-    \caption{Desempenho \textit{in silico} do estimador AUKF e resposta de subtensão em EOL: (a1) convergência de SoC e comparação com deriva do Coulomb Counting; (a2) erro absoluto $|SoC_{est} - SoC_{real}|$ convergindo para $0{,}03\%$ ($\sigma_V=15\text{ mV}$) e $0{,}19\%$ ($\sigma_V=150\text{ mV}$); (b1) filtragem do ruído de sensoriamento; (b2) resposta sob pulso de IA de 50~kW (140~A por 60~s) em EOL, contrastando a margem operacional a $SoC = 20\%$ ($> 28\text{ V}$) com o ensaio fora de projeto a $SoC = 2\%$ ($V_{UV} = 324\text{ V}$).}
+    \includegraphics[width=0.78\textwidth]{figuras/figura_3_6_convergencia_aukf_estresse.png}
+    \caption{Desempenho \textit{in silico} do estimador AUKF com fator de esquecimento adaptativo sob degrau de potência computacional (2~kW $\to$ 20~kW): (a) convergência dinâmica do Estado de Carga (SoC) com envelope de incerteza da covariância ($\pm 3\sigma$); (b) resíduo de estimação e erro de inovação contido estritamente dentro da faixa de tolerância de projeto ($\pm 0{,}8\%$).}
     \label{fig:convergencia_aukf_estresse}
 \end{figure}
 

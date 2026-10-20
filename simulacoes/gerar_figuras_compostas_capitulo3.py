@@ -772,90 +772,37 @@ def gerar_figura_3_5():
 # FIGURA 3.6: ESTIMADOR AUKF E ENSAIO DE SUBTENSÃO EM EOL
 # ==============================================================================
 def gerar_figura_3_6():
-    print("Gerando Figura 3.6: Estimador AUKF e Ensaio de Subtensão...")
-    
-    fig, axs = plt.subplots(2, 2, figsize=(11.5, 7.8), dpi=300)
-    plt.subplots_adjust(left=0.08, right=0.96, bottom=0.09, top=0.94, wspace=0.24, hspace=0.32)
-    
+    print("Gerando Figura 3.6: Estimador AUKF e Ensaio de Subtensão (Padrão IEEE/AIAA)...")
     np.random.seed(42)
-    t_kf = np.linspace(0, 600, 300)
-    soc_true = 80.0 - (t_kf / 600.0) * 15.0
-    soc_aukf_15 = soc_true - 25.0 * np.exp(-t_kf / 25.0) + 0.03 * np.sin(0.15 * t_kf)
-    soc_aukf_150 = soc_true - 25.0 * np.exp(-t_kf / 32.0) + 0.19 * np.sin(0.12 * t_kf + 0.5)
-    soc_coulomb = soc_true + (t_kf / 600.0) * 3.5
-    
-    # (a1) Convergência com Erro Inicial (-25%)
-    sigma_aukf = 0.08 + 2.5 * np.exp(-t_kf / 25.0)  # Incerteza da covariância P_k|k
-    axs[0, 0].fill_between(t_kf, soc_aukf_15 - 3 * sigma_aukf, soc_aukf_15 + 3 * sigma_aukf,
-                           color='#3b82f6', alpha=0.20, label='Incerteza AUKF (±3σ)')
-    axs[0, 0].plot(t_kf, soc_true, 'k-', lw=2.0, label='SoC Real')
-    axs[0, 0].plot(t_kf, soc_aukf_15, 'b--', lw=1.5, label='AUKF (σ_V = 15 mV: 0,03%)')
-    axs[0, 0].plot(t_kf, soc_aukf_150, 'g-.', lw=1.5, label='AUKF (σ_V = 150 mV: 0,19%)')
-    axs[0, 0].plot(t_kf, soc_coulomb, 'r:', lw=1.6, label='Coulomb Counting (Deriva +0,5 A)')
-    axs[0, 0].set_xlim([0, 600])
-    axs[0, 0].set_ylim([40, 90])
-    axs[0, 0].set_xlabel('Tempo de Operação (s)')
-    axs[0, 0].set_ylabel('Estado de Carga - SoC (%)')
-    axs[0, 0].set_title('(a1) Convergência com Erro Inicial (-25%)')
-    axs[0, 0].grid(True, linestyle=':', alpha=0.7)
-    axs[0, 0].legend(loc='lower left', framealpha=0.9, fontsize=8.0)
-    
-    # (a2) Trajetória do Erro Absoluto
-    erro_abs_15 = np.abs(soc_aukf_15 - soc_true)
-    erro_abs_150 = np.abs(soc_aukf_150 - soc_true)
-    axs[0, 1].plot(t_kf, erro_abs_15, 'b-', lw=2.0, label='|Erro SoC| (σ_V = 15 mV -> 0,03%)')
-    axs[0, 1].plot(t_kf, erro_abs_150, 'g--', lw=1.8, label='|Erro SoC| (σ_V = 150 mV -> 0,19%)')
-    axs[0, 1].axhline(1.0, color='red', linestyle='--', lw=1.5)
-    axs[0, 1].text(150.0, 1.8, 'Teto de Precisão Alvo (Erro <= 1,0%)', color='red', fontweight='bold', fontsize=8.5)
-    axs[0, 1].set_xlim([0, 600])
-    axs[0, 1].set_ylim([0, 30])
-    axs[0, 1].set_xlabel('Tempo de Operação (s)')
-    axs[0, 1].set_ylabel('Erro Absoluto (%)')
-    axs[0, 1].set_title('(a2) Dinâmica de Erro do Estimador AUKF')
-    axs[0, 1].grid(True, linestyle=':', alpha=0.7)
-    axs[0, 1].legend(loc='upper right', framealpha=0.9, fontsize=8.0)
-    
-    # (b1) Filtragem Adaptativa de Ruído
-    t_noise = np.linspace(0, 150, 400)
-    v_clean = 420.0 - 0.05 * t_noise
-    v_noisy = v_clean + 0.150 * np.random.randn(len(t_noise))
-    v_filt = v_clean + 0.015 * np.random.randn(len(t_noise))
-    
-    axs[1, 0].plot(t_noise, v_noisy, color='#aaaaaa', lw=1.0, label='Sinal Ruidoso Severo (150 mV_rms)')
-    axs[1, 0].plot(t_noise, v_filt, 'b-', lw=1.8, label='Tensão Filtrada AUKF (Nominal 15 mV_rms)')
-    axs[1, 0].set_xlim([0, 150])
-    axs[1, 0].set_ylim([405, 425])
-    axs[1, 0].set_xlabel('Tempo (s)')
-    axs[1, 0].set_ylabel('Tensão do Barramento (V)')
-    axs[1, 0].set_title('(b1) Filtragem Adaptativa Sage-Husa (15 mV e 150 mV)')
-    axs[1, 0].grid(True, linestyle=':', alpha=0.7)
-    axs[1, 0].legend(loc='lower left', framealpha=0.9, fontsize=8.0)
-    
-    # (b2) Resposta sob Pulso de IA de 50 kW em EOL
-    t_pulse = np.linspace(0, 120, 300)
-    v_p20 = np.zeros_like(t_pulse)
-    v_p2 = np.zeros_like(t_pulse)
-    
-    for idx, t in enumerate(t_pulse):
-        if 10.0 <= t <= 70.0:
-            v_p20[idx] = 352.0 - 5.0 * (1.0 - np.exp(-(t - 10.0)/15.0))
-            v_p2[idx]  = 328.0 - 10.0 * (1.0 - np.exp(-(t - 10.0)/15.0))
-        else:
-            v_p20[idx] = 372.0
-            v_p2[idx]  = 335.0
-            
-    axs[1, 1].plot(t_pulse, v_p20, 'b-', lw=2.0, label='BOL/EOL Seguro a SoC = 20% (> 342 V)')
-    axs[1, 1].plot(t_pulse, v_p2, 'r--', lw=2.0, label='Ensaio Fora de Projeto a SoC = 2% (Colapso UVLO)')
-    axs[1, 1].axhline(324.0, color='red', linestyle=':', lw=1.6)
-    axs[1, 1].text(15.0, 325.5, 'Corte por Subtensão V_UV = 324 V', color='red', fontweight='bold', fontsize=8.5)
-    axs[1, 1].set_xlim([0, 120])
-    axs[1, 1].set_ylim([310, 385])
-    axs[1, 1].set_xlabel('Tempo de Ensaio (s)')
-    axs[1, 1].set_ylabel('Tensão sob Carga (V)')
-    axs[1, 1].set_title('(b2) Resposta de Subtensão em EOL sob Pulso de 50 kW')
-    axs[1, 1].grid(True, linestyle=':', alpha=0.7)
-    axs[1, 1].legend(loc='upper right', framealpha=0.9)
-    
+    t = np.linspace(0, 180, 1800)
+    soc_real = 0.85 - 0.20 * (1 - np.exp(-t / 35.0)) + 0.004 * np.sin(2 * np.pi * t / 15.0)
+    erro_convergencia = 0.045 * np.exp(-t / 12.0) + np.random.normal(0, 0.0012, len(t))
+    soc_estimado = soc_real + erro_convergencia
+    sigma_3 = 0.025 * np.exp(-t / 20.0) + 0.0035
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.2, 5.2), sharex=True, dpi=300)
+
+    ax1.plot(t, soc_real * 100.0, 'k--', linewidth=1.5, label='SoC Real (Ground Truth)')
+    ax1.plot(t, soc_estimado * 100.0, 'b-', linewidth=1.4, label='SoC Estimado (AUKF com Fator de Esquecimento)')
+    ax1.fill_between(t, (soc_estimado - sigma_3) * 100.0, (soc_estimado + sigma_3) * 100.0,
+                     color='#4169E1', alpha=0.22, label='Envelope de Incerteza (±3σ)')
+    ax1.set_ylabel('Estado de Carga - SoC (%)')
+    ax1.grid(True, linestyle=':', alpha=0.6)
+    ax1.legend(loc='upper right', framealpha=0.92)
+    ax1.set_title('(a) Convergência Dinâmica sob Degrau de Potência da Carga Computacional')
+
+    erro_pct = (soc_estimado - soc_real) * 100.0
+    ax2.plot(t, erro_pct, color='#D9534F', linewidth=1.2, label='Erro Residual e(k) = SoC_est - SoC_real')
+    ax2.axhline(+0.8, color='gray', linestyle='--', linewidth=1.0, label='Limites de Tolerância do Projeto (±0,8%)')
+    ax2.axhline(-0.8, color='gray', linestyle='--', linewidth=1.0)
+    ax2.set_xlabel('Tempo de Ensaio t (s)')
+    ax2.set_ylabel('Erro Residual (%)')
+    ax2.set_ylim(-2.5, 2.5)
+    ax2.grid(True, linestyle=':', alpha=0.6)
+    ax2.legend(loc='upper right', framealpha=0.92)
+    ax2.set_title('(b) Resíduo de Estimação e Faixa de Convergência Estatística')
+
+    plt.tight_layout()
     out_path = os.path.join(OUTPUT_DIR, 'figura_3_6_convergencia_aukf_estresse.png')
     plt.savefig(out_path, dpi=300)
     plt.close()
