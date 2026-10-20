@@ -78,7 +78,7 @@ D_max_target  = 0.90;
 V_pv_min_req  = V_bus_nominal / D_max_target; % 444.4 V
 
 % Novo número de células em série (substitui Ns = 166)
-N_s = ceil(V_pv_min_req / V_mp_cell_hot); % 205 -> Adota-se N_s = 208 células
+N_s = 208;                   % Adota-se N_s = 208 células (limite D <= 0.885 no pior caso quente)
 
 % Redimensionamento de strings em paralelo para manter 50 kW nominais EOL
 I_mp_hot = (17.50e-3 * 30.18 * (1361/1353)) + (0.1518e-3 * (65 - 28)); % 0.5369 A
@@ -87,7 +87,7 @@ P_cell_hot = V_mp_cell_hot * I_mp_hot; % 1.1666 W
 P_alvo_eol = 50e3;           % [W] Potência requerida em fim de vida
 fator_eol  = 0.82;           % Degradação DDD após 10 anos em SSO 700 km
 N_total    = ceil(P_alvo_eol / (P_cell_hot * fator_eol));
-N_p_no     = ceil(N_total / N_s); % Strings em paralelo recalculadas
+N_p_no     = 252;            % 252 strings em paralelo (52.416 células no total)
 
 fprintf('=== NOVO ARRANJO COMPATÍVEL COM TOPOLOGIA BUCK E 400 V ===\n');
 fprintf('Células em série (N_s): %d (Tensão MPP a 65 °C = %5.1f V)\n', N_s, N_s * V_mp_cell_hot);

@@ -300,8 +300,8 @@ def gerar_figura_3_3():
     dIph_sub_dT = np.array([0.85, 1.00, 1.80]) * dIsc_dT
     Rs_total = 0.20
     
-    N_s = 166
-    N_p = 244
+    N_s = 208
+    N_p = 252
     
     temperaturas = [15.0, 28.0, 60.0, 85.0]
     cores = ['#1f77b4', '#2ca02c', '#9467bd', '#d62728']
@@ -332,8 +332,8 @@ def gerar_figura_3_3():
         # (a2) Curvas P-V
         axs[0, 1].plot(V, P / 1e3, color=cores[idx], lw=1.8, label=f"{labels_temp[idx]} ({P_mp/1e3:.2f} kW)")
         
-    axs[0, 0].set_xlim([0, 500])
-    axs[0, 0].set_ylim([0, 150])
+    axs[0, 0].set_xlim([0, 650])
+    axs[0, 0].set_ylim([0, 160])
     axs[0, 0].set_xlabel('Tensão da Matriz Solar (V)')
     axs[0, 0].set_ylabel('Corrente da Matriz do Nó (A)')
     axs[0, 0].set_title('(a1) Curvas I-V (Modelo 3 Diodos GaInP/GaAs/Ge)')
@@ -341,11 +341,10 @@ def gerar_figura_3_3():
     axs[0, 0].legend(loc='lower left', framealpha=0.9)
     
     # (a2) Marcação de Barramento
-    axs[0, 1].axvline(350.0, color='gray', linestyle=':', lw=1.3)
     axs[0, 1].axvline(400.0, color='black', linestyle='--', lw=1.5)
-    axs[0, 1].text(404.0, 20.0, 'Barramento (400 V)', color='black', fontweight='bold', fontsize=8.5, rotation=90, va='bottom')
-    axs[0, 1].set_xlim([0, 500])
-    axs[0, 1].set_ylim([0, 58])
+    axs[0, 1].text(406.0, 25.0, 'Barramento (400 V)', color='black', fontweight='bold', fontsize=8.5, rotation=90, va='bottom')
+    axs[0, 1].set_xlim([0, 650])
+    axs[0, 1].set_ylim([0, 75])
     axs[0, 1].set_xlabel('Tensão da Matriz Solar (V)')
     axs[0, 1].set_ylabel('Potência da Matriz do Nó (kW)')
     axs[0, 1].set_title('(a2) Curvas P-V (3 Diodos) e Ponto de Máxima Potência')
@@ -450,8 +449,8 @@ def gerar_figura_3_4():
     axs[0, 1].plot(t_hs, T_1f - 273.15, 'r--', lw=1.8, label='Sem Bypass — 1 Face (Eq = 279,4 °C)')
     axs[0, 1].plot(t_hs, T_2f - 273.15, 'r-', lw=2.0, label='Sem Bypass — 2 Faces (Eq = 201,7 °C)')
     axs[0, 1].plot(t_hs, T_bp - 273.15, 'g-', lw=2.0, label='Com Diodo Schottky (Estável 60,0 °C)')
-    axs[0, 1].axhline(180.0, color='black', linestyle=':', lw=1.5)
-    axs[0, 1].text(10.0, 185.0, 'Limiar de Delaminação do Adesivo (180 °C)', color='black', fontweight='bold', fontsize=8.2)
+    axs[0, 1].axhline(180.0, color='darkred', linestyle='--', lw=1.5, label='Limite Crítico / Trip (180 °C)')
+    axs[0, 1].text(10.0, 185.0, 'Limiar de Delaminação do Adesivo (180 °C)', color='darkred', fontweight='bold', fontsize=8.2)
     axs[0, 1].set_xlim([0, 240])
     axs[0, 1].set_ylim([40, 300])
     axs[0, 1].set_xlabel('Tempo de Sombra (s)')
@@ -480,8 +479,8 @@ def gerar_figura_3_4():
     V_mp_ref = 2.406
     dVmp_dT = -6.30e-3
     T_ref = 28.0
-    N_s = 166
-    N_p_no = 244
+    N_s = 208
+    N_p_no = 252
     I_mp_ref = 0.5313
     dImp_dT = +5.0e-6 * 30.18 * (1361.0 / 1353.0)
 
@@ -572,7 +571,7 @@ def gerar_figura_3_4():
     axs[1, 0].plot(t_ms, V_pv_fixo, 'r-', lw=1.4, label='P&O Passo Fixo (ΔD = 0,005)')
     axs[1, 0].plot(t_ms, V_mp_analitico, 'k--', lw=1.5, label='Trajetória V_mp Ótima (-100 °C a +65 °C)')
     axs[1, 0].set_xlim([0, 50])
-    axs[1, 0].set_ylim([340, 580])
+    axs[1, 0].set_ylim([420, 720])
     axs[1, 0].set_xlabel('Tempo após Saída do Eclipse (ms)')
     axs[1, 0].set_ylabel('Tensão da Matriz FV (V)')
     axs[1, 0].set_title('(b1) Rastreamento MPPT Buck GaN 150 kHz (EDO LC)')

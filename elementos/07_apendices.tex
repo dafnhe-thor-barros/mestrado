@@ -25,9 +25,10 @@ A massa total de cada condutor é expressa pelo produto do volume pela densidade
 \end{equation}
 
 Substituindo a razão de áreas na razão de massas:
-\begin{equation}
-    \frac{M_{Al}}{M_{Cu}} = \frac{\delta_{Al} \cdot A_{Al} \cdot L}{\delta_{Cu} \cdot A_{Cu} \cdot L} = \frac{\delta_{Al}}{\delta_{Cu}} \cdot \frac{\rho_{Al}}{\rho_{Cu}} = \frac{2{,}70\text{ g/cm}^3}{8{,}96\text{ g/cm}^3} \cdot \frac{2{,}82 \times 10^{-8}\ \Omega\cdot\text{m}}{1{,}72 \times 10^{-8}\ \Omega\cdot\text{m}} = 0{,}3013 \times 1,6395 \approx 0{,}494
-\end{equation}
+\begin{align}
+    \frac{M_{Al}}{M_{Cu}} &= \frac{\delta_{Al} \cdot A_{Al} \cdot L}{\delta_{Cu} \cdot A_{Cu} \cdot L} = \frac{\delta_{Al}}{\delta_{Cu}} \cdot \frac{\rho_{Al}}{\rho_{Cu}} \nonumber \\
+    &= \frac{2{,}70\text{ g/cm}^3}{8{,}96\text{ g/cm}^3} \cdot \frac{2{,}82 \times 10^{-8}\ \Omega\cdot\text{m}}{1{,}72 \times 10^{-8}\ \Omega\cdot\text{m}} = 0{,}3013 \times 1,6395 \approx 0{,}494
+\end{align}
 Demonstra-se analiticamente que o condutor de alumínio proporciona uma redução de massa de $1 - 0{,}494 = 0{,}506$ ($50{,}6\%$) em relação ao condutor de cobre equivalente.
 
 \subsubsection*{A.2 Dedução da Corrente de Saturação Reversa por Subcélula (Modelo de 3 Diodos)}
@@ -38,9 +39,10 @@ No modelo de 3 diodos independentes em série ($\text{GaInP}/\text{GaAs}/\text{G
 \end{equation}
 
 Na condição de circuito aberto ($I = 0$, $V_i = V_{oc,i}$):
-\begin{equation}
-    0 = I_{ph,i} - I_{0,i} \left[ \exp\left( \frac{q V_{oc,i}}{n_i k_B T} \right) - 1 \right] - \frac{V_{oc,i}}{R_{sh,i}} \implies I_{0,i} = \frac{I_{ph,i} - \frac{V_{oc,i}}{R_{sh,i}}}{\exp\left( \frac{q V_{oc,i}}{n_i k_B T} \right) - 1}
-\end{equation}
+\begin{align}
+    0 &= I_{ph,i} - I_{0,i} \left[ \exp\left( \frac{q V_{oc,i}}{n_i k_B T} \right) - 1 \right] - \frac{V_{oc,i}}{R_{sh,i}} \nonumber \\
+    &\implies I_{0,i} = \frac{I_{ph,i} - \frac{V_{oc,i}}{R_{sh,i}}}{\exp\left( \frac{q V_{oc,i}}{n_i k_B T} \right) - 1}
+\end{align}
 Com os valores da Spectrolab XTJ Prime a $T_{ref} = 301{,}15\text{ K}$ ($V_{oc} = [1{,}42;\, 1{,}01;\, 0{,}29]\text{ V}$, $n = [1{,}15;\, 1{,}15;\, 1{,}75]$, $R_{sh} = [2500;\, 3500;\, 200]\,\Omega$, $R_s = 0{,}20\,\Omega$), cada subcélula tem sua corrente de saturação $I_{0,i}$ univocamente determinada.
 
 \subsubsection*{A.3 Formulação Matricial da Transformada Unscented e Fator de Esquecimento do AUKF}
@@ -53,9 +55,10 @@ Para um sistema não linear com dimensão de estado $L = 3$, o conjunto de $2L+1
     \boldsymbol{\chi}_{i+L, k-1} &= \hat{\mathbf{x}}_{k-1} - \left( \sqrt{(L + \lambda) \mathbf{P}_{k-1}} \right)_i, \quad i = 1, \dots, L
 \end{align}
 onde o parâmetro composto de escala é $\lambda = \alpha_{ut}^2 (L + \kappa_{ut}) - L$. Os pesos de média $W_m$ e covariância $W_c$ são:
-\begin{equation}
-    W_m^{(0)} = \frac{\lambda}{L + \lambda}, \quad W_c^{(0)} = \frac{\lambda}{L + \lambda} + (1 - \alpha_{ut}^2 + \beta_{ut}), \quad W_m^{(i)} = W_c^{(i)} = \frac{1}{2(L + \lambda)}, \quad i = 1, \dots, 2L
-\end{equation}
+\begin{align}
+    W_m^{(0)} &= \frac{\lambda}{L + \lambda}, \quad W_c^{(0)} = \frac{\lambda}{L + \lambda} + (1 - \alpha_{ut}^2 + \beta_{ut}) \\
+    W_m^{(i)} &= W_c^{(i)} = \frac{1}{2(L + \lambda)}, \quad i = 1, \dots, 2L
+\end{align}
 
 A matriz de raiz quadrada é calculada deterministicamente através da fatoração triangular inferior de Cholesky $\mathbf{S}\mathbf{S}^T = (L + \lambda)\mathbf{P}_{k-1}$. A propagação a priori dos estados obedece a $\boldsymbol{\chi}_{i, k|k-1} = f(\boldsymbol{\chi}_{i, k-1}, u_{k-1})$, resultando no estado previsto ponderado:
 \begin{equation}
@@ -94,9 +97,10 @@ Considerando $P_{cond}(T_j) = I_{rms}^2 R_{on,25} [1 + \alpha_{sc}(T_j - 25)]$ e
 Caso $R_{th} \ge R_{th,crit}$, a curva linear de resfriamento tangencia ou cai abaixo da curva de geração de calor, resultando em ausência de raiz real estável e deflagrando a fuga térmica catastrófica (\textit{thermal runaway}).
 
 No domínio da estabilidade de barramentos alimentando cargas de potência constante (CPL), a impedância de entrada incremental de pequenos sinais é obtida diferenciando a equação de potência constante $P_{CPL} = v(t) \cdot i(t)$:
-\begin{equation}
-    d P_{CPL} = 0 \implies i_0 \cdot \hat{v} + v_0 \cdot \hat{i} = 0 \implies Z_{in,CPL}(s) = \frac{\hat{v}(s)}{\hat{i}(s)} = - \frac{v_0}{i_0} = - \frac{V_{bus}^2}{P_{CPL}}
-\end{equation}
+\begin{align}
+    d P_{CPL} = 0 &\implies i_0 \cdot \hat{v} + v_0 \cdot \hat{i} = 0 \nonumber \\
+    &\implies Z_{in,CPL}(s) = \frac{\hat{v}(s)}{\hat{i}(s)} = - \frac{v_0}{i_0} = - \frac{V_{bus}^2}{P_{CPL}}
+\end{align}
 A função de transferência de laço fechado da tensão de barramento sob interação fonte-carga é dada por:
 \begin{equation}
     T_{bus}(s) = \frac{Z_{in,CPL}(s)}{Z_{out}(s) + Z_{in,CPL}(s)} = \frac{1}{1 + \frac{Z_{out}(s)}{Z_{in,CPL}(s)}} = \frac{1}{1 + T_m(s)}
@@ -152,9 +156,10 @@ com parâmetros $V_{th0} \approx 0{,}28\text{ V}$, $\kappa_T \approx 1{,}10\text
 Na aleta sanduíche de APG ($k_{eff} t_{fin} \frac{d^2 T}{dx^2} = 2 \varepsilon_{ir} \sigma (T^4 - T_{space}^4)$, com $T(0)=T_{root}$ e $dT/dx|_{L_{fin}}=0$), fatora-se $T^4 - T_{space}^4 = (T - T_{space})(T + T_{space})(T^2 + T_{space}^2) \approx h_{rad}(T - T_{space})$, onde $h_{rad} = \varepsilon_{ir}\sigma(T_{root} + T_{space})(T_{root}^2 + T_{space}^2) \approx 1{,}512\text{ W/(m}^2\text{K)}$. Integrando a EDO linearizada $d^2\theta/dx^2 - m^2\theta = 0$ ($\theta = T - T_{space}$, $m = \sqrt{2h_{rad}/(k_{eff}t_{fin})} \approx 1{,}089\text{ m}^{-1}$), obtém-se $\theta(x) = \theta_{root}\cosh[m(L_{fin}-x)]/\cosh(mL_{fin})$ e $\eta_{fin,ideal} = \tanh(mL_{fin})/(mL_{fin}) \approx 0{,}9978$.
 
 De modo análogo, para o equilíbrio eletrotérmico da junção ($C_{th} d(\Delta T)/dt = [P_{leak}(T_j^*+\Delta T)-P_{leak}(T_j^*)] - [\dot{Q}_{out}(T_j^*+\Delta T)-\dot{Q}_{out}(T_j^*)]$), a candidata de Lyapunov $V(\Delta T) = \frac{1}{2}C_{th}(\Delta T)^2$ possui derivada temporal exata:
-\begin{equation}
-    \dot{V}(\Delta T) = \Delta T \left\{ \left[ P_{leak}(T_j^* + \Delta T) - P_{leak}(T_j^*) \right] - \left[ \dot{Q}_{out}(T_j^* + \Delta T) - \dot{Q}_{out}(T_j^*) \right] \right\} \approx \left( \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{T_j^*} - \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} \right) (\Delta T)^2
-\end{equation}
+\begin{align}
+    \dot{V}(\Delta T) &= \Delta T \left\{ \left[ P_{leak}(T_j^* + \Delta T) - P_{leak}(T_j^*) \right] - \left[ \dot{Q}_{out}(T_j^* + \Delta T) - \dot{Q}_{out}(T_j^*) \right] \right\} \nonumber \\
+    &\approx \left( \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{T_j^*} - \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} \right) (\Delta T)^2
+\end{align}
 exigindo $\partial P_{leak}/\partial T_j|_{T_j^*} < d\dot{Q}_{out}/dT_j|_{T_j^*}$ para estabilidade assintótica local ($\dot{V} < 0, \, \forall \Delta T \neq 0$).
 
 \vspace{0.8cm}

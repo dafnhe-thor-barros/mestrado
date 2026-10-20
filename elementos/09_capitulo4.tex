@@ -188,7 +188,7 @@ O balanço dinâmico de energia em cada um dos cinco nós térmicos obedece ao s
     C_4 \frac{dT_4(t)}{dt} &= \dot{Q}_{34}(t) - \frac{T_4(t) - T_5(t)}{R_{45}} \label{eq:edo_no4} \\[0.2cm]
     C_5 \frac{dT_5(t)}{dt} &= \frac{T_4(t) - T_5(t)}{R_{45}} + q_{abs,rad}(t) A_{rad} - \varepsilon_{ir} \sigma A_{rad} \eta_{fin} \left( T_5^4(t) - T_{space}^4 \right) \label{eq:edo_no5}
 \end{align}
-onde $\dot Q_{34}$ representa o fluxo líquido do nó 3 ao nó 4, modelado por resistência efetiva $R_{34}$ (sendo a formulação entálpica $\dot m \Delta h$ ou monofásica $\dot m c_p \Delta T$ dependente do fechamento hidráulico específico entre as alternativas LHP capilar e MPFL bombeado), $q_{abs,rad}$ é o fluxo ambiental absorvido e $\sigma=5{,}67037\times10^{-8}\text{ W/(m}^2\text{K}^4)$.
+onde $\dot Q_{34}$ representa o fluxo líquido do nó 3 ao nó 4, modelado por resistência efetiva $R_{34}$ (sendo a formulação entálpica $\dot m \Delta h$ ou monofásica $\dot m c_p \Delta T$ dependente do fechamento hidráulico específico entre as alternativas LHP capilar e MPFL bombeado), $q_{abs,rad}$ é o fluxo ambiental absorvido e $\sigma=5{,}67037\times10^{-8}\text{ W/(m}^2\text{K}^4)$. Ressalta-se que, conforme a norma \textbf{ECSS-E-ST-31C}, em formulações térmicas nodais com injeção direta dos fluxos ambientais absorvidos ($Q_{sol}, Q_{alb}, Q_{ir}$), a dissipação radiativa para o espaço profundo deve descarregar unicamente contra a temperatura de fundo cósmico ($T_{space} \approx 2{,}7\text{--}3{,}0\text{ K}$), prevenindo a dupla contagem de cargas térmicas ambientais que ocorreria caso a temperatura de sumidouro equivalente $T_{sink}$ fosse empregada simultaneamente no termo incidente e na parcela de emissão radiativa.
 
 Na forma matricial compacta para integração numérica, o sistema é expresso por:
 \begin{equation}
@@ -409,6 +409,16 @@ A dinâmica eletrotérmica na junção é governada por $C_{th} \frac{dT_j(t)}{d
 reduzindo-se a $\partial P_{leak}/\partial T_j < 1/R_{th} = G_{th}$ quando $dR_{th}/d\dot{Q} = 0$.
 
 Para as condições nominais ($T_j^* = 70^\circ\text{C}$, $V_{core} = 0{,}85\text{ V}$, $P_{leak} \approx 3{,}6\text{ kW}$), o gradiente de fuga é $\partial P_{leak}/\partial T_j = \beta_T P_{leak} \approx 102{,}6\text{ W/K}$, muito inferior à condutância nominal agregada de $860{,}2\text{ W/K}$ (80 dies em paralelo), garantindo estabilidade incondicional ($\dot{V} < 0$). Sob falha severa ($R_{th}$ elevado para $\ge 0{,}35\text{ K/W}$ por degradação de TIM ou dry-out), a condutância cai para $\le 228{,}5\text{ W/K}$. Caso $T_j$ atinja $95^\circ\text{C}$ ($P_{leak} \approx 7{,}4\text{ kW}$), o gradiente sobe para $210{,}9\text{ W/K}$, aproximando-se da bifurcação em que $\dot{V} > 0$ e o sistema entra em \textit{thermal runaway} divergente.
+
+Em nível de die unitário individual sob estresse de rajada computacional plena, a fuga sublimiar expressa por $P_{leak}(T_j) = P_0 \exp[\gamma(T_j - T_0)]$ (com $\gamma = 0{,}025\text{ K}^{-1}$ e $P_0 = 45\text{ W}$ a $25^\circ\text{C}$) atinge, ao nível de $T_j = 88{,}4^\circ\text{C}$ ($361{,}55\text{ K}$), um gradiente incremental de:
+\begin{equation}
+    \frac{\partial P_{leak}}{\partial T_j} = \gamma P_0 \exp\left[ \gamma(T_j - T_0) \right] = 0{,}025 \times 45 \times \exp\left[ 0{,}025 \times (88{,}4 - 25) \right] = 5{,}49\text{ W/K}
+\end{equation}
+Confrontando com a condutância térmica equivalente de um arranjo convencional com dissipação passiva ou interface degradada por fadiga de solda SAC305 ($\theta_{ja} = 0{,}85\text{ K/W}$, condutância $1/\theta_{ja} = 1{,}176\text{ W/K}$), constata-se que a condição estática de estabilidade $\partial P_{leak}/\partial T_j < 1/\theta_{ja}$ seria violada com margem negativa ($5{,}49\text{ W/K} \gg 1{,}176\text{ W/K}$), deflagrando colapso térmico irreversível. Para assegurar estabilidade térmica assintótica sem runaway no die, a resistência térmica global máxima admissível é estritamente delimitada por:
+\begin{equation}
+    \theta_{ja} < \frac{1}{\left.\frac{\partial P_{leak}}{\partial T_j}\right|_{88{,}4^\circ\text{C}}} = \frac{1}{5{,}49\text{ W/K}} \approx 0{,}182\text{ K/W}
+\end{equation}
+o que comprova a necessidade mandatória da arquitetura de resfriamento bifásico por placas frias microcanaladas de circulação forçada e acoplamento direto a evaporadores de alto fluxo ($R_{12}+R_{23}+R_{34} \le 0{,}075\text{ K/W}$).
 
 A violação do envelope de temperatura deflagra as proteções: (a) \textit{thermal throttling} gradual antes de $80^\circ\text{C}$ (reduzindo $f_{clk}$ de $1{,}8$ para $1{,}0\text{ GHz}$); (b) \textit{thermal trip} rígido em $T_{crit} = 85{,}0^\circ\text{C}$ para modo seguro. A Figura~\ref{fig:estabilidade_runaway_lhp} ilustra o crescimento exponencial da fuga, a bifurcação de runaway sob tensão turbo ($1{,}05\text{ V}$) e o mapa de estabilidade no plano $V_{core} \times R_{th,crit}$.
 
