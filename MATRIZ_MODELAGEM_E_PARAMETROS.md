@@ -55,23 +55,23 @@
 | :--- | :--- | :---: | :---: | :--- |
 | $G_{AM0}$ | Irradiância solar extraterrestre a 1 UA | $1361{,}0$ | $\text{W/m}^2$ | **[VERIFICÁVEL]** ASTM E490-22; cenário operacional AM0 |
 | $G_{datasheet}$ | Irradiância de ensaio de catálogo XTJ Prime | $1353{,}0$ | $\text{W/m}^2$ | **[VERIFICÁVEL]** Spectrolab XTJ Prime Datasheet ($28^\circ\text{C}$) |
-| $A_{cel}$ | Área ativa adotada por célula | $30{,}18$ | $\text{cm}^2$ | **[HIPÓTESE DE GEOMETRIA]** Célula espacial de grande área |
+| $A_{cel}$ | Área ativa adotada por célula | $30{,}18$ | $\text{cm}^2$ | **Premissa de geometria:** Célula espacial de grande área |
 | $V_{oc,1..3}$ | Tensões de circuito aberto por subcélula ($28^\circ\text{C}$) | $1{,}42 / 1{,}01 / 0{,}29$ | $\text{V}$ | **[VERIFICÁVEL]** GaInP / GaAs / Ge; soma $V_{oc} = 2{,}720\text{ V}$ (COTAL et al., 2000) |
 | $n_{1..3}$ | Fatores de idealidade por subcélula | $1{,}15 / 1{,}15 / 1{,}75$ | -- | **[VERIFICÁVEL]** Faixas físicas $1{,}1\text{--}1{,}2$ (GaInP/GaAs) e $1{,}5\text{--}2{,}0$ (Ge) |
 | $R_{sh,1..3}$ | Resistências shunt por subcélula | $2500 / 3500 / 200$ | $\Omega$ | **[VERIFICÁVEL]** GaInP ($>2000\,\Omega$), GaAs ($>3000\,\Omega$), Ge ($\approx 200\,\Omega$) |
 | $R_s$ | Resistência série total (contatos + junções túnel) | $0{,}20$ | $\Omega$ | **[VERIFICÁVEL]** Arquitetura monolítica em série (COTAL et al., 2000) |
 | $J_{sc,cel}, J_{mp,cel}$ | Densidades de corrente de catálogo ($1353\text{ W/m}^2$) | $18{,}0 / 17{,}5$ | $\text{mA/cm}^2$ | **[VERIFICÁVEL]** Datasheet Spectrolab XTJ Prime ($V_{mp,cat}=2{,}406\text{ V}$) |
-| $I_{sc,ref}, I_{mp,ref}$ | Correntes escaladas para $1361\text{ W/m}^2$ ($30{,}18\text{ cm}^2$) | $0{,}5465 / 0{,}5313$ | $\text{A}$ | **[CALCULADO]** $J \times A_{cel} \times (1361/1353)$ |
+| $I_{sc,ref}, I_{mp,ref}$ | Correntes escaladas para $1361\text{ W/m}^2$ ($30{,}18\text{ cm}^2$) | $0{,}5465 / 0{,}5313$ | $\text{A}$ | **(dimensionado analiticamente)** $J \times A_{cel} \times (1361/1353)$ |
 | $K_V, K_I$ | Coeficientes térmicos globais de $V_{oc}$ e $I_{sc}$ | $-5{,}60\text{ mV/K}, +0{,}3036\text{ mA/K}$ | -- | **[VERIFICÁVEL]** Datasheet XTJ Prime ($dJ_{sc}/dT = +10\,\mu\text{A/cm}^2\text{K}$) |
-| $N_{s,no}, N_{p,no}$ | Células em série / strings em paralelo por satélite | $208 \times 252$ | -- | **[CALCULADO]** $52.416\text{ células/nó}$ ($A_{ativa,no} = 158{,}19\text{ m}^2$) |
-| $A_{array,cluster}$ | Área ativa total na constelação (20 nós) | $3163{,}8$ | $\text{m}^2$ | **[CALCULADO]** $1.048.320\text{ células}$ no cluster de $1{,}0\text{ MW}$ EOL |
-| $V_{mp,str}(28^\circ\text{C})$ | Tensão MPP por string a $28^\circ\text{C}$ (3 diodos / catálogo) | $489{,}6 / 500{,}45$ | $\text{V}$ | **[CALCULADO]** $489{,}6\text{ V}$ ($2{,}354\text{ V/cel}$ com $R_s=0{,}20\,\Omega$) / $500{,}45\text{ V}$ catálogo |
-| $P_{BOL,no}, P_{EOL,no}$ | Potência MPP BOL e EOL (10 anos) por nó | $65{,}55\text{--}66{,}61 / \ge 50{,}0$ | $\text{kW}$ | **[CALCULADO]** $65{,}55\text{ kW}$ (3 diodos) / $66{,}61\text{ kW}$ (catálogo); $\ge 50{,}0\text{ kW}$ garantido em EOL |
-| $V_{mp,str}(T)$ | Faixa térmica de tensão MPP ($65^\circ\text{C}$ a $-100^\circ\text{C}$) | $452{,}0\text{ a }657{,}2$ | $\text{V}$ | **[CALCULADO]** Modelo de 3 diodos ($425{,}8\text{ V}$ em WCH a $85^\circ\text{C}$; $V_{oc,-100}=714{,}9\text{ V} \le 900\text{ V}$) |
+| $N_{s,no}, N_{p,no}$ | Células em série / strings em paralelo por satélite | $208 \times 252$ | -- | **(dimensionado analiticamente)** $52.416\text{ células/nó}$ ($A_{ativa,no} = 158{,}19\text{ m}^2$) |
+| $A_{array,cluster}$ | Área ativa total na constelação (20 nós) | $3163{,}8$ | $\text{m}^2$ | **(dimensionado analiticamente)** $1.048.320\text{ células}$ no cluster de $1{,}0\text{ MW}$ EOL |
+| $V_{mp,str}(28^\circ\text{C})$ | Tensão MPP por string a $28^\circ\text{C}$ (3 diodos / catálogo) | $489{,}6 / 500{,}45$ | $\text{V}$ | **(dimensionado analiticamente)** $489{,}6\text{ V}$ ($2{,}354\text{ V/cel}$ com $R_s=0{,}20\,\Omega$) / $500{,}45\text{ V}$ catálogo |
+| $P_{BOL,no}, P_{EOL,no}$ | Potência MPP BOL e EOL (10 anos) por nó | $65{,}55\text{--}66{,}61 / \ge 50{,}0$ | $\text{kW}$ | **(dimensionado analiticamente)** $65{,}55\text{ kW}$ (3 diodos) / $66{,}61\text{ kW}$ (catálogo); $\ge 50{,}0\text{ kW}$ garantido em EOL |
+| $V_{mp,str}(T)$ | Faixa térmica de tensão MPP ($65^\circ\text{C}$ a $-100^\circ\text{C}$) | $452{,}0\text{ a }657{,}2$ | $\text{V}$ | **(dimensionado analiticamente)** Modelo de 3 diodos ($425{,}8\text{ V}$ em WCH a $85^\circ\text{C}$; $V_{oc,-100}=714{,}9\text{ V} \le 900\text{ V}$) |
 | $\Phi_{anual,700}$ | Taxa de fluência anual equivalente (1 MeV, CMG $150\,\mu\text{m}$) | $2{,}5 \times 10^{13}$ | $\text{e}^-/\text{cm}^2/\text{ano}$ | **[CENÁRIO NOMINAL]** SSO 700 km ($\Phi_x = 1{,}0\times 10^{14}\text{ e}^-/\text{cm}^2$) |
-| $C_d$ | Coeficiente de degradação logarítmica DDD | $0{,}085 / 0{,}12851$ | -- | **[CALCULADO]** Nominal ($90{,}42\%$ EOL) / Conservador ECSS ($88{,}17\%$ EOL) |
-| $\Delta P_{env}$ | Degradação óptica ambiental acumulada em 10 anos | $5{,}2$ | $\%$ | **[HIPÓTESE]** Escurecimento UV e micrometeoroides |
-| $T_{eq,hotspot}$ | Temperatura de equilíbrio em hot spot ($V_{rev}=-28\text{ V}$) | $201{,}7\text{ (2f)} / 279{,}4\text{ (1f)}$ | $^\circ\text{C}$ | **[CALCULADO]** Sem bypass ($14{,}88\text{ W}$) vs. $60{,}0^\circ\text{C}$ com Schottky ($0{,}186\text{ W}$) |
+| $C_d$ | Coeficiente de degradação logarítmica DDD | $0{,}085 / 0{,}12851$ | -- | **(dimensionado analiticamente)** Nominal ($90{,}42\%$ EOL) / Conservador ECSS ($88{,}17\%$ EOL) |
+| $\Delta P_{env}$ | Degradação óptica ambiental acumulada em 10 anos | $5{,}2$ | $\%$ | **(premissa de modelagem)** Escurecimento UV e micrometeoroides |
+| $T_{eq,hotspot}$ | Temperatura de equilíbrio em hot spot ($V_{rev}=-28\text{ V}$) | $201{,}7\text{ (2f)} / 279{,}4\text{ (1f)}$ | $^\circ\text{C}$ | **(dimensionado analiticamente)** Sem bypass ($14{,}88\text{ W}$) vs. $60{,}0^\circ\text{C}$ com Schottky ($0{,}186\text{ W}$) |
 
 ---
 
@@ -91,7 +91,7 @@
 | $L_{buck}, C_{in}$ | Filtro indutivo-capacitivo do estágio Buck | $45{,}0\,\mu\text{H}, \, 250{,}0\,\mu\text{F}$ | -- | **[PROJETO]** $R_L = 25{,}0\text{ m}\Omega$; ripple indutivo $\Delta i_{L,pp} \approx 4{,}72\text{ A}$ a $+65^\circ\text{C}$ |
 | $f_{mppt}$ | Frequência de atualização da malha MPPT | $10{,}0$ | $\text{kHz}$ | **[PROJETO]** Sincronizada a cada 15 ciclos PWM de $150\text{ kHz}$ |
 | $M, \Delta D_{max}$ | Ganho adaptativo e limitador de passo P&O-AP | $1{,}2\times 10^{-4}\text{ V/W}, \, 0{,}002$ | -- | **[PROJETO]** Janela de razão cíclica $D \in [0{,}55, \, 0{,}90]$ sob $V_{bus}=400\text{ V}$ |
-| $\eta_{MPPT}$ | Eficiência média de rastreamento dinâmico no MPP | $99{,}92$ | $\%$ | **[CALCULADO]** Rastreamento dinâmico contínuo sob rampa térmica pós-eclipse ($15\text{ K/min}$) |
+| $\eta_{MPPT}$ | Eficiência média de rastreamento dinâmico no MPP | $99{,}92$ | $\%$ | **(dimensionado analiticamente)** Rastreamento dinâmico contínuo sob rampa térmica pós-eclipse ($15\text{ K/min}$) |
 
 ---
 
@@ -114,20 +114,20 @@
 #### 3.2 Catálogo de Parâmetros dos Conversores DC-DC e Proteção SSPC
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $V_{bus,prim}$ | Tensão nominal do barramento primário HVDC | $400{,}0$ | $\text{V}$ | **[CALCULADO]** Faixa $324{,}0\text{ V}$ (UVLO) a $442{,}8\text{ V}$ (OV) (BEVER et al., 2006; FERGUSON, 2006) |
+| $V_{bus,prim}$ | Tensão nominal do barramento primário HVDC | $400{,}0$ | $\text{V}$ | **(dimensionado analiticamente)** Faixa $324{,}0\text{ V}$ (UVLO) a $442{,}8\text{ V}$ (OV) (BEVER et al., 2006; FERGUSON, 2006) |
 | $V_{bus,sec}$ | Tensão do barramento intermediário de rack | $48{,}0$ | $\text{V}$ | **[VERIFICÁVEL]** Padrão Open Compute / conversores PoL sub-1 V |
 | $f_{sw}$ | Frequência de chaveamento do conversor isolado | $150{,}0$ | $\text{kHz}$ | **[PROJETO]** Ponte completa GaN + transformador planar 3C95 |
 | $R_{on,25}, \alpha_{sc}$ | Resistência a $25^\circ\text{C}$ e coef. térmico (GS66516T) | $25{,}0\text{ m}\Omega, \, 0{,}0128\text{ K}^{-1}$ | -- | **[VERIFICÁVEL]** Datasheet Infineon GS66516T ($R_{on,150}=65\text{ m}\Omega$; $42{,}60\text{ m}\Omega$ a $80^\circ\text{C}$) |
 | $C_{oss}, Q_g$ | Capacitância de saída e carga de porta ($Q_{rr}=0$) | $207\text{ pF}, \, 14{,}2\text{ nC}$ | -- | **[VERIFICÁVEL]** Datasheet Infineon GS66516T ($V_{gate}=6{,}0\text{ V}$) |
-| $t_r, t_f$ | Tempos de subida e descida de comutação | $12, \, 15$ | $\text{ns}$ | **[HIPÓTESE DE MALHA DE GATE]** Encapsulamento GaNPX top-side cooled |
+| $t_r, t_f$ | Tempos de subida e descida de comutação | $12, \, 15$ | $\text{ns}$ | **[PREMISSA DE GATE]** Encapsulamento GaNPX top-side cooled |
 | $R_{th,total}$ | Resistência térmica junção-dissipador (GaNPX + AlN/PGS) | $1{,}12$ | $\text{K/W}$ | **[VERIFICÁVEL]** $R_{th,jc}=0{,}27\text{ K/W} + R_{th,TIM}=0{,}85\text{ K/W}$ |
-| $R_{th,crit,1}, R_{th,crit,4}$ | Resistência térmica crítica de fuga térmica (1 ch / 4 ch) | $2{,}65 / 0{,}662$ | $\text{K/W}$ | **[CALCULADO]** $\partial P/\partial T_j = 0{,}3775\text{ W/K}$ por chave a $I_{rms}=34{,}35\text{ A}$ |
-| $P_{core}, P_{cu}$ | Perdas no núcleo (Ferroxcube U93/152/30 3C95) e cobre | $95{,}31 / 61{,}10$ | $\text{W}$ | **[CALCULADO]** $V_e=450\text{ cm}^3, \Delta B=0{,}15\text{ T}, k_{fe}=0{,}70, \alpha=1{,}46, \beta=2{,}52$ |
-| $P_{loss,total}, \eta_{20kW}$ | Dissipação total e rendimento em plena carga ($20\text{ kW}$) | $617{,}85\text{ W} / 97{,}003\%$ | -- | **[CALCULADO]** $201{,}01\text{ W}$ pri + $90{,}99\text{ W}$ sw + $169{,}44\text{ W}$ sec + $156{,}41\text{ W}$ mag |
-| $|Z_{out,400}|_{max}$ | Pico de impedância passiva no barramento de $400\text{ V}$ | $0{,}0732$ | $\Omega$ | **[CALCULADO]** $C_{bus}=4{,}7\text{ mF}, L_{dist}=1{,}8\,\mu\text{H}$ (limite Middlebrook $0{,}800\,\Omega$) |
+| $R_{th,crit,1}, R_{th,crit,4}$ | Resistência térmica crítica de fuga térmica (1 ch / 4 ch) | $2{,}65 / 0{,}662$ | $\text{K/W}$ | **(dimensionado analiticamente)** $\partial P/\partial T_j = 0{,}3775\text{ W/K}$ por chave a $I_{rms}=34{,}35\text{ A}$ |
+| $P_{core}, P_{cu}$ | Perdas no núcleo (Ferroxcube U93/152/30 3C95) e cobre | $95{,}31 / 61{,}10$ | $\text{W}$ | **(dimensionado analiticamente)** $V_e=450\text{ cm}^3, \Delta B=0{,}15\text{ T}, k_{fe}=0{,}70, \alpha=1{,}46, \beta=2{,}52$ |
+| $P_{loss,total}, \eta_{20kW}$ | Dissipação total e rendimento em plena carga ($20\text{ kW}$) | $617{,}85\text{ W} / 97{,}003\%$ | -- | **(dimensionado analiticamente)** $201{,}01\text{ W}$ pri + $90{,}99\text{ W}$ sw + $169{,}44\text{ W}$ sec + $156{,}41\text{ W}$ mag |
+| $|Z_{out,400}|_{max}$ | Pico de impedância passiva no barramento de $400\text{ V}$ | $0{,}0732$ | $\Omega$ | **(dimensionado analiticamente)** $C_{bus}=4{,}7\text{ mF}, L_{dist}=1{,}8\,\mu\text{H}$ (limite Middlebrook $0{,}800\,\Omega$) |
 | $|Z_{out,48}|_{max}$ | Pico de impedância no barramento laminado de $48\text{ V}$ | $7{,}23\text{ (BOL)} / 12{,}14\text{ (EOL)}$ | $\text{m}\Omega$ | **[DIAGNÓSTICO]** $L_{48}=0{,}15\,\mu\text{H}$; EOL ($2{,}5\text{ mF}, 9{,}5\text{ m}\Omega$) viola $11{,}52\text{ m}\Omega$ (DC-F03) |
-| $t_{trip,crit}, \tau_{ext,min}$ | Retardo adiabático ($1500\text{ A}^2\text{s}$) e extinção suave SSPC | $74{,}8\,\mu\text{s}, \, 31{,}1\,\mu\text{s}$ | -- | **[CALCULADO]** Proteção contra fusão SiC e ruptura dielétrica ($V_{ds} \le 1200\text{ V}$) |
-| $V_{spike,GaN}, E_{L}$ | Sobretensão indutiva ultrarrápida GaN ($200\text{ ns}$) e energia | $1080\text{ V}, \, 12{,}96\text{ mJ}$ | -- | **[CALCULADO]** Exige grampeamento ativo TVS para conter $V_{max}=1480\text{ V}$ |
+| $t_{trip,crit}, \tau_{ext,min}$ | Retardo adiabático ($1500\text{ A}^2\text{s}$) e extinção suave SSPC | $74{,}8\,\mu\text{s}, \, 31{,}1\,\mu\text{s}$ | -- | **(dimensionado analiticamente)** Proteção contra fusão SiC e ruptura dielétrica ($V_{ds} \le 1200\text{ V}$) |
+| $V_{spike,GaN}, E_{L}$ | Sobretensão indutiva ultrarrápida GaN ($200\text{ ns}$) e energia | $1080\text{ V}, \, 12{,}96\text{ mJ}$ | -- | **(dimensionado analiticamente)** Exige grampeamento ativo TVS para conter $V_{max}=1480\text{ V}$ |
 
 ---
 
@@ -149,15 +149,15 @@
 #### 4.2 Catálogo de Parâmetros da Bateria (Arquitetura A — Conexão Direta 108S1P)
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $E_{bat,nom}, C_{n}$ | Energia e capacidade nominal por nó satelital | $9{,}0\text{ kWh}, \, 22{,}52\text{ Ah}$ | -- | **[CALCULADO]** Pack 108S1P (6 submódulos 18S; $60\text{ kg}$ a $150\text{ Wh/kg}$; $180\text{ kWh}$ no cluster) |
-| $V_{bat,nom}$ | Tensão nominal e limites operacionais do pack | $399{,}6$ ($324{,}0\text{--}442{,}8$) | $\text{V}$ | **[CALCULADO]** Conexão direta ao barramento (NASA, 2021; ECSS-E-HB-20-02A) |
-| $R_{0,ref}$ | Resistência ôhmica interna a $20^\circ\text{C}$ (BOL / EOL) | $45{,}0 / 85{,}0$ | $\text{m}\Omega$ | **[MODELO SINTÉTICO]** Parametrização representativa 108S ($32\text{ m}\Omega$ a $30^\circ\text{C}$ BOL) |
-| $R_{p1}, C_{p1}$ | Polarização rápida ($\tau_1 = 57{,}6\text{ s}$) | $18{,}0\text{ m}\Omega, \, 3200\text{ F}$ | -- | **[MODELO SINTÉTICO]** Dupla camada eletroquímica ($a_1 = 0{,}998266$ para $\Delta t=0{,}1\text{ s}$) |
-| $R_{p2}, C_{p2}$ | Polarização lenta ($\tau_2 = 528{,}0\text{ s}$) | $24{,}0\text{ m}\Omega, \, 22000\text{ F}$ | -- | **[MODELO SINTÉTICO]** Difusão em fase sólida ($a_2 = 0{,}999811$ para $\Delta t=0{,}1\text{ s}$) |
-| $E_a$ | Energia de ativação eletroquímica de Arrhenius | $0{,}32$ ($5{,}127\times 10^{-20}$) | $\text{eV}$ ($\text{J}$) | **[MODELO SINTÉTICO]** Calibração representativa Li-ion NMC |
-| $\bar{P}_{Joule,orb}$ | Dissipação Joule média orbital em SSO ($T_{orb}=5926\text{ s}$) | $52{,}82$ | $\text{W}$ | **[CALCULADO]** $212{,}4\text{ W}$ em eclipse ($1128\text{ s}$) e $15{,}3\text{ W}$ em sol ($4798\text{ s}$) |
-| $C_{bat}, C_{chassi}$ | Capacidades térmicas do pack e do chassi | $54.360, \, 18.000\text{--}38.000$ | $\text{J/K}$ | **[CALCULADO / HIPÓTESE]** $60\text{ kg}$ NMC ($906\text{ J/kgK}$) + estrutura de alumínio |
-| $R_{bat,chassi}, R_{bat,MLI}$ | Resistências térmicas ao chassi e através do MLI | $0{,}25, \, 4{,}80$ | $\text{K/W}$ | **[HIPÓTESE]** 2 nós estabiliza em $28{,}4^\circ\text{C}$; 1 nó isolado em MLI atinge $40{,}82^\circ\text{C}$ |
+| $E_{bat,nom}, C_{n}$ | Energia e capacidade nominal por nó satelital | $9{,}0\text{ kWh}, \, 22{,}52\text{ Ah}$ | -- | **(dimensionado analiticamente)** Pack 108S1P (6 submódulos 18S; $60\text{ kg}$ a $150\text{ Wh/kg}$; $180\text{ kWh}$ no cluster) |
+| $V_{bat,nom}$ | Tensão nominal e limites operacionais do pack | $399{,}6$ ($324{,}0\text{--}442{,}8$) | $\text{V}$ | **(dimensionado analiticamente)** Conexão direta ao barramento (NASA, 2021; ECSS-E-HB-20-02A) |
+| $R_{0,ref}$ | Resistência ôhmica interna a $20^\circ\text{C}$ (BOL / EOL) | $45{,}0 / 85{,}0$ | $\text{m}\Omega$ | **[PARAMETRIZAÇÃO FENOMENOLÓGICA]** Parametrização representativa 108S ($32\text{ m}\Omega$ a $30^\circ\text{C}$ BOL) |
+| $R_{p1}, C_{p1}$ | Polarização rápida ($\tau_1 = 57{,}6\text{ s}$) | $18{,}0\text{ m}\Omega, \, 3200\text{ F}$ | -- | **[PARAMETRIZAÇÃO FENOMENOLÓGICA]** Dupla camada eletroquímica ($a_1 = 0{,}998266$ para $\Delta t=0{,}1\text{ s}$) |
+| $R_{p2}, C_{p2}$ | Polarização lenta ($\tau_2 = 528{,}0\text{ s}$) | $24{,}0\text{ m}\Omega, \, 22000\text{ F}$ | -- | **[PARAMETRIZAÇÃO FENOMENOLÓGICA]** Difusão em fase sólida ($a_2 = 0{,}999811$ para $\Delta t=0{,}1\text{ s}$) |
+| $E_a$ | Energia de ativação eletroquímica de Arrhenius | $0{,}32$ ($5{,}127\times 10^{-20}$) | $\text{eV}$ ($\text{J}$) | **[PARAMETRIZAÇÃO FENOMENOLÓGICA]** Calibração representativa Li-ion NMC |
+| $\bar{P}_{Joule,orb}$ | Dissipação Joule média orbital em SSO ($T_{orb}=5926\text{ s}$) | $52{,}82$ | $\text{W}$ | **(dimensionado analiticamente)** $212{,}4\text{ W}$ em eclipse ($1128\text{ s}$) e $15{,}3\text{ W}$ em sol ($4798\text{ s}$) |
+| $C_{bat}, C_{chassi}$ | Capacidades térmicas do pack e do chassi | $54.360, \, 18.000\text{--}38.000$ | $\text{J/K}$ | **Valor derivado:** $60\text{ kg}$ NMC ($906\text{ J/kgK}$) + estrutura de alumínio |
+| $R_{bat,chassi}, R_{bat,MLI}$ | Resistências térmicas ao chassi e através do MLI | $0{,}25, \, 4{,}80$ | $\text{K/W}$ | **(premissa de modelagem)** 2 nós estabiliza em $28{,}4^\circ\text{C}$; 1 nó isolado em MLI atinge $40{,}82^\circ\text{C}$ |
 | $DoD_{LEO,cont}$ | Faixa de profundidade de descarga contínua LEO | $20\%\text{--}30\%$ | -- | **[NORMA ESPACIAL]** ECSS-E-ST-20-32C para retenção $> 80\%$ em 10 anos |
 
 ---
@@ -179,9 +179,9 @@
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
 | $\alpha_{ut}, \beta_{ut}, \kappa_{ut}$ | Parâmetros da Transformada Unscented | $10^{-3}, \, 2{,}0, \, 0$ | -- | **[VERIFICÁVEL]** Fator de memória de Sage–Husa $b = 0{,}95$ |
-| $\sigma_{V,meas}$ | Cenários de ruído do sensor de tensão avaliados | $15{,}0\text{ e }150{,}0$ | $\text{mV}_{rms}$ | **[ENSAIO IN SILICO]** Precisão ($R_0=2{,}25\times 10^{-4}\text{ V}^2$) vs. EMI ($0{,}0225\text{ V}^2$) |
-| $e_{SoC,15mV}$ | Erro médio de regime de SoC sob $\sigma_V = 15\text{ mV}_{rms}$ | $0{,}028$ ($\approx 0{,}03$) | $\%$ | **[CALCULADO]** $\text{RMSE}_V = 1{,}18\text{ mV}$, convergência $< 90\text{ s}$ (\texttt{rng(42)}) |
-| $e_{SoC,150mV}$ | Erro médio de regime de SoC sob $\sigma_V = 150\text{ mV}_{rms}$ | $0{,}194$ ($\approx 0{,}19$) | $\%$ | **[CALCULADO]** $\text{RMSE}_V = 11{,}60\text{ mV}$, atende folgadamente à meta $< 1{,}20\%$ |
+| $\sigma_{V,meas}$ | Cenários de ruído do sensor de tensão avaliados | $15{,}0\text{ e }150{,}0$ | $\text{mV}_{rms}$ | **Ensaio de sensibilidade:** Precisão ($R_0=2{,}25\times 10^{-4}\text{ V}^2$) vs. EMI ($0{,}0225\text{ V}^2$) |
+| $e_{SoC,15mV}$ | Erro médio de regime de SoC sob $\sigma_V = 15\text{ mV}_{rms}$ | $0{,}028$ ($\approx 0{,}03$) | $\%$ | **(dimensionado analiticamente)** $\text{RMSE}_V = 1{,}18\text{ mV}$, convergência $< 90\text{ s}$ (\texttt{rng(42)}) |
+| $e_{SoC,150mV}$ | Erro médio de regime de SoC sob $\sigma_V = 150\text{ mV}_{rms}$ | $0{,}194$ ($\approx 0{,}19$) | $\%$ | **(dimensionado analiticamente)** $\text{RMSE}_V = 11{,}60\text{ mV}$, atende folgadamente à meta $< 1{,}20\%$ |
 
 ---
 
@@ -194,8 +194,8 @@
 #### 6.2 Catálogo de Parâmetros do OISL
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $N_{term}, \lambda_{opt}$ | Número de terminais por satélite e comprimento de onda | $4, \, 1550\text{ nm}$ | -- | **[PROVISÓRIO]** Interconexão em anel/malha ($100\text{ Gbps}$ a $1\text{ Tbps}$) |
-| $P_{elec,term}, \eta_{eo}$ | Potência elétrica por terminal e eficiência eletro-óptica | $110\text{ W}, \, 22\%$ | -- | **[DEPENDENTE DE HARDWARE]** Gera $85{,}8\text{ W/terminal}$ ($343{,}2\text{ W}$ totais) de calor interno |
+| $N_{term}, \lambda_{opt}$ | Número de terminais por satélite e comprimento de onda | $4, \, 1550\text{ nm}$ | -- | **(premissa de projeto)** Interconexão em anel/malha ($100\text{ Gbps}$ a $1\text{ Tbps}$) |
+| $P_{elec,term}, \eta_{eo}$ | Potência elétrica por terminal e eficiência eletro-óptica | $110\text{ W}, \, 22\%$ | -- | **(especificação COTS)** Gera $85{,}8\text{ W/terminal}$ ($343{,}2\text{ W}$ totais) de calor interno |
 
 ---
 
@@ -215,14 +215,14 @@
 #### 7.2 Catálogo de Parâmetros Orbitais e Balanço Radiativo EOL (Tabela 10 / Script 4.1)
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $h_{orb}$ | Altitudes avaliadas (SSO / LEO / GEO) | $700 / 500 / 35.786$ | $\text{km}$ | **[DEPENDENTE DE MISSÃO]** SSO Dawn-Dusk ($i=98{,}19^\circ$) como projeto nominal |
-| $T_{orb}, t_{ecl,max}$ | Período orbital e eclipse máximo em SSO / LEO / GEO | $98{,}8 / 94{,}6 / 1436\text{ min}$ | -- | **[CALCULADO]** Eclipses máximos: $18{,}8\text{ min}$ (SSO), $35{,}8\text{ min}$ (LEO), $72{,}0\text{ min}$ (GEO) |
+| $h_{orb}$ | Altitudes avaliadas (SSO / LEO / GEO) | $700 / 500 / 35.786$ | $\text{km}$ | **[PARÂMETRO ORBITAL]** SSO Dawn-Dusk ($i=98{,}19^\circ$) como projeto nominal |
+| $T_{orb}, t_{ecl,max}$ | Período orbital e eclipse máximo em SSO / LEO / GEO | $98{,}8 / 94{,}6 / 1436\text{ min}$ | -- | **(dimensionado analiticamente)** Eclipses máximos: $18{,}8\text{ min}$ (SSO), $35{,}8\text{ min}$ (LEO), $72{,}0\text{ min}$ (GEO) |
 | $\alpha_{s,EOL}, \varepsilon_{ir,EOL}$ | Propriedades termo-ópticas EOL do espelho OSR (10 anos) | $0{,}14, \, 0{,}88$ | -- | **[VERIFICÁVEL]** Tabela 10 ($\alpha_{s,BOL}=0{,}08$; ECSS-E-HB-31-01 Parte 6; GILMORE, 2002) |
-| $F_{rad-E}(90^\circ)$ | Fator de visão analítico placa--Terra ($\phi_{rad}=90^\circ$) | $0{,}23282 / 0{,}27125 / 0{,}00729$ | -- | **[CALCULADO]** SSO ($700\text{ km}$), LEO ($500\text{ km}$; ou $0{,}4473$ inclinado), GEO ($35.786\text{ km}$) |
-| $K_{alb}$ | Fator médio orbital de iluminação de albedo | $0{,}32 / 0{,}45 / 0{,}10$ | -- | **[HIPÓTESE PARAMÉTRICA]** Curvas de Lambert NASA TM-4527 para SSO / LEO / GEO |
-| $q_{amb,EOL}$ | Fluxo ambiental absorvido em EOL (SSO / LEO / GEO) | $52{,}82 / 63{,}55\text{ (104,79)} / 1{,}56$ | $\text{W/m}^2$ | **[CALCULADO]** Em SSO: $4{,}26\text{ W/m}^2$ (albedo) $+ 48{,}56\text{ W/m}^2$ (IR) |
-| $A_{rad}, A_{req,55}$ | Área instalada por nó vs. área requerida a $T_{rad}=55^\circ\text{C}$ | $88{,}60\text{ vs. }84{,}99\text{ (SSO)}$ | $\text{m}^2$ | **[CALCULADO]** Folga de $+3{,}61\text{ m}^2$ em SSO ($T_{rad}=51{,}40^\circ\text{C}, T_j=76{,}40^\circ\text{C}$) |
-| $|\delta\theta_{thr}|, |\delta\theta_{trip}|$ | Desvios de atitude para início de throttling e trip em SSO | $5{,}87^\circ, \, 15{,}24^\circ$ | graus | **[CALCULADO]** Throttling a $T_j=80^\circ\text{C}$ ($T_{rad}=55^\circ\text{C}$) e trip a $T_j=85^\circ\text{C}$ ($60^\circ\text{C}$) |
+| $F_{rad-E}(90^\circ)$ | Fator de visão analítico placa--Terra ($\phi_{rad}=90^\circ$) | $0{,}23282 / 0{,}27125 / 0{,}00729$ | -- | **(dimensionado analiticamente)** SSO ($700\text{ km}$), LEO ($500\text{ km}$; ou $0{,}4473$ inclinado), GEO ($35.786\text{ km}$) |
+| $K_{alb}$ | Fator médio orbital de iluminação de albedo | $0{,}32 / 0{,}45 / 0{,}10$ | -- | **Parâmetro de referência:** Curvas de Lambert NASA TM-4527 para SSO / LEO / GEO |
+| $q_{amb,EOL}$ | Fluxo ambiental absorvido em EOL (SSO / LEO / GEO) | $52{,}82 / 63{,}55\text{ (104,79)} / 1{,}56$ | $\text{W/m}^2$ | **(dimensionado analiticamente)** Em SSO: $4{,}26\text{ W/m}^2$ (albedo) $+ 48{,}56\text{ W/m}^2$ (IR) |
+| $A_{rad}, A_{req,55}$ | Área instalada por nó vs. área requerida a $T_{rad}=55^\circ\text{C}$ | $88{,}60\text{ vs. }84{,}99\text{ (SSO)}$ | $\text{m}^2$ | **(dimensionado analiticamente)** Folga de $+3{,}61\text{ m}^2$ em SSO ($T_{rad}=51{,}40^\circ\text{C}, T_j=76{,}40^\circ\text{C}$) |
+| $|\delta\theta_{thr}|, |\delta\theta_{trip}|$ | Desvios de atitude para início de throttling e trip em SSO | $5{,}87^\circ, \, 15{,}24^\circ$ | graus | **(dimensionado analiticamente)** Throttling a $T_j=80^\circ\text{C}$ ($T_{rad}=55^\circ\text{C}$) e trip a $T_j=85^\circ\text{C}$ ($60^\circ\text{C}$) |
 
 ---
 
@@ -245,11 +245,11 @@
 #### 8.2 Catálogo de Parâmetros dos Aceleradores Neurais (Nó de 40 kW TI)
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $P_{IT,no}, Q_{int,no}$ | Potência útil de TI e carga térmica interna total por nó | $40{,}0\text{ kW}, \, 41{,}984\text{ kW}$ | -- | **[CALCULADO]** 80 dies por satélite ($800\text{ kW}$ TI em 20 satélites operacionais) |
+| $P_{IT,no}, Q_{int,no}$ | Potência útil de TI e carga térmica interna total por nó | $40{,}0\text{ kW}, \, 41{,}984\text{ kW}$ | -- | **(dimensionado analiticamente)** 80 dies por satélite ($800\text{ kW}$ TI em 20 satélites operacionais) |
 | $V_{core}, f_{clk}$ | Faixas operacionais de tensão e frequência (DVFS) | $0{,}65\text{--}1{,}05\text{ V}, \, 1{,}0\text{--}1{,}8\text{ GHz}$ | -- | **[PROJETO]** Nominal $V_{core}=0{,}85\text{ V}$; inferência ($171\text{ nF}$) e treino ($334{,}4\text{ nF}$) |
-| $\beta_T$ | Coeficiente térmico exponencial de fuga sublimiar | $0{,}0285$ | $\text{K}^{-1}$ | **[PROVISÓRIO]** A $70^\circ\text{C}$, $\partial P_{leak}/\partial T_j \approx 102{,}6\text{ W/K} \ll 860{,}2\text{ W/K}$ |
+| $\beta_T$ | Coeficiente térmico exponencial de fuga sublimiar | $0{,}0285$ | $\text{K}^{-1}$ | **(premissa de projeto)** A $70^\circ\text{C}$, $\partial P_{leak}/\partial T_j \approx 102{,}6\text{ W/K} \ll 860{,}2\text{ W/K}$ |
 | $T_{target}, T_{thr}, T_{crit}$ | Alvo nominal, limiar de throttling e corte de emergência | $75{,}0 / <80{,}0 / 85{,}0$ | $^\circ\text{C}$ | **[REQUISITO DE PROJETO]** Prevenção de runaway e fadiga termomecânica |
-| $\theta_{ja,crit}$ | Resistência térmica máxima para estabilidade FinFET a $88{,}4^\circ\text{C}$ | $0{,}182$ | $\text{K/W}$ | **[CALCULADO]** $\theta_{ja} < 1 / (5{,}49\text{ W/K})$; exige placa fria microcanalada |
+| $\theta_{ja,crit}$ | Resistência térmica máxima para estabilidade FinFET a $88{,}4^\circ\text{C}$ | $0{,}182$ | $\text{K/W}$ | **(dimensionado analiticamente)** $\theta_{ja} < 1 / (5{,}49\text{ W/K})$; exige placa fria microcanalada |
 
 ---
 
@@ -264,8 +264,8 @@
 #### 9.2 Catálogo de Parâmetros Térmicos da Rede de 5 Nós
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $C_1 \dots C_5$ | Capacitâncias térmicas dos nós 1 a 5 | $85 / 420 / 1100 / 3500 / 12500$ | $\text{J/K}$ | **[PROVISÓRIO]** Die, spreader, cold plate, loop LHP/MPFL e painel radiador |
-| $R_{12}, R_{23}, R_{34}, R_{45}$ | Resistências térmicas inter-nodais | $0{,}035 / 0{,}025 / 0{,}015 / 0{,}018$ | $\text{K/W}$ | **[PROVISÓRIO]** TIM1 (GaInSn), TIM2, evaporador-loop e condensador-radiador |
+| $C_1 \dots C_5$ | Capacitâncias térmicas dos nós 1 a 5 | $85 / 420 / 1100 / 3500 / 12500$ | $\text{J/K}$ | **(premissa de projeto)** Die, spreader, cold plate, loop LHP/MPFL e painel radiador |
+| $R_{12}, R_{23}, R_{34}, R_{45}$ | Resistências térmicas inter-nodais | $0{,}035 / 0{,}025 / 0{,}015 / 0{,}018$ | $\text{K/W}$ | **(premissa de projeto)** TIM1 (GaInSn), TIM2, evaporador-loop e condensador-radiador |
 | $k_{eff}, \eta_{fin}$ | Condutividade planar APG/K13D2U e eficiência efetiva | $1275\text{ W/(mK)}, \, 0{,}945$ | -- | **[VERIFICÁVEL / PROVISÓRIO]** Inclui resistência de colagem tubo-aleta |
 
 ---
@@ -292,11 +292,11 @@
 #### 11.2 Catálogo de Parâmetros de Confiabilidade e Desempenho (Script 4.6)
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $L_{DNP}$ | Distância do centro neutro à esfera de canto ($28\times 28\text{ mm}$) | $19{,}80$ | $\text{mm}$ | **[CALCULADO]** Semidiagonal exata $\frac{1}{2}\sqrt{28^2 + 28^2} = 19{,}799\text{ mm}$ |
-| $h_{solder}, \Delta\alpha_{CTE}$ | Altura da esfera BGA e descasamento de expansão térmica | $0{,}18\text{ mm}, \, 14{,}0\times 10^{-6}\text{ K}^{-1}$ | -- | **[VERIFICÁVEL]** IPC-9701A / IPC-SM-785 ($F = 0{,}90$, $k_{att} = 0{,}85$ [HIPÓTESE]) |
-| $2\varepsilon_f'$ | Coeficiente de ductilidade equivalente com *underfill* | $2{,}887$ ($0{,}65$ sem underfill) | -- | **[CALIBRAÇÃO EQUIVALENTE]** Redistribuição por *underfill* epóxi (OSTERMAN, 2018; SYED, 2004) |
-| $N_f, \text{Vida}_{SSO+TEMS}$ | Vida em fadiga no cenário nominal (`SSO + TEMS`, $\Delta T_j \le 7^\circ\text{C}$) | $73.063\text{ ciclos} / 13{,}72\text{ anos}$ | -- | **[CALCULADO]** $L_{DNP}=19{,}80\text{ mm}$; margem $+37{,}2\%$ sobre 10 anos (LEO sem TEMS: $3.165\text{ ciclos} / 6{,}8\text{ meses}$) |
-| $PUE_{orbital}$ | Eficácia energética orbital (Nominal / Pior Caso WCH) | $1{,}050 / 1{,}144$ | -- | **[CALCULADO]** $41.983\text{ W}/40.000\text{ W}$ (nom.) e $45.757\text{ W}/40.000\text{ W}$ (WCH); $\eta_{comp}=0{,}476\text{ TOPS/W}$ |
+| $L_{DNP}$ | Distância do centro neutro à esfera de canto ($28\times 28\text{ mm}$) | $19{,}80$ | $\text{mm}$ | **(dimensionado analiticamente)** Semidiagonal exata $\frac{1}{2}\sqrt{28^2 + 28^2} = 19{,}799\text{ mm}$ |
+| $h_{solder}, \Delta\alpha_{CTE}$ | Altura da esfera BGA e descasamento de expansão térmica | $0{,}18\text{ mm}, \, 14{,}0\times 10^{-6}\text{ K}^{-1}$ | -- | **[VERIFICÁVEL]** IPC-9701A / IPC-SM-785 ($F = 0{,}90$, $k_{att} = 0{,}85$ (premissa de modelagem)) |
+| $2\varepsilon_f'$ | Coeficiente de ductilidade equivalente com *underfill* | $2{,}887$ ($0{,}65$ sem underfill) | -- | **Calibração empírica equivalente:** Redistribuição por *underfill* epóxi (OSTERMAN, 2018; SYED, 2004) |
+| $N_f, \text{Vida}_{SSO+TEMS}$ | Vida em fadiga no cenário nominal (`SSO + TEMS`, $\Delta T_j \le 7^\circ\text{C}$) | $73.063\text{ ciclos} / 13{,}72\text{ anos}$ | -- | **(dimensionado analiticamente)** $L_{DNP}=19{,}80\text{ mm}$; margem $+37{,}2\%$ sobre 10 anos (LEO sem TEMS: $3.165\text{ ciclos} / 6{,}8\text{ meses}$) |
+| $PUE_{orbital}$ | Eficácia energética orbital (Nominal / Pior Caso WCH) | $1{,}050 / 1{,}144$ | -- | **(dimensionado analiticamente)** $41.983\text{ W}/40.000\text{ W}$ (nom.) e $45.757\text{ W}/40.000\text{ W}$ (WCH); $\eta_{comp}=0{,}476\text{ TOPS/W}$ |
 
 ---
 *Este documento constitui a especificação paramétrica oficial, fechada e sincronizada que rege o equacionamento analítico dos Capítulos 3 e 4, dos Apêndices e das rotinas de simulação numérica da Dissertação de Mestrado.*

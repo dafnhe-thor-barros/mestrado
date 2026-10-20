@@ -17,7 +17,7 @@ com variação anual inferior a $\pm 3{,}4\%$ decorrente da excentricidade da ó
 
 Para viabilizar a operação contínua e economicamente competitiva de servidores de alta densidade sem a necessidade de armazenar dezenas de megawatts-hora em baterias pesadas, a literatura técnica e iniciativas da indústria aeroespacial apontam três opções orbitais clássicas (AGÜERA Y ARCAS et al., 2025, p. 2; BLOCH et al., 2026, p. 4):
 \begin{enumerate}[label=(\alph*)]
-    \item \textbf{Órbita Baixa Terrestre Convencional (\textit{Low Earth Orbit} -- LEO):} Cenário comparativo circular a $500\text{ km}$ ($i=51{,}6^\circ$). Sob geometria de eclipse máximo ($\beta \approx 0^\circ$), o modelo de sombra cônica calcula $35{,}8\text{ min}$ de eclipse por revolução de $94{,}6\text{ min}$ [CALCULADO], impondo severa ciclagem térmica e de bateria;
+    \item \textbf{Órbita Baixa Terrestre Convencional (\textit{Low Earth Orbit} -- LEO):} Cenário comparativo circular a $500\text{ km}$ ($i=51{,}6^\circ$). Sob geometria de eclipse máximo ($\beta \approx 0^\circ$), o modelo de sombra cônica calcula $35{,}8\text{ min}$ de eclipse por revolução de $94{,}6\text{ min}$ (dimensionado analiticamente), impondo severa ciclagem térmica e de bateria;
     \item \textbf{Órbita Heliossíncrona (\textit{Sun-Synchronous Orbit} -- SSO) \textit{Dawn-Dusk}:} Cenário nominal de referência circular a $700\text{ km}$ (LTAN $18{:}00$, $\beta \approx 85^\circ$). Proporciona insolação contínua durante a maior parte do ano, sujeita apenas a breves eclipses sazonais próximos aos solstícios (SPIETZ et al., 2021);
     \item \textbf{Órbita Geoestacionária (\textit{Geostationary Earth Orbit} -- GEO):} Cenário comparativo equatorial a $35.786\text{ km}$, com insolação contínua fora dos equinócios (eclipses máximos de $\approx 72\text{ min}$, HANLEY, 1979) e fluxo térmico planetário residual ($< 2\text{ W/m}^2$).
 \end{enumerate}
@@ -31,10 +31,10 @@ Para estimativa geométrica de eclipse umbral em órbita circular de semieixo $a
 
 Adota-se uma arquitetura de \textbf{clusters modulares distribuídos} em que 22 nós satelitais de $50\text{ kW}$ ($2.600\text{ kg}$ cada, totalizando $57{,}2\text{ t}$ lançadas: 20 operacionais e 2 reservas em órbita) cooperam via \textbf{Enlaces Ópticos Inter-Satélite (\textit{Optical Inter-Satellite Links} -- OISL)} de $100\text{ Gbps}$ a $1\text{ Tbps}$ para sincronização de gradientes (AGÜERA Y ARCAS et al., 2025; BLOCH et al., 2026; PÉNOT, 2026; SORET et al., 2024; LEYVA-MAYORGA et al., 2023; KAUSHAL; KADDOUM, 2017).
 
-\subsubsection{Arquitetura de Cluster e Trade-Off Técnico-Econômico de Escala}
+\subsubsection{Arquitetura de Cluster e \textit{Trade-Off} Técnico-Econômico de Escala}
 \label{sec:tradeoff_custo_escala}
 
-A seleção da potência unitária do nó satelital ($P_{no}$) é formulada como um trade-off paramétrico para suprir $1{,}0\text{ MW}$ bruto operacional ($800\text{ kW}$ úteis de TI e $200\text{ kW}$ para recarga, perdas e auxiliares em 20 nós de $50\text{ kW}$). Com margem de redundância de frota de $10\%$ (\textit{on-orbit spares}, conforme WERTZ; EVERETT; PUSCHELL, 2011; TURYSHEV, 2026a, 2026b; NASA, 2016; ECSS, 2009, análoga às constelações \textit{Iridium} e \textit{OneWeb}), o número de satélites operacionais ($N_{req}$) e lançados ($N_{tot}$) é:
+A seleção da potência unitária do nó satelital ($P_{no}$) é formulada como um \textit{trade-off} paramétrico para suprir $1{,}0\text{ MW}$ bruto operacional ($800\text{ kW}$ úteis de TI e $200\text{ kW}$ para recarga, perdas e auxiliares em 20 nós de $50\text{ kW}$). Com margem de redundância de frota de $10\%$ (\textit{on-orbit spares}, conforme WERTZ; EVERETT; PUSCHELL, 2011; TURYSHEV, 2026a, 2026b; NASA, 2016; ECSS, 2009, análoga às constelações \textit{Iridium} e \textit{OneWeb}), o número de satélites operacionais ($N_{req}$) e lançados ($N_{tot}$) é:
 \begin{equation}
     N_{req}=\left\lceil\frac{1000}{P_{no}}\right\rceil, \qquad
     N_{tot}=\left\lceil\frac{11}{10}N_{req}\right\rceil
@@ -48,7 +48,7 @@ A comparação econômica avalia o \textbf{CAPEX Orbital preliminar (Fabricaçã
     C_{CAPEX}(P_{no}) = C_{mfg}(P_{no},N_{tot}) + C_{launch}(P_{no},N_{tot}) = \left(C_{fixo}+\gamma_pP_{no}\right)N_{tot}^{1+b} + P_{voo}\left\lceil \frac{N_{tot}}{n_{coifa}}\right\rceil
     \label{eq:capex_orbital}
 \end{equation}
-Adotam-se como hipóteses conceituais de trade-off [PROVISÓRIO]: massa unitária $M_{sat} = M_0 + \beta_m P_{no}$ ($M_0 = 350\text{ kg}$, $\beta_m = 45\text{ kg/kW}$), parâmetros de série $C_{fixo} = \text{US\$ }5{,}0\text{ M}$, $\gamma_p = \text{US\$ }90\text{ k/kW}$, curva de aprendizado $S = 85\%$ ($b = \log_2 S \approx -0{,}234$, NASA, 2015) e preço médio de lançamento dedicado $P_{voo} = \text{US\$ }67\text{ M}$ (cenário 2021--2024; SPACEX, 2024, 2025). Tais valores foram selecionados como parametrização exploratória de primeira ordem compatível com plataformas comerciais de alta potência e dispensadores múltiplos; o seu fechamento definitivo requer modelagem estrutural tridimensional (CAD/FEA) do módulo orbital e análise acoplada de cargas (\textit{Coupled Loads Analysis} -- CLA) junto ao provedor de lançamento para certificar a acomodação de $n_{coifa} = 2\text{ satélites}$ na coifa de $5{,}2\text{ m}$.
+Adotam-se como hipóteses conceituais de \textit{trade-off} (premissa de projeto): massa unitária $M_{sat} = M_0 + \beta_m P_{no}$ ($M_0 = 350\text{ kg}$, $\beta_m = 45\text{ kg/kW}$), parâmetros de série $C_{fixo} = \text{US\$ }5{,}0\text{ M}$, $\gamma_p = \text{US\$ }90\text{ k/kW}$, curva de aprendizado $S = 85\%$ ($b = \log_2 S \approx -0{,}234$, NASA, 2015) e preço médio de lançamento dedicado $P_{voo} = \text{US\$ }67\text{ M}$ (cenário 2021--2024; SPACEX, 2024, 2025). Tais valores foram selecionados como parametrização exploratória de primeira ordem compatível com plataformas comerciais de alta potência e dispensadores múltiplos; o seu fechamento definitivo requer modelagem estrutural tridimensional (CAD/FEA) do módulo orbital e análise acoplada de cargas (\textit{Coupled Loads Analysis} -- CLA) junto ao provedor de lançamento para certificar a acomodação de $n_{coifa} = 2\text{ satélites}$ na coifa de $5{,}2\text{ m}$.
 
 \begin{table}[htbp]
 \centering
@@ -146,7 +146,7 @@ Agüera y Arcas et al. / Google (2025) & Arquitetura e infraestrutura espacial d
 \addlinespace
 Chen et al. / HotCarbon (2026) & Sistemas computacionais sustentáveis & Introduziu escalonamento térmico consciente de diafonia (\textit{thermal crosstalk}) para clusters orbitais de IA. & Tratou o subsistema elétrico como barramento ideal; omitiu perdas em conversores DC-DC e MPPT. \\
 \addlinespace
-Singh / arXiv (2026) & Alocação de cargas em nuvem orbital & Estruturou taxonomia e abstração semântica de cargas de IA viáveis para processamento orbital versus downlink. & Não modelou as dinâmicas físicas de transição térmica em vácuo nem a degradação de baterias. \\
+Singh / arXiv (2026) & Alocação de cargas em nuvem orbital & Estruturou taxonomia e abstração semântica de cargas de IA viáveis para processamento orbital versus \textit{downlink}. & Não modelou as dinâmicas físicas de transição térmica em vácuo nem a degradação de baterias. \\
 \addlinespace
 Pignaton et al. / ProPECAut (2021) & Modelagem de sistemas de energia solar & Validou modelo de 1 diodo / 5 parâmetros para módulos fotovoltaicos sob dados meteorológicos. & Desenvolvido exclusivamente para o espectro terrestre AM1.5 e resfriamento atmosférico natural. \\
 \addlinespace
@@ -156,7 +156,7 @@ Feng et al. / IEEE Access (2022) & Sistemas de armazenamento eletroquímico & De
 \addlinespace
 Barros e Fernandes / REMUNOM (2026b) & Engenharia aeroespacial e sistemas orbitais & Estudo comparativo multifísico analítico entre LEO, SSO e GEO em 4 eixos com AHP. & Foco na seleção orbital macro e balanço anual; sem acoplamento de malha rápida de MPPT e transitórios kA/$\mu$s. \\
 \addlinespace
-Barros e Fernandes / REMUNOM (2026a) & Controle ótimo e inteligência artificial & Co-Design 4D em malha fechada via NMPC de 16 estados unindo térmico, elétrico, ADCS e downlink. & Validado para nós individuais de borda; sem detalhamento de redes de distribuição de potência em escala MW. \\
+Barros e Fernandes / REMUNOM (2026a) & Controle ótimo e inteligência artificial & Co-Design 4D em malha fechada via NMPC de 16 estados unindo térmico, elétrico, ADCS e \textit{downlink}. & Validado para nós individuais de borda; sem detalhamento de redes de distribuição de potência em escala MW. \\
 \midrule
 \textbf{Proposta Desta Dissertação (2026)} & \textbf{Engenharia de Controle e Automação} & \textbf{Framework computacional integrado unindo geração AM0, perdas em conversores, Stefan-Boltzmann e TEMS/AUKF.} & \textbf{Validação computacional \textit{in silico} (sem TVAC); nós térmicos concentrados e foco termo-elétrico (sem física atômica de TID/SEB).} \\
 \bottomrule

@@ -323,7 +323,7 @@ def gerar_figura_4_2():
     axs[0, 0].set_ylabel('Temperatura (°C)')
     axs[0, 0].set_title('(a1) Dinâmica Transitória dos 5 Nós sob Degrau de IA (40 kW)')
     axs[0, 0].grid(True, linestyle=':', alpha=0.7)
-    axs[0, 0].legend(loc='center right', framealpha=0.9, fontsize=8)
+    axs[0, 0].legend(loc='upper left', framealpha=0.9, fontsize=7.8)
     axs[0, 0].set_xlim([0, 2400])
     axs[0, 0].set_ylim([20, 120])
 
@@ -337,7 +337,7 @@ def gerar_figura_4_2():
     axs[0, 1].set_ylabel('Temperatura (°C)')
     axs[0, 1].set_title('(a2) Sensibilidade a aumento paramétrico de $R_{12}$')
     axs[0, 1].grid(True, linestyle=':', alpha=0.7)
-    axs[0, 1].legend(loc='center right', framealpha=0.9, fontsize=8)
+    axs[0, 1].legend(loc='lower right', framealpha=0.9, fontsize=8)
     axs[0, 1].set_xlim([0, 600])
     axs[0, 1].set_ylim([20, 115])
 
@@ -362,9 +362,9 @@ def gerar_figura_4_2():
     axs[1, 0].set_ylabel('Temperatura (°C)')
     axs[1, 0].set_title('(b1) Cenário paramétrico R34 × 12; cruzamento do limiar')
     axs[1, 0].grid(True, linestyle=':', alpha=0.7)
-    axs[1, 0].legend(loc='lower right', framealpha=0.9, fontsize=8)
+    axs[1, 0].legend(loc='upper right', framealpha=0.9, fontsize=8)
     axs[1, 0].set_xlim([0, 300])
-    axs[1, 0].set_ylim([20, 150])
+    axs[1, 0].set_ylim([20, 160])
 
     # (b2) Queda de temperatura imposta pelos R do modelo; não é medição.
     deltaT_links = 40000.0 * np.array([R12_nom, R23_nom, R34_nom, R45_nom])
@@ -479,7 +479,7 @@ def gerar_figura_4_3():
     axs[0, 1].grid(True, linestyle=':', alpha=0.7)
     axs[0, 1].legend(loc='upper left', framealpha=0.9, fontsize=8)
     axs[0, 1].set_xlim([25, 115])
-    axs[0, 1].set_ylim([0, 1000])
+    axs[0, 1].set_ylim([0, 1150])
 
     # (b1) Não-Linearidade do Limite Capilar do LHP
     axs[1, 0].plot(Q_sweep, R_LHP, 'b-', lw=2.0, label='Resistência Térmica Efetiva $R_{th,j-sink}(Q)$')
@@ -507,7 +507,7 @@ def gerar_figura_4_3():
     axs[1, 1].set_ylabel('Resistência Térmica Crítica por Die (K/W)')
     axs[1, 1].set_title('(b2) Mapa de Bifurcação de Lyapunov e Margem de Projeto')
     axs[1, 1].grid(True, linestyle=':', alpha=0.7)
-    axs[1, 1].legend(loc='upper right', framealpha=0.9, fontsize=8)
+    axs[1, 1].legend(loc='upper left', framealpha=0.9, fontsize=8)
     axs[1, 1].set_xlim([0.65, 1.05])
     axs[1, 1].set_ylim([0.0, 0.50])
 
@@ -605,7 +605,7 @@ def gerar_figura_4_4():
     plt.subplots_adjust(left=0.08, right=0.96, bottom=0.09, top=0.94, wspace=0.22, hspace=0.30)
 
     # (a1) Temperatura de Junção: NMPC Precooling vs Controle Convencional
-    axs[0, 0].plot(t, T_j_conv, 'r--', lw=1.6, label='Controle Convencional (Chattering e Violação)')
+    axs[0, 0].plot(t, T_j_conv, 'r--', lw=1.6, label=r'Controle Convencional ($\it{chattering}$ e Violação)')
     axs[0, 0].plot(t, T_j_tems, 'b-', lw=2.2, label='TEMS NMPC com Pré-Resfriamento')
     axs[0, 0].axhline(85.0, color='m', linestyle='--', lw=1.4, label='Teto de Segurança ($85{,}0^\\circ\\text{C}$)')
     axs[0, 0].axhline(65.0, color='g', linestyle=':', lw=1.3, label='Alvo Nominal ($65{,}0^\\circ\\text{C}$)')
@@ -623,9 +623,9 @@ def gerar_figura_4_4():
     axs[0, 0].set_ylabel('Temperatura de Junção $T_j$ (°C)')
     axs[0, 0].set_title('(a1) Supressão de Picos Térmicos por Pré-Resfriamento Orbital')
     axs[0, 0].grid(True, linestyle=':', alpha=0.7)
-    axs[0, 0].legend(loc='lower left', framealpha=0.9, fontsize=8)
+    axs[0, 0].legend(loc='upper right', framealpha=0.9, fontsize=7.8)
     axs[0, 0].set_xlim([0, 600])
-    axs[0, 0].set_ylim([40, 92])
+    axs[0, 0].set_ylim([35, 95])
 
     # (a2) Frequência de Clock e Eliminação de Chattering
     axs[0, 1].plot(t, f_clk_conv, 'r--', lw=1.4, label='DVFS Convencional (Chattering de 800 MHz)')

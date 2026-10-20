@@ -155,9 +155,10 @@ def gerar_figura_3_2():
     t_sc = np.arange(0, 150e-6, dt_sc)
     
     sc_configs = [
-        {'nome': 'Rápido (8 µs)', 't_trip': 8e-6, 'L': 1.8e-6, 'C': 4.7e-3, 'color': 'green', 'ls': '-'},
-        {'nome': 'Nominal (15 µs)', 't_trip': 15e-6, 'L': 1.8e-6, 'C': 4.7e-3, 'color': 'blue', 'ls': '-'},
-        {'nome': 'WCA Retardo (100 µs)', 't_trip': 100e-6, 'L': 4.0e-6, 'C': 1.5e-3, 'color': 'red', 'ls': '-'}
+        {'nome': 'Rápido (8 µs)', 't_trip': 8e-6, 'L': 1.8e-6, 'C': 4.7e-3, 'color': '#2b8f5c', 'ls': '-'},
+        {'nome': 'Nominal (15 µs)', 't_trip': 15e-6, 'L': 1.8e-6, 'C': 4.7e-3, 'color': '#2b5c8f', 'ls': '-'},
+        {'nome': 'Crítico (74,8 µs)', 't_trip': 74.8e-6, 'L': 4.0e-6, 'C': 1.5e-3, 'color': '#e67e22', 'ls': '--'},
+        {'nome': 'WCA Retardo (100 µs)', 't_trip': 100e-6, 'L': 4.0e-6, 'C': 1.5e-3, 'color': '#d94336', 'ls': '-'}
     ]
     
     i2t_results = []
@@ -199,8 +200,8 @@ def gerar_figura_3_2():
     axs[0, 0].legend(loc='upper right', framealpha=0.9)
     
     # (a2) Estresse Cumulativo I^2t e Limite Adiabático
-    labels_bar = ['8 µs (Nominal)', '15 µs (Típico)', '100 µs (WCA)']
-    bars = axs[0, 1].bar(labels_bar, i2t_results, color=['#2b5c8f', '#2b5c8f', '#d94336'], width=0.45)
+    labels_bar = ['8 µs (Nom.)', '15 µs (Típ.)', '74,8 µs (Crít.)', '100 µs (WCA)']
+    bars = axs[0, 1].bar(labels_bar, i2t_results, color=['#2b8f5c', '#2b5c8f', '#e67e22', '#d94336'], width=0.45)
     axs[0, 1].axhline(1500.0, color='red', linestyle='--', lw=1.6)
     axs[0, 1].text(0.1, 1580.0, 'Limite Adiabático SiC (1500 A²s)', color='red', fontweight='bold', fontsize=8.5)
     for bar in bars:
@@ -360,7 +361,7 @@ def gerar_figura_3_3():
     
     axs[1, 0].plot(anos, phi_sso / 1e14, 'k-', lw=2.0, label='SSO 700 km (Projeto: 2,5×10¹³ e⁻/cm²/ano)')
     axs[1, 0].plot(anos, phi_leo_500 / 1e14, 'b--', lw=1.6, label='LEO 500 km (1,4×10¹³ e⁻/cm²/ano)')
-    axs[1, 0].plot(anos, phi_leo_1000 / 1e14, 'r:', lw=1.6, label='LEO 1000 km (5,8×10¹³ e⁻/cm²/ano)')
+    axs[1, 0].plot(anos, phi_leo_1000 / 1e14, 'r:', lw=1.6, label='MEO 1000 km (5,8×10¹³ e⁻/cm²/ano)')
     axs[1, 0].set_xlim([0, 10])
     axs[1, 0].set_ylim([0, 6.5])
     axs[1, 0].set_xlabel('Tempo de Missão (Anos)')
@@ -839,8 +840,18 @@ def gerar_figura_3_7():
     axs[0, 0].plot(T_j, (T_j - T_c) / 1.80, 'g-', lw=1.6, label='R_th = 1,80 K/W (Margem Reduzida)')
     axs[0, 0].plot(T_j, (T_j - T_c) / R_crit_1sw, 'k:', lw=1.8, label=f'R_th,crit = {R_crit_1sw:.2f} K/W (Limite Runaway)')
     axs[0, 0].plot(T_j, (T_j - T_c) / 4.00, 'm--', lw=1.6, label='R_th = 4,00 K/W (Fuga Térmica)')
+    # Indicação no eixo y do ponto de geração base
+    p_base = P_loss_1sw[0] # 51.2 W
+    axs[0, 0].plot(25.0, p_base, 'ro', markersize=5)
+    axs[0, 0].axhline(p_base, color='red', linestyle=':', lw=1.0, alpha=0.5)
+    axs[0, 0].annotate(f'P_loss(25 °C) = {p_base:.1f} W',
+                       xy=(25.0, p_base), xytext=(45.0, p_base - 14.0),
+                       arrowprops=dict(arrowstyle='->', color='red', lw=1.1),
+                       fontsize=8.0, fontweight='bold', color='red',
+                       bbox=dict(boxstyle='round,pad=0.2', facecolor='#fff5f5', edgecolor='red', alpha=0.9))
     axs[0, 0].set_xlim([25, 160])
-    axs[0, 0].set_ylim([0, 95])
+    axs[0, 0].set_ylim([0, 135])
+    axs[0, 0].set_yticks(np.arange(0, 141, 20))
     axs[0, 0].set_xlabel('Temperatura de Junção T_j (°C)')
     axs[0, 0].set_ylabel('Potência Térmica por Chave (W)')
     axs[0, 0].set_title('(a1) Estabilidade Eletrotérmica GS66516T (T_c = 60 °C)')
@@ -954,7 +965,7 @@ def gerar_figura_3_8():
     axs[0, 1].set_ylabel('Magnitude de Impedância (dBΩ)')
     axs[0, 1].set_title('(a2) Diagrama de Middlebrook (400 V, 4,7 mF)')
     axs[0, 1].grid(True, linestyle=':', alpha=0.7)
-    axs[0, 1].legend(loc='lower right', framealpha=0.9)
+    axs[0, 1].legend(loc='upper right', framealpha=0.9)
     
     # (b1) Resposta ao Degrau de IA no Barramento de 400 V
     dt_sim = 0.1e-6
@@ -1034,7 +1045,7 @@ def gerar_figura_3_8():
     axs[1, 1].set_ylabel('Tensão no Barramento 48 V (V)')
     axs[1, 1].set_title('(b2) Ponto de Falha WCA em 48 V (Degradação Capacitiva)')
     axs[1, 1].grid(True, linestyle=':', alpha=0.7)
-    axs[1, 1].legend(loc='lower right', framealpha=0.9)
+    axs[1, 1].legend(loc='upper right', framealpha=0.9)
     
     out_path = os.path.join(OUTPUT_DIR, 'figura_3_8_estabilidade_cpl_banco_capacitivo.png')
     plt.savefig(out_path, dpi=300)

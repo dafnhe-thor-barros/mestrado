@@ -172,9 +172,9 @@ exigindo $\partial P_{leak}/\partial T_j|_{T_j^*} < d\dot{Q}_{out}/dT_j|_{T_j^*}
 As rotinas computacionais desenvolvidas para as simulações multifísicas encontram-se estruturadas no diretório \texttt{simulacoes/} do repositório da pesquisa:
 \begin{itemize}[noitemsep,topsep=2pt,leftmargin=*]
     \item \texttt{simulacao\_3\_1\_barramento\_hvdc.m}: Dinâmica do barramento de 400~V, balanço orbital multicíclico do BESS (5 órbitas), amortecimento RLC e estresse $I^2t$ do SSPC.
-    \item \texttt{simulacao\_3\_2\_gerador\_fotovoltaico\_am0.m}: Curvas $I-V/P-V$ multijunção (modelo de 3 diodos em série $\text{GaInP}/\text{GaAs}/\text{Ge}$), degradação temporal DDD (10 anos), avalanche reversa em hot spot e dinâmica do MPPT Buck a 150~kHz.
+    \item \texttt{simulacao\_3\_2\_gerador\_fotovoltaico\_am0.m}: Curvas $I-V/P-V$ multijunção (modelo de 3 diodos em série $\text{GaInP}/\text{GaAs}/\text{Ge}$), degradação temporal DDD (10 anos), avalanche reversa em \textit{hot spot} e dinâmica do MPPT Buck a 150~kHz.
     \item \texttt{gerar\_figuras\_compostas\_3\_1.m}: Consolidação de dados e renderização das Figuras 3.1 (balanço BESS) e 3.2 (curto-circuito e acoplamento térmico LHP).
-    \item \texttt{gerar\_figuras\_compostas\_3\_2.m}: Renderização das Figuras 3.3 (curvas AM0 térmicas e DDD) e 3.4 (hot spot e transiente do MPPT GaN).
+    \item \texttt{gerar\_figuras\_compostas\_3\_2.m}: Renderização das Figuras 3.3 (curvas AM0 térmicas e DDD) e 3.4 (\textit{hot spot} e transiente do MPPT GaN).
     \item \texttt{gerar\_figuras\_compostas\_3\_3.m}: Modelo eletroquímico Dual-Polarization (DP) 2ª ordem, cinética de Arrhenius, estimador AUKF e colapso por subtensão (Figuras 3.5 e 3.6).
     \item \texttt{gerar\_figuras\_compostas\_3\_4.m}: Modelo eletrotérmico GaN, perdas de Steinmetz a 150~kHz, estabilidade de Middlebrook sob CPL e desacoplamento de rack a 48~V (Figuras 3.7 e 3.8).
     \item \texttt{simulacao\_4\_1\_fluxos\_orbitais.m}: Propagação kepleriana, ocultação cônica exata, fatores de forma ECSS $F_{rad-E}(h, \phi)$, fluxos ambientais e sensibilidade de atitude.

@@ -59,7 +59,7 @@ xlabel('Tempo de Missão (Anos)', 'fontsize', 10, 'fontweight', 'bold');
 ylabel('Fluência 1-MeV (\times 10^{14} e^-/cm^2)', 'fontsize', 10, 'fontweight', 'bold');
 title('(b1) Fluência Cumulativa de Radiação (DDD)', 'fontsize', 11, 'fontweight', 'bold');
 legend('SSO 700 km (Projeto: 2.5\times10^{13})', 'LEO 500 km (1.4\times10^{13})', ...
-       'LEO 1000 km (5.8\times10^{13})', 'location', 'northwest', 'fontsize', 8);
+       'MEO 1000 km (5.8\times10^{13})', 'location', 'northwest', 'fontsize', 8);
 % --- Subpainel (b2): Fator de Retenção de Potência EOL (10 Anos) ---
 subplot(2, 2, 4);
 plot(anos, retencao_total * 100, 'b-', 'linewidth', 2.0); hold on;
