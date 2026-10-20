@@ -7,178 +7,6 @@
 \addcontentsline{toc}{section}{APÊNDICES}
 
 % ------------------------------------------------------------------------------
-% APÊNDICE A
-% ------------------------------------------------------------------------------
-\subsection*{APÊNDICE A -- Catálogo Paramétrico Completo dos Modelos Elétricos de Potência}
-\addcontentsline{toc}{subsection}{APÊNDICE A -- Catálogo Paramétrico Completo dos Modelos Elétricos de Potência}
-
-Este apêndice reúne o conjunto exaustivo de propriedades eletrofísicas, térmicas e dimensionais empregadas na parametrização dos modelos do barramento HVDC de 400~V e do gerador fotovoltaico multijunção AM0 desenvolvidos no Capítulo 3, discriminando os valores do nó satelital unitário representativo de 50~kW e da infraestrutura agregada da constelação (1,0~MW útil).
-
-\begin{table}[!ht]
-\centering
-\footnotesize
-\renewcommand{\arraystretch}{0.80}
-\caption{Parâmetros detalhados de simulação do barramento HVDC de 400~V e componentes associados.}
-\label{tab:apendice_parametros_barramento}
-\resizebox{0.95\textwidth}{!}{%
-\begin{tabular}{lcccp{6.0cm}}
-\hline
-\textbf{Parâmetro / Propriedade} & \textbf{Símbolo} & \textbf{Valor Adotado} & \textbf{Unidade} & \textbf{Descrição e Referência Técnica} \\ \hline
-Tensão Nominal de Barramento & $V_{nom}$ & 400,0 & V & NASA-HDBK-4007A (NASA, 2026); classe HVDC \\
-Tensão de Corte por Subtensão & $V_{UV}$ & 324,0 & V & 3,0 V/célula Li-ion NMC (descarga máxima 100\%) \\
-Tensão Máxima de Sobretensão & $V_{OV}$ & 442,8 & V & 4,1 V/célula Li-ion NMC (teto de recarga segura) \\
-Potência Máxima Útil de IA (Nó) & $P_{IT,max}$ & 40000 & W & Aceleradores de IA em carga plena no nó (2 racks de 20 kW) \\
-Potência em Repouso do Nó de IA & $P_{IT,idle}$ & 2000 & W & Consumo de polarização e standby no eclipse \\
-Potência Nominal Bruta do Satélite & $P_{no,nom}$ & 50000 & W & 40 kW IA + 10 kW cargas auxiliares e recarga \\
-Eficiência Nominal dos Conversores & $\eta_{conv,nom}$ & 97,5 & \% & Topologia GaN com retificação síncrona a 150 kHz \\
-Eficiência Conservadora de Projeto & $\eta_{conv,cons}$ & 90,0 & \% & Pior caso para envelope de dissipação térmica \\
-Capacidade do Banco BESS por Nó & $E_{bat,no}$ & 9,0 & kWh & Bateria 108S1P Li-ion NMC ($22{,}5\text{ Ah}$, 60 kg) (NASA, 2021) \\
-Capacidade Agregada da Constelação & $E_{bat,tot}$ & 180,0 & kWh & 20 nós satelitais operacionais ($20 \times 9{,}0\text{ kWh}$) \\
-Resistência Interna BESS BOL ($20^\circ\text{C}$) & $R_{0,nom}$ & 45 & m$\Omega$ & Medição de impedância em acumuladores NMC de 108S \\
-Resistência Interna BESS EOL ($5^\circ\text{C}$) & $R_{0,eol}$ & 85 & m$\Omega$ & Degradação eletroquímica após 10 anos de ciclagem \\
-Material dos Cabos de Distribuição & -- & Al 6061-T6 & -- & Densidade $2{,}70\text{ g/cm}^3$, resistividade $2{,}82 \times 10^{-8}\ \Omega\cdot\text{m}$ \\
-Bitola dos Condutores Principais & AWG & AWG 4 & -- & Área de seção transversal condutora de $21{,}15\text{ mm}^2$ \\
-Comprimento do Chicote Interno & $L_{cabo}$ & 4,5 & m & Distância entre bay de baterias e rack computacional \\
-Resistência Ôhmica Nominal dos Cabos & $R_{cab}$ & 14,0 & m$\Omega$ & Condução em alumínio a $20^\circ\text{C}$ (ida e volta 9,0 m) \\
-Resistência de Contato dos Terminais & $R_{cont}$ & 2,0 & m$\Omega$ & Terminais crimpados banhados a níquel e prata \\
-Indutância Parasita de Distribuição & $L_{dist}$ & 1,8 & $\mu$H & Arranjo blindado com retorno adjacente equilibrado \\
-Indutância Desfavorável de Malha & $L_{dist,max}$ & 4,0 & $\mu$H & Pior caso de afastamento e laços de chicote no chassi \\
-Capacitância de Filtro do Barramento & $C_{bus}$ & 4,7 & mF & Banco de capacitores cerâmicos/tântalo espaciais \\
-Capacitância Degradada em EOL & $C_{bus,eol}$ & 1,5 & mF & Limite inferior considerando perda dielétrica e estresse \\
-Resistência de Curto-Circuito Franco & $R_{sc}$ & 1,0 & m$\Omega$ & Estresse extremo de arco condutivo no vácuo \\
-Tempo de Abertura Nominal do SSPC & $t_{trip,nom}$ & 15 & $\mu$s & Driver de estado sólido com SiC MOSFET integrado \\
-Tempo de Abertura Limite WCA & $t_{trip,max}$ & 100 & $\mu$s & Degradação severa da malha de sensoriamento \\
-Limite Térmico do SiC MOSFET & $I^2t_{lim}$ & 1500 & A$^2$s & Limite de queima adiabática de junção (ECSS) \\
-Capacitância Térmica do Chassi & $C_{th,elec}$ & 18000 & J/K & Massa estrutural de alumínio de $\approx 20\text{ kg}$ \\
-Condutância Térmica ao Loop Heat Pipe & $G_{th}$ & 120 & W/K & Interface condutiva acoplada ao evaporador bifásico \\
-\hline
-\end{tabular}%
-}
-\end{table}
-
-\begin{table}[!ht]
-\centering
-\footnotesize
-\renewcommand{\arraystretch}{0.80}
-\caption{Parâmetros eletrofísicos e coeficientes térmicos da célula fotovoltaica multijunção AM0.}
-\label{tab:apendice_parametros_pv}
-\resizebox{0.95\textwidth}{!}{%
-\begin{tabular}{lcccp{6.0cm}}
-\hline
-\textbf{Parâmetro / Propriedade} & \textbf{Símbolo} & \textbf{Valor Adotado} & \textbf{Unidade} & \textbf{Descrição e Referência Técnica} \\ \hline
-Constante Solar Extraterrestre AM0 & $G_{AM0}$ & 1361,0 & W/m$^2$ & Wertz et al. (2011); padrão extraterrestre LEO \\
-Tecnologia Semicondutora & -- & InGaP/InGaAs/Ge & -- & Tripla junção monolítica III-V (Spectrolab XTJ Prime) \\
-Área Ativa adotada no modelo & $A_{cel}$ & 30,18 & cm$^2$ & Geometria escolhida para o cálculo [PROVISÓRIA; não universal do catálogo] \\
-Eficiência MPP BOL declarada no datasheet (28°C) & $\eta_{mp}$ & 30,7 & \% & Valor de catálogo; discrepante de $V_{mp}J_{mp}/G$ arredondados \\
-Tensão de Circuito Aberto por Célula & $V_{oc,ref}$ & 2,720 & V & Valor de catálogo Spectrolab a $28^\circ\text{C}$ \\
-Densidade de Curto-Circuito & $J_{sc,ref}$ & 18,00 & mA/cm$^2$ & Valor de catálogo; corrente depende da área adotada \\
-Tensão no Ponto de Máxima Potência & $V_{mp,ref}$ & 2,406 & V & Valor de catálogo Spectrolab a $28^\circ\text{C}$ \\
-Densidade no Ponto de Máxima Potência & $J_{mp,ref}$ & 17,50 & mA/cm$^2$ & Valor de catálogo; corrente depende da área adotada \\
-Corrente de MPP para $A_{cel}=30{,}18$ cm$^2$ & $I_{mp,ref}$ & 0,52815 & A & Calculada de $J_{mp,ref}A_{cel}$; área [PROVISÓRIA] \\
-Potência MPP calculada por célula & $P_{mp,cel}$ & 1,27073 & W & $V_{mp,ref}I_{mp,ref}$; antes de perdas \\
-Coeficiente Térmico de $V_{oc}$ & $K_V$ & $-5,60$ & mV/K & Valor de catálogo usado no script \\
-Coeficiente Térmico de $J_{sc}$ & $dJ_{sc}/dT$ & $+10,0$ & $\mu$A/(cm$^2$ K) & Valor de catálogo usado no script \\
-Coeficiente Térmico de $V_{mp}$ & $dV_{mp}/dT$ & $-6,30$ & mV/K & Valor de catálogo usado nas curvas [VERIFICÁVEL] \\
-Coeficiente Térmico de $J_{mp}$ & $dJ_{mp}/dT$ & $+5,0$ & $\mu$A/(cm$^2$ K) & Valor de catálogo usado nas curvas [VERIFICÁVEL] \\
-Fator de Idealidade Equivalente & $a_{eq}$ & 3,00 & -- & Parâmetro do modelo concentrado [PROVISÓRIO] \\
-Resistência Série Concentrada & $R_s$ & 0,080 & $\Omega$ & Parâmetro do modelo concentrado [PROVISÓRIO] \\
-Resistência Shunt de Fuga & $R_{sh}$ & 1200,0 & $\Omega$ & Parâmetro do modelo concentrado [PROVISÓRIO] \\
-Corrente de Saturação Equivalente (28°C) & $I_{0,ref}$ & $3{,}6309 \times 10^{-16}$ & A & Recalculada no modelo concentrado [PROVISÓRIO] \\
-Número de Células em Série por String & $N_s$ & 166 & -- & Arranjo adotado; $V_{mp}=399{,}4$ V no ponto de catálogo \\
-Número de Strings em Paralelo (Nó) & $N_{p,no}$ & 244 & -- & Arranjo adotado com margem de potência instalada \\
-Número Total de Células por Satélite & $N_{cel,no}$ & 40504 & -- & $166\times244$; potência MPP ideal de 51,47 kW \\
-Área Ativa de Células por Satélite & $A_{ativa,no}$ & 122,24 & m$^2$ & Calculada com área por célula [PROVISÓRIA] \\
-Potência MPP BOL por Satélite & $P_{BOL,no}$ & 51,47 & kW & Antes de perdas de conversão e ambientais \\
-Strings em Paralelo na Constelação & $N_{p,tot}$ & 4880 & -- & 20 nós operacionais ($20\times244$) \\
-Células Totais na Constelação & $N_{total}$ & 810080 & -- & 20 satélites operacionais ($20\times40504$) \\
-Área Ativa Total na Constelação & $A_{ativa,tot}$ & 2444,82 & m$^2$ & Calculada; área por célula adotada [PROVISÓRIA] \\
-Potência MPP BOL agregada (28°C) & $P_{BOL,tot}$ & 1029,39 & kW & Antes de perdas; meta de barramento continua 1,0 MW \\
-Espessura do Coverglass de Proteção & $t_{glass}$ & 100 & $\mu$m & Borosilicato ceriado CMG com revestimento MgF$_2$ \\
-Escala do modelo DDD & $\Phi_x$ & $1{,}0 \times 10^{14}$ & e$^-$/cm$^2$ & Escolha paramétrica [PROVISÓRIA] \\
-Coeficiente de ajuste pontual DDD & $C_d$ & 0,12851 & -- & Ajustado à retenção ECSS de 0,90 a $5\times10^{14}$ e$^-$/cm$^2$ [PROVISÓRIO] \\
-Perda ambiental não radiativa (10 anos) & $\Delta P_{env}$ & 5,2 & \% & Premissa sem calibração ou ensaio [PROVISÓRIA] \\
-\hline
-\end{tabular}%
-}
-\end{table}
-
-\begin{table}[!ht]
-\centering
-\footnotesize
-\renewcommand{\arraystretch}{0.80}
-\caption{Parâmetros eletroquímicos de 2ª ordem (DP) e constantes térmicas do BESS de 400~V.}
-\label{tab:apendice_parametros_bess_dp}
-\resizebox{0.95\textwidth}{!}{%
-\begin{tabular}{lcccp{6.0cm}}
-\hline
-\textbf{Parâmetro / Propriedade} & \textbf{Símbolo} & \textbf{Valor Adotado} & \textbf{Unidade} & \textbf{Descrição e Referência Técnica} \\ \hline
-Capacidade Nominal do Banco por Nó & $C_{n,no}$ & 22,52 & Ah & Pack 108S1P Li-ion NMC por satélite ($9{,}0\text{ kWh}$) \\
-Energia Nominal do Banco por Nó & $E_{nom,no}$ & 9,0 & kWh & Energia instalada por satélite (60 kg) \\
-Energia Utilizável Inicial ($DoD=60\%$) & $E_{util,no}$ & 5,4 & kWh & Margem segura para ciclo de vida $\ge 10$ anos LEO \\
-Capacidade e Energia Total da Constelação & $C_{n,tot}, E_{tot}$ & 450,5 Ah / 180,0 kWh & -- & 20 nós satelitais operacionais interligados \\
-Tensão Nominal do Pack & $V_{nom}$ & 399,6 & V & Platô de $3{,}70\text{ V/célula}$ a 50\% de SoC (108S) \\
-Tensão Crítica de Subtensão & $V_{UV}$ & 324,0 & V & $3{,}0\text{ V/célula}$ (proteção contra dissolução do cobre) \\
-Tensão Máxima de Recarga & $V_{OV}$ & 442,8 & V & $4{,}10\text{ V/célula}$ (proteção contra sobrecarga e gaseificação) \\
-Resistência Ôhmica BOL (20°C) & $R_{0,ref}$ & 45,0 & m$\Omega$ & Impedância ôhmica pura do pack no início de vida \\
-Resistência Ôhmica EOL (20°C) & $R_{0,eol}$ & 85,0 & m$\Omega$ & Degradação da camada SEI após 10 anos em LEO \\
-Resistência de Transferência de Carga & $R_{p1}$ & 18,0 & m$\Omega$ & Cinética rápida de eletrodo / dupla camada elétrica \\
-Capacitância de Dupla Camada & $C_{p1}$ & 3200,0 & F & Constante de tempo rápida $\tau_1 = R_{p1} C_{p1} = 57{,}6\text{ s}$ \\
-Resistência de Difusão em Fase Sólida & $R_{p2}$ & 24,0 & m$\Omega$ & Transporte de massa de íons de lítio nos sítios ativos \\
-Capacitância de Difusão & $C_{p2}$ & 22000,0 & F & Constante de tempo lenta $\tau_2 = R_{p2} C_{p2} = 528{,}0\text{ s}$ \\
-Energia de Ativação de Arrhenius & $E_a$ & 0,32 & eV & Modulação térmica de transporte ($5{,}127 \times 10^{-20}\text{ J}$) \\
-Massa Total do Pack de Baterias por Nó & $M_{bat}$ & 60,0 & kg & Densidade gravimétrica de $\approx 150\text{ Wh/kg}$ a nível de pack \\
-Capacitância Térmica do Pack por Nó & $C_{th,bat}$ & 54360 & J/K & Massa e calor específico do NMC ($c_p \approx 906\text{ J/(kg K)}$) \\
-Resistência Térmica da Manta MLI & $R_{th,MLI}$ & 4,8 & K/W & Isolamento passivo contra o chassi no vácuo \\
-Potência Máxima do Aquecedor PWM & $P_{heat,max}$ & 300 & W & Aquecedor com modulação PWM (teto de segurança) \\
-Rendimento Coulombico de Recarga & $\eta_c$ & 0,995 & -- & Eficiência de reversibilidade de carga \\
-Dimensão do Vetor de Estado AUKF & $L$ & 3 & -- & $\mathbf{x} = [SoC, V_{p1}, V_{p2}]^T$ \\
-Parâmetros de Espalhamento Sigma & $\alpha_{ut}, \beta_{ut}, \kappa_{ut}$ & $10^{-3}, 2{,}0, 0$ & -- & Parâmetros canônicos da Transformada Unscented \\
-Covariância do Ruído de Processo & $\mathbf{Q}_0$ & $\text{diag}(10^{-7}, 10^{-5}, 10^{-5})$ & -- & Matriz de incerteza de transição de estado \\
-Covariância do Ruído de Medição & $R_{meas}$ & 0,0225 & V$^2$ & Ruído gaussiano de sensoriamento ($150\text{ mV}_{rms}$) \\
-Fator de Memória do Esquecimento & $\rho$ & 0,95 & -- & Filtro exponencial do resíduo de inovação AUKF \\
-\hline
-\end{tabular}%
-}
-\end{table}
-
-\begin{table}[!ht]
-\centering
-\footnotesize
-\renewcommand{\arraystretch}{0.80}
-\caption{Parâmetros eletrofísicos, perdas e estabilidade dos estágios conversores CC-CC GaN.}
-\label{tab:apendice_parametros_conversores}
-\resizebox{0.95\textwidth}{!}{%
-\begin{tabular}{lcccp{6.0cm}}
-\hline
-\textbf{Parâmetro / Propriedade} & \textbf{Símbolo} & \textbf{Valor Adotado} & \textbf{Unidade} & \textbf{Descrição e Referência Técnica} \\ \hline
-Potência Nominal por Módulo Primário & $P_{mod}$ & 20,0 & kW & Módulo Full-Bridge 400 V / 48 V com GaN \\
-Frequência de Chaveamento Primária & $f_{sw}$ & 150 & kHz & Otimização de volume magnético e perdas GaN \\
-Resistência de Canal GaN ($25^\circ\text{C}$) & $R_{on,25}$ & 18,0 & m$\Omega$ & Transistor GaN HEMT 650 V classe espacial \\
-Coeficiente Térmico do GaN & $\alpha_{sc}$ & 0,0065 & K$^{-1}$ & Inclinação positiva de $R_{on}(T_j)$ \\
-Resistência de Canal GaN ($150^\circ\text{C}$) & $R_{on,150}$ & 32,63 & m$\Omega$ & Aumento de 81,25\% sob limite térmico máximo \\
-Tempo de Subida do Transistor & $t_r$ & 12,0 & ns & Medição sob malha de gate otimizada de baixa indutância \\
-Tempo de Descida do Transistor & $t_f$ & 15,0 & ns & Rotação de chaveamento com slew-rate de $33\text{ V/ns}$ \\
-Capacitância Parasita Efetiva de Saída & $C_{oss}$ & 120,0 & pF & Capacitância equivalente dependente de tensão a 400 V \\
-Carga de Porta e Tensão de Acionamento & $Q_g, V_{gate}$ & 6,0 / 5,0 & nC / V & Perdas de driver de $P_{gate} = 4{,}5\text{ mW}$ por dispositivo \\
-Resistência Secundária Retificação ($25^\circ\text{C}$) & $R_{on,sec}$ & 0,80 & m$\Omega$ & Arranjo paralelo de chaves GaN 100 V a 48 V \\
-Material Magnético do Transformador & -- & Ferrite MnZn & -- & Grau de alta frequência Ferroxcube 3C95 \\
-Coeficiente de Steinmetz do Núcleo & $k_{fe}$ & 0,072 & W/(m$^3$Hz$^\alpha$T$^\beta$) & Caracterização volumétrica a $100^\circ\text{C}$ \\
-Expoentes de Frequência e Indução & $\alpha, \beta$ & 1,46 / 2,52 & -- & Ajuste de curvas de Steinmetz MnZn \\
-Volume Efetivo do Núcleo & $V_e$ & $4{,}5 \times 10^{-4}$ & m$^3$ & Geometria planar tipo E/PQ de alto acoplamento \\
-Excursão de Densidade de Fluxo de Pico & $\Delta B$ & 0,15 & T & Ponto de operação abaixo da saturação ($B_{sat} \approx 0{,}4\text{ T}$) \\
-Resistência CA dos Enrolamentos & $R_{ac,pri}, R_{ac,sec}$ & 15 / 0,25 & m$\Omega$ & Cabo Litz / fita de cobre com efeito pelicular a 150 kHz \\
-Resistência Incremental CPL a 400 V & $r_{in,400}$ & $-8{,}00$ & $\Omega$ & Pequenos sinais $r_{in} = -V_{bus}^2/P$ para 20 kW \\
-Resistência Incremental CPL a 48 V & $r_{in,48}$ & $-0{,}115$ & $\Omega$ & Pequenos sinais $r_{in} = -V_{bus}^2/P$ para 20 kW \\
-Resistência Incremental CPL a 0,8 V & $r_{in,0.8}$ & $-0{,}00427$ & $\Omega$ & Carga local de acelerador de IA de 150 W \\
-Capacitância de Barramento de Rack (48 V) & $C_{rack}$ & 15,0 & mF & Banco MLCC / tântalo com $ESR = 1{,}2\text{ m}\Omega$ nominal \\
-Capacitância Degradada de Rack em EOL & $C_{rack,eol}$ & 3,0 & mF & Condição de pior caso WCA com $ESR = 8{,}0\text{ m}\Omega$ \\
-\hline
-\end{tabular}%
-}
-\end{table}
-
-\vspace{0.8cm}
-% ------------------------------------------------------------------------------
 % APÊNDICE B
 % ------------------------------------------------------------------------------
 \subsection*{APÊNDICE B -- Deduções Algébricas e Modelagem Analítica Detalhada}
@@ -202,23 +30,18 @@ Substituindo a razão de áreas na razão de massas:
 \end{equation}
 Demonstra-se analiticamente que o condutor de alumínio proporciona uma redução de massa de $1 - 0{,}494 = 0{,}506$ ($50{,}6\%$) em relação ao condutor de cobre equivalente.
 
-\subsubsection*{B.2 Dedução da Corrente de Saturação Reversa da Célula Multijunção}
+\subsubsection*{B.2 Dedução da Corrente de Saturação Reversa por Subcélula (Modelo de 3 Diodos)}
 
-A equação do modelo de 1 diodo modificado é expressa por:
+No modelo de 3 diodos independentes em série ($\text{GaInP}/\text{GaAs}/\text{Ge}$), cada subcélula $i \in \{1, 2, 3\}$ obedece a:
 \begin{equation}
-    I = I_{ph} - I_0 \left[ \exp\left( \frac{q (V + I R_s)}{a_{eq} k_B T} \right) - 1 \right] - \frac{V + I R_s}{R_{sh}}
+    I = I_{ph,i} - I_{0,i} \left[ \exp\left( \frac{q V_i}{n_i k_B T} \right) - 1 \right] - \frac{V_i}{R_{sh,i}}, \qquad V_{cel}(I) = \sum_{i=1}^{3} V_i(I) - I R_s
 \end{equation}
 
-Na condição de circuito aberto ($V = V_{oc}$, $I = 0$):
+Na condição de circuito aberto ($I = 0$, $V_i = V_{oc,i}$):
 \begin{equation}
-    0 = I_{ph} - I_0 \left[ \exp\left( \frac{q V_{oc}}{a_{eq} k_B T} \right) - 1 \right] - \frac{V_{oc}}{R_{sh}}
+    0 = I_{ph,i} - I_{0,i} \left[ \exp\left( \frac{q V_{oc,i}}{n_i k_B T} \right) - 1 \right] - \frac{V_{oc,i}}{R_{sh,i}} \implies I_{0,i} = \frac{I_{ph,i} - \frac{V_{oc,i}}{R_{sh,i}}}{\exp\left( \frac{q V_{oc,i}}{n_i k_B T} \right) - 1}
 \end{equation}
-
-Isolando a corrente de saturação reversa $I_0$:
-\begin{equation}
-    I_0 \left[ \exp\left( \frac{q V_{oc}}{a_{eq} k_B T} \right) - 1 \right] = I_{ph} - \frac{V_{oc}}{R_{sh}} \implies I_0 = \frac{I_{ph} - \frac{V_{oc}}{R_{sh}}}{\exp\left( \frac{q V_{oc}}{a_{eq} k_B T} \right) - 1}
-\end{equation}
-Substituindo os valores de referência da Spectrolab XTJ Prime a $T_{ref} = 301{,}15\text{ K}$, com $V_{th} = 0{,}02595\text{ V}$ e $a_{eq} = 3{,}45$, obtém-se o valor unívoco de $I_{0,ref} = 3{,}4268 \times 10^{-14}\text{ A}$.
+Com os valores da Spectrolab XTJ Prime a $T_{ref} = 301{,}15\text{ K}$ ($V_{oc} = [1{,}42;\, 1{,}01;\, 0{,}29]\text{ V}$, $n = [1{,}15;\, 1{,}15;\, 1{,}75]$, $R_{sh} = [2500;\, 3500;\, 200]\,\Omega$, $R_s = 0{,}20\,\Omega$), cada subcélula tem sua corrente de saturação $I_{0,i}$ univocamente determinada.
 
 \subsubsection*{B.3 Formulação Matricial da Transformada Unscented e Fator de Esquecimento do AUKF}
 
@@ -304,16 +127,27 @@ O fator de visão geométrico $F_{k-E}$ para uma superfície plana com inclinaç
         \end{aligned} & \text{se } \left|\phi_k - \frac{\pi}{2}\right| \le \theta_m \\[0.45cm]
         0{,}0, & \text{se } \phi_k > \frac{\pi}{2} + \theta_m
     \end{cases}
+    \label{eq:fator_visao_ecss_apendice}
 \end{equation}
 
 \subsubsection*{B.7 Modelo BSIM de Corrente de Fuga Sublimiar de Transistores Nanométricos}
 
-A dependência termodinâmica da corrente de fuga por tunelamento e emissão termoiônica em transistores FinFET e GAA sub-7~nm é expressa pela formulação de referência BSIM:
+A dependência termodinâmica da corrente de fuga por tunelamento e emissão termoiônica em transistores FinFET e GAA sub-7~nm é expressa pela formulação eletrotérmica de referência (SKADRON et al., 2004; MURALI et al., 2007; LE SUEUR; HEISER, 2010):
 \begin{align}
     P_{leak}(T_j, V_{core}) &= V_{core} I_{leak,0}(V_{core}) \left( \frac{T_j}{T_{ref}} \right)^2 \exp\left[ \frac{-q \left( V_{th0} - \kappa_T (T_j - T_{ref}) \right)}{\eta_{sub} k_B T_j} \right] \nonumber \\
     &\quad \times \left[ 1 - \exp\left( -\frac{q V_{core}}{k_B T_j} \right) \right]
 \end{align}
 com parâmetros $V_{th0} \approx 0{,}28\text{ V}$, $\kappa_T \approx 1{,}10\text{ mV/K}$ e $\eta_{sub} \approx 1{,}25$.
+
+\subsubsection*{B.8 Linearização da Equação da Aleta de APG e Expansão de Taylor de Lyapunov}
+
+Na aleta sanduíche de APG ($k_{eff} t_{fin} \frac{d^2 T}{dx^2} = 2 \varepsilon_{ir} \sigma (T^4 - T_{space}^4)$, com $T(0)=T_{root}$ e $dT/dx|_{L_{fin}}=0$), fatora-se $T^4 - T_{space}^4 = (T - T_{space})(T + T_{space})(T^2 + T_{space}^2) \approx h_{rad}(T - T_{space})$, onde $h_{rad} = \varepsilon_{ir}\sigma(T_{root} + T_{space})(T_{root}^2 + T_{space}^2) \approx 1{,}512\text{ W/(m}^2\text{K)}$. Integrando a EDO linearizada $d^2\theta/dx^2 - m^2\theta = 0$ ($\theta = T - T_{space}$, $m = \sqrt{2h_{rad}/(k_{eff}t_{fin})} \approx 1{,}089\text{ m}^{-1}$), obtém-se $\theta(x) = \theta_{root}\cosh[m(L_{fin}-x)]/\cosh(mL_{fin})$ e $\eta_{fin,ideal} = \tanh(mL_{fin})/(mL_{fin}) \approx 0{,}9978$.
+
+De modo análogo, para o equilíbrio eletrotérmico da junção ($C_{th} d(\Delta T)/dt = [P_{leak}(T_j^*+\Delta T)-P_{leak}(T_j^*)] - [\dot{Q}_{out}(T_j^*+\Delta T)-\dot{Q}_{out}(T_j^*)]$), a candidata de Lyapunov $V(\Delta T) = \frac{1}{2}C_{th}(\Delta T)^2$ possui derivada temporal exata:
+\begin{equation}
+    \dot{V}(\Delta T) = \Delta T \left\{ \left[ P_{leak}(T_j^* + \Delta T) - P_{leak}(T_j^*) \right] - \left[ \dot{Q}_{out}(T_j^* + \Delta T) - \dot{Q}_{out}(T_j^*) \right] \right\} \approx \left( \left. \frac{\partial P_{leak}}{\partial T_j} \right|_{T_j^*} - \left. \frac{d\dot{Q}_{out}}{dT_j} \right|_{T_j^*} \right) (\Delta T)^2
+\end{equation}
+exigindo $\partial P_{leak}/\partial T_j|_{T_j^*} < d\dot{Q}_{out}/dT_j|_{T_j^*}$ para estabilidade assintótica local ($\dot{V} < 0, \, \forall \Delta T \neq 0$).
 
 \vspace{0.8cm}
 % ------------------------------------------------------------------------------
