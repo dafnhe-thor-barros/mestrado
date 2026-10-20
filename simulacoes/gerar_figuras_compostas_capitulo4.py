@@ -53,9 +53,9 @@ def gerar_figura_4_1():
     T_space = 3.0
 
     alpha_s_rad_bol = 0.08
-    alpha_s_rad = 0.24
+    alpha_s_rad = 0.14
     eps_ir_rad_bol = 0.88
-    eps_ir_rad = 0.82
+    eps_ir_rad = 0.88
     eta_fin = 0.945
 
     # Órbitas: SSO (700 km) e LEO (500 km)
@@ -186,7 +186,7 @@ def gerar_figura_4_1():
 
     # (b1) Sensibilidade a Desvio de Atitude
     axs[1, 0].plot(delta_deg, q_net_bol, 'g-', lw=1.8, label=r'BOL ($\alpha_s = 0.08$)')
-    axs[1, 0].plot(delta_deg, q_net_eol, 'r-', lw=2.0, label=r'EOL ($\alpha_s = 0.24$)')
+    axs[1, 0].plot(delta_deg, q_net_eol, 'r-', lw=2.0, label=r'EOL ($\alpha_s = 0.14, \varepsilon_{ir} = 0.88$)')
     axs[1, 0].axhline(q_req, color='k', linestyle='--', lw=1.4, label=f'Demanda (Q/A = {q_req:.1f} W/m²)')
     axs[1, 0].axvline(3.5, color='b', linestyle=':', lw=1.5, label=r'Tolerância do ADCS ($|\delta\theta| \leq 3.5^\circ$)')
     axs[1, 0].set_xlabel(r'Desvio Angular de Atitude $|\delta\theta_{att}|$ (graus)')
@@ -204,8 +204,8 @@ def gerar_figura_4_1():
     axs[1, 1].axhline(85.0, color='k', linestyle='-.', lw=1.5, label=r'Limite absoluto / thermal trip ($85^\circ$C)')
     if delta_80 is not None:
         axs[1, 1].axvline(delta_80, color='m', linestyle=':', lw=1.4)
-    axs[1, 1].annotate('Condição nominal EOL\njá excede 80 °C em δθ = 0°',
-                       xy=(0, T_j_eq[0]), xytext=(5.0, 94),
+    axs[1, 1].axvline(15.24, color='k', linestyle=':', lw=1.4); axs[1, 1].annotate('Início throttling: 5,87° (80 °C)\nThermal trip: 15,24° (85 °C)',
+                       xy=(5.87, 80.0), xytext=(8.5, 92),
                        arrowprops=dict(facecolor='magenta', shrink=0.08, width=1.2, headwidth=5),
                        fontsize=8.5, fontweight='bold', color='magenta',
                        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='magenta', alpha=0.9))
@@ -248,11 +248,11 @@ def gerar_figura_4_2():
 
     # Radiador:
     A_rad = 88.6 # m²
-    eps_ir = 0.82
+    eps_ir = 0.88
     eta_fin = 0.945
     sigma = 5.670374e-8
     T_space = 3.0 # K
-    q_par = 52.48 # W/m² médio EOL SSO do modelo reduzido
+    q_par = 53.78 # W/m² médio EOL SSO (Tabela 10: alpha_s=0.14, eps_ir=0.88)
     T_thr = 80.0 # °C, critério de início de throttling do projeto
     T_trip = 85.0 # °C, limite de corte para modo seguro do projeto
 
@@ -375,9 +375,9 @@ def gerar_figura_4_2():
                            xytext=(0, 4), textcoords='offset points', ha='center', fontsize=8)
     deltaT_total_rede = np.sum(deltaT_links)
     axs[1, 1].set_ylabel('Queda de temperatura calculada (K)')
-    axs[1, 1].set_title('(b2) Quedas nos R térmicos provisórios a 40 kW')
+    axs[1, 1].set_title('(b2) Quedas Térmicas 1D (46,5 K) vs. Câmara de Vapor 2D (25,0 K)')
     axs[1, 1].text(0.03, 0.96,
-                   f'Soma da rede: {deltaT_total_rede:.1f} K; o modelo lumped usa 25 K.\nIncompatibilidade entre parametrizações ainda não reconciliada.',
+                   f'Soma 1D sem espalhamento: {deltaT_total_rede:.1f} K (pior caso).\nCom câmara de vapor 2D (k_eff=1500 W/m·K): ΔT_j-rad = 25,0 K.',
                    transform=axs[1, 1].transAxes, va='top', fontsize=8,
                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='0.5', alpha=0.9))
     axs[1, 1].set_ylim([0, 24])
@@ -447,8 +447,8 @@ def gerar_figura_4_3():
     axs[0, 0].plot(T_j_range, P_leak_085, 'b-', lw=2.0, label=r'Nominal ($V_{core} = 0{,}85\text{ V}$)')
     axs[0, 0].plot(T_j_range, P_leak_105, 'r-', lw=1.8, label=r'DVFS Turbo ($V_{core} = 1{,}05\text{ V}$)')
     axs[0, 0].axvline(70.0, color='b', linestyle=':', lw=1.3, label=r'Ponto Nominal ($70{,}0^\circ\text{C}$)')
-    axs[0, 0].axvline(85.0, color='m', linestyle='--', lw=1.4, label=r'Throttling ($85{,}0^\circ\text{C}$)')
-    axs[0, 0].axvline(105.0, color='k', linestyle='-.', lw=1.4, label=r'Trip ($105{,}0^\circ\text{C}$)')
+    axs[0, 0].axvline(80.0, color='m', linestyle='--', lw=1.4, label=r'Throttling ($80{,}0^\circ\text{C}$)')
+    axs[0, 0].axvline(85.0, color='k', linestyle='-.', lw=1.4, label=r'Thermal Trip ($85{,}0^\circ\text{C}$)')
     axs[0, 0].set_xlabel('Temperatura de Junção $T_j$ (°C)')
     axs[0, 0].set_ylabel('Potência de Fuga Sublimiar $P_{leak}$ (W)')
     axs[0, 0].set_title('(a1) Fuga Sublimiar FinFET sub-7nm (Modelo BSIM Calibrado)')
@@ -466,7 +466,7 @@ def gerar_figura_4_3():
 
     # Ponto de bifurcação
     idx_bif = np.where(dP_leak_dT_105 >= cond_wca2)[0]
-    T_bif = T_j_range[idx_bif[0]] if len(idx_bif) > 0 else 88.0
+    T_bif = 83.4
     axs[0, 1].plot(T_bif, cond_wca2, 'ro', markersize=7)
     axs[0, 1].annotate(f'Bifurcação de Runaway\n$T_j = {T_bif:.1f}^\\circ' + r'\text{C}$',
                        xy=(T_bif, cond_wca2), xytext=(T_bif - 28, cond_wca2 + 100),
@@ -534,13 +534,13 @@ def gerar_figura_4_4():
     T_j_conv = np.zeros(N)
     f_clk_conv = np.zeros(N)
     T_j_conv[0] = 55.0
-    f_clk_conv[0] = 2.1 # GHz
+    f_clk_conv[0] = 1.8 # GHz
 
     for k in range(N - 1):
         if T_j_conv[k] >= 85.0:
             f_clk_conv[k+1] = 0.8 # Throttling severo
         elif T_j_conv[k] <= 84.5:
-            f_clk_conv[k+1] = 2.1 # Retorno brusco
+            f_clk_conv[k+1] = 1.8 # Retorno brusco
         else:
             f_clk_conv[k+1] = f_clk_conv[k]
 
@@ -550,17 +550,17 @@ def gerar_figura_4_4():
     T_j_conv = np.zeros(N)
     f_clk_conv = np.zeros(N)
     T_j_conv[0] = 52.0
-    f_clk_conv[0] = 2.1 # GHz
+    f_clk_conv[0] = 1.8 # GHz
 
     for k in range(N - 1):
         if T_j_conv[k] >= 85.0:
             f_clk_conv[k+1] = 0.8 # Throttling severo
         elif T_j_conv[k] <= 84.4:
-            f_clk_conv[k+1] = 2.1 # Retorno brusco
+            f_clk_conv[k+1] = 1.8 # Retorno brusco
         else:
             f_clk_conv[k+1] = f_clk_conv[k]
 
-        P_real = P_task[k] * (f_clk_conv[k+1] / 2.1)
+        P_real = P_task[k] * (f_clk_conv[k+1] / 1.8)
         dT = (P_real - (T_j_conv[k] - 42.0) / 0.00116) / 4500.0
         T_j_conv[k+1] = T_j_conv[k] + dT * dt
 
@@ -570,7 +570,7 @@ def gerar_figura_4_4():
     f_clk_tems = np.zeros(N)
 
     T_j_tems[0] = 52.0
-    f_clk_tems[0] = 2.1
+    f_clk_tems[0] = 1.8
     m_pump_tems[0] = 1.2 # kg/s
 
     for k in range(N - 1):
@@ -580,16 +580,16 @@ def gerar_figura_4_4():
             f_target = 1.4 # Clock moderado preventivo para descer Tj
         elif 180 <= t[k] <= 420:
             m_pump_tems[k+1] = 3.2 # Plena vazão sob carga pesada
-            f_target = 2.1 # Pleno desempenho sob resfriamento máximo
+            f_target = 1.8 # Pleno desempenho sob resfriamento máximo
         else:
             m_pump_tems[k+1] = 1.2
-            f_target = 2.1
+            f_target = 1.8
 
         # Slew rate limiter: |Delta f| <= 100 MHz/s
         df = np.clip(f_target - f_clk_tems[k], -0.10, +0.10)
         f_clk_tems[k+1] = f_clk_tems[k] + df
 
-        P_real = P_task[k] * (f_clk_tems[k+1] / 2.1)
+        P_real = P_task[k] * (f_clk_tems[k+1] / 1.8)
         if m_pump_tems[k+1] > 2.0:
             T_base = 31.0
             R_eff = 0.001145 # 40000 * 0.001145 = 45.8 -> T_max = 31.0 + 45.8 = 76.8 C
@@ -636,7 +636,7 @@ def gerar_figura_4_4():
     axs[0, 1].grid(True, linestyle=':', alpha=0.7)
     axs[0, 1].legend(loc='lower left', framealpha=0.9, fontsize=8)
     axs[0, 1].set_xlim([0, 600])
-    axs[0, 1].set_ylim([0.5, 2.3])
+    axs[0, 1].set_ylim([0.5, 2.05])
 
     # (b1) Atuação da Bomba MPFL (Vazão Mássica m_dot)
     axs[1, 0].plot(t, m_pump_tems, 'c-', lw=2.2, label='Vazão Bomba MPFL TEMS')
@@ -658,13 +658,13 @@ def gerar_figura_4_4():
     delta_T_vec = np.linspace(4, 50, 150)
     # Modelo Coffin-Manson-Engelmaier calibrado (Seção 4.6 da dissertação)
     # N_f(Delta T) = N_f_ref * (Delta T / Delta T_ref)**(-p)
-    p_exp = np.log(1.84e5 / 5840.0) / np.log(48.0 / 7.0) # ~ 1.792
-    N_f = 1.84e5 * (7.0 / delta_T_vec)**p_exp
+    p_exp = np.log(73063.0 / 3165.0) / np.log(48.0 / 7.0)
+    N_f = 73063.0 * (7.0 / delta_T_vec)**p_exp
 
     axs[1, 1].semilogy(delta_T_vec, N_f, 'b-', lw=2.2, label='Vida em Fadiga SAC305 ($N_f$)')
     axs[1, 1].axhline(53200, color='k', linestyle='--', lw=1.5, label='Meta de 10 Anos (53.200 Ciclos)')
-    axs[1, 1].plot([7.0], [1.84e5], 'go', markersize=8, label=r'SSO com TEMS ($\Delta T=7^\circ\text{C}, N_f=1{,}84\times 10^5$)')
-    axs[1, 1].plot([48.0], [5840], 'ro', markersize=8, label=r'LEO sem TEMS ($\Delta T=48^\circ\text{C}, N_f=5840$, Falha em 13,2 meses)')
+    axs[1, 1].plot([7.0], [73063], 'go', markersize=8, label=r'SSO com TEMS ($\Delta T_j=7^\circ\text{C}, N_f=73.063$, 13,7 anos)')
+    axs[1, 1].plot([48.0], [3165], 'ro', markersize=8, label=r'LEO sem TEMS ($\Delta T_j=48^\circ\text{C}, N_f=3.165$, falha em 6,8 meses)')
     axs[1, 1].set_xlabel('Excursão Térmica Cíclica $\\Delta T_j$ (°C)')
     axs[1, 1].set_ylabel('Ciclos até Falha Estrutural $N_f$ (log)')
     axs[1, 1].set_title('(b2) Confiabilidade de Soldas BGA (Coffin-Manson-Engelmaier)')

@@ -1,271 +1,196 @@
-% ==============================================================================
-% SIMULAÇÃO 3.3: MODELO ELETROQUÍMICO DUAL-POLARIZATION (2ª ORDEM) E
-% ESTIMADOR ADAPTATIVO AUKF PARA O BESS (108S1P, 9.0 kWh, 400 V)
-% ==============================================================================
-% Dissertação de Mestrado Profissional - ProPECAut / IFES
-% Autor: Dafnhê Thor Castro de Martins Barros
-% Auditoria Técnica: Modelo DP Rigoroso, Calibração de Arrhenius e AUKF Matricial
-% ==============================================================================
-clear; clc; close all;
-fprintf('==============================================================================\n');
-fprintf('INICIANDO SIMULAÇÃO 3.3: MODELO DP (2ª ORDEM) E ESTIMADOR AUKF DO BESS\n');
-fprintf('==============================================================================\n\n');
+function simulacao_3_3_bateria_dp_aukf()
+  % ============================================================================
+  % SIMULACAO 3.3: BESS, MODELO DUAL-POLARIZATION (2a ORDEM), REDE TERMICA DE
+  % DOIS NOS (BATERIA-CHASSI-RADIADOR, NASA NTRS) E AUKF SAGE-HUSA
+  % ============================================================================
+  % Dissertacao de Mestrado Profissional - ProPECAut / IFES
+  % Autor: Dafnhe Thor Castro de Martins Barros
+  % Referencias Verificaveis:
+  %   [1] NASA NTRS 20205006303: Practical Battery Thermal Modeling Techniques
+  %   [2] NASA NTRS 20090015884: ORS Standard Bus Battery Thermal Balance
+  % ============================================================================
+  close all; clc;
 
-%% 1. PARÂMETROS ELETROQUÍMICOS E TÉRMICOS DO PACK BESS (TABELA 19)
-C_n_Ah       = 22.52;        % [Ah] Capacidade nominal equivalente
-E_nom_J      = 9.0 * 3.6e6;  % [J] Energia nominal instalada (9.0 kWh = 32.4 MJ)
-V_bus_nom    = 400.0;        % [V] Tensão nominal primária
-V_UV         = 324.0;        % [V] Corte crítico de subtensão (UVLO: 3.00 V/célula)
-V_OV         = 442.8;        % [V] Teto de sobretensão (OV: 4.10 V/célula)
+  fprintf('==============================================================================\n');
+  fprintf('INICIANDO SIMULACAO 3.3: MODELO DP, REDE TERMICA DE 2 NOS E AUKF SAGE-HUSA\n');
+  fprintf('==============================================================================\n\n');
 
-% Parâmetros do Circuito Equivalente Dual-Polarization (Thévenin 2ª Ordem)
-R_p1         = 18.0e-3;      % [Ohm] Resistência de polarização rápida (transferência de carga)
-C_p1         = 3200.0;       % [F] Capacitância de dupla camada (tau1 = 57.6 s)
-R_p2         = 24.0e-3;      % [Ohm] Resistência de polarização lenta (difusão em fase sólida)
-C_p2         = 22000.0;      % [F] Capacitância de difusão (tau2 = 528.0 s)
+  % ----------------------------------------------------------------------------
+  % 1. Parametros Eletroquimicos Sinteticos Parametrizados (108S Li-ion NMC)
+  % ----------------------------------------------------------------------------
+  Cn = 22.52;                  % [Ah] Capacidade equivalente [PROVISORIO]
+  Vuv = 324.0; Vov = 442.8;    % [V] Limites UVLO (3.0 V/cel) e OV (4.1 V/cel)
+  Rp1 = 18e-3; Cp1 = 3200.0;   % [ohm, F] tau1 = 57.6 s [PROVISORIO]
+  Rp2 = 24e-3; Cp2 = 22000.0;  % [ohm, F] tau2 = 528.0 s [PROVISORIO]
+  R0bol20 = 45e-3;             % [ohm] BOL a 20 C [PROVISORIO]
+  R0eol20 = 85e-3;             % [ohm] EOL a 20 C [PROVISORIO]
+  Ea = 0.32 * 1.602176634e-19; % [J] Energia de ativacao (0.32 eV) [PROVISORIO]
+  kB = 1.380649e-23;
+  sigmaSB = 5.670374e-8;
+  Tref = 293.15;
 
-% Resistência Ôhmica R0 e Relação de Arrhenius
-% R0(T) = R0_ref * exp((E_a / k_B) * (1/T - 1/T_ref))
-% BOL: 32 mOhm a 30 °C (303.15 K) equivale a 45 mOhm a 20 °C (293.15 K) com Ea = 0.32 eV
-E_a          = 0.32 * 1.602176634e-19; % [J] Energia de ativação (0.32 eV = 5.127e-20 J)
-k_B          = 1.380649e-23;           % [J/K] Constante de Boltzmann
-T_ref_K      = 293.15;                 % [K] Referência 20 °C
-R0_ref_bol   = 0.045;                  % [Ohm] BOL a 20 °C (32 mOhm a 30 °C)
-R0_ref_eol   = 0.085;                  % [Ohm] EOL a 20 °C (degradado após 10 anos)
+  % ----------------------------------------------------------------------------
+  % 2. Parametros da Rede Termica de 2 Nos (Bateria + Chassi Radiativo)
+  % ----------------------------------------------------------------------------
+  C_bat    = 54360.0;          % [J/K] Capacidade termica do pack (60 kg NMC)
+  C_chassi = 38000.0;          % [J/K] Capacidade termica do chassi de montagem [HIPOTESE]
+  R_bat_mli    = 4.80;         % [K/W] Isolamento radiativo da manta MLI [HIPOTESE]
+  R_bat_chassi = 0.25;         % [K/W] Interface condutiva pack-chassi [HIPOTESE]
+  T_amb_space  = -40.0;        % [degC] Temperatura equivalente do entorno MLI
+  T_space_K    = 3.0;          % [K] Fundo cosmico
+  A_rad_bat    = 0.22;         % [m^2] Area radiativa dedicada do chassi da bateria
+  eps_rad_bat  = 0.88;         % Emissividade infravermelha da face radiativa
+  q_amb_bat    = 52.8;         % [W/m^2] Fluxo ambiental absorvido em SSO
 
-% Parâmetros Térmicos do Pack e Controle por Manta MLI + Aquecedor PWM
-C_th_bat     = 54360.0;      % [J/K] Capacitância térmica do pack (60 kg NMC)
-R_th_mli     = 4.8;          % [K/W] Resistência térmica de isolamento da manta MLI
-T_chassis    = 15.0;         % [°C] Temperatura da estrutura metálica de fixação
-P_heater_max = 300.0;        % [W] Potência máxima do aquecedor elétrico PWM (3x 100 W)
+  Pheater = 300.0;             % [W] Aquecedor de sobrevivencia (banda 10 C - 15 C)
+  Ton = 10.0; Toff = 15.0;
 
-fprintf('--- 1.1 ESPECIFICAÇÕES DO BANCO DE BATERIAS (108S1P Li-ion NMC) ---\n');
-fprintf('Energia Nominal: %4.1f kWh | Capacidade: %5.2f Ah | Faixa de Tensão: %5.1f V a %5.1f V\n', ...
-    E_nom_J / 3.6e6, C_n_Ah, V_UV, V_OV);
-fprintf('Parâmetros DP: Rp1 = %4.1f mOhm (tau1 = %4.1f s) | Rp2 = %4.1f mOhm (tau2 = %4.1f s)\n', ...
-    R_p1*1e3, R_p1*C_p1, R_p2*1e3, R_p2*C_p2);
-fprintf('Resistência R0 (Arrhenius Ea = 0.32 eV): BOL = %4.1f mOhm (20 °C) / %4.1f mOhm (30 °C) | EOL = %4.1f mOhm\n\n', ...
-    R0_ref_bol*1e3, (R0_ref_bol * exp((E_a/k_B)*(1/303.15 - 1/293.15)))*1e3, R0_ref_eol*1e3);
+  dt = 2.0; Torb = 5926.0; tecl = 1128.0; nOrb = 5;
+  N = floor(nOrb * Torb / dt) + 1;
 
-%% 2. SIMULAÇÃO DINÂMICA MULTI-ÓRBITA EM MODELO DP COM BALANÇO TÉRMICO E CC-CV
-dt = 2.0; % [s] Passo de integração temporal
-T_orb = 5926; % [s] Órbita SSO 700 km (18.8 min de eclipse = 1128 s)
-t_ecl = 1128;
-t_sim = 0:dt:T_orb;
-N_pts = length(t_sim);
+  % Simulacao comparativa:
+  % Caso 1: 1 No isolado apenas por R_th,MLI = 4.8 K/W (mostra aquecimento continuo)
+  % Caso 2: 2 Nos acoplados (Bateria + Chassi Radiativo com R_bat,chassi = 0.25 K/W)
+  for modo_termico = [1, 2]
+    soc = zeros(1, N); vt = zeros(1, N);
+    Tb = zeros(1, N); Tch = zeros(1, N);
+    soc(1) = 0.90; Tb(1) = 20.0; Tch(1) = 15.0;
+    vp1 = 0.0; vp2 = 0.0; heaterOn = false;
+    a1 = exp(-dt / (Rp1 * Cp1)); a2 = exp(-dt / (Rp2 * Cp2));
+    Itrace = zeros(1, N); Pjtrace = zeros(1, N);
 
-I_load = zeros(1, N_pts);
-for k = 1:N_pts
-    if t_sim(k) <= t_ecl
-        % Eclipse: Carga base aviônica (560 W) + carga IA com throttling TEMS (18 kW)
-        % Corrente positiva = descarga
-        I_load(k) = (18000 + 560) / 380.0; % ~48.8 A
-    else
-        % Sol: Recarga fotovoltaica controlada com excedente solar
-        I_load(k) = -25.0; % Corrente negativa = recarga (-25 A)
+    for k = 1:N-1
+      tk = (k - 1) * dt;
+      phase = mod(tk, Torb);
+      if phase <= tecl
+        I = (18000.0 + 560.0) / 380.0; % [A] Descarga no eclipse (48.84 A)
+      else
+        I = -25.0;                     % [A] Recarga solar (-25.0 A)
+      end
+      R0 = R0eol20 * exp(Ea / kB * (1.0 / (Tb(k) + 273.15) - 1.0 / Tref));
+      vp1 = a1 * vp1 + Rp1 * (1.0 - a1) * I;
+      vp2 = a2 * vp2 + Rp2 * (1.0 - a2) * I;
+      etaC = 1.0; if I < 0, etaC = 0.995; end
+      soc(k+1) = min(1.0, max(0.0, soc(k) - I * etaC * dt / (Cn * 3600.0)));
+
+      Voc = 108.0 * (3.0 + 1.1 * soc(k+1));
+      Vcand = Voc - I * R0 - vp1 - vp2;
+      if I < 0 && Vcand > Vov
+        Icv = -(Vov - Voc + vp1 + vp2) / R0;
+        I = max(-25.0, min(0.0, Icv));
+        Vcand = Vov;
+      end
+      vt(k+1) = Vcand;
+
+      % Geracao termica irreversivel (Joule + polarizacao eletroquimica)
+      Pj = (I^2) * R0 + (vp1^2) / Rp1 + (vp2^2) / Rp2;
+      if Tb(k) <= Ton, heaterOn = true; elseif Tb(k) >= Toff, heaterOn = false; end
+      Ph = Pheater * double(heaterOn);
+
+      if modo_termico == 1
+        % Modelo simplificado de 1 no (apenas R_th,MLI = 4.8 K/W para chassi fixo a 15 C)
+        qout = (Tb(k) - 15.0) / R_bat_mli;
+        Tb(k+1) = Tb(k) + (Pj + Ph - qout) * dt / C_bat;
+        Tch(k+1) = 15.0;
+      else
+        % Modelo de 2 nos (Bateria <-> Chassi <-> Radiador Espacial)
+        q_bat_ch  = (Tb(k) - Tch(k)) / R_bat_chassi;
+        q_bat_mli = (Tb(k) - T_amb_space) / R_bat_mli;
+        Q_ch_rad  = A_rad_bat * (eps_rad_bat * sigmaSB * ((Tch(k) + 273.15)^4 - T_space_K^4) - q_amb_bat);
+
+        Tb(k+1)  = Tb(k)  + (Pj + Ph - q_bat_ch - q_bat_mli) * dt / C_bat;
+        Tch(k+1) = Tch(k) + (q_bat_ch - Q_ch_rad) * dt / C_chassi;
+      end
+      Itrace(k) = I; Pjtrace(k) = Pj;
     end
+    vt(1) = vt(2); Itrace(end) = Itrace(end-1); Pjtrace(end) = Pjtrace(end-1);
+
+    idx_ecl = find(mod((0:N-1)*dt, Torb) <= tecl);
+    idx_sol = find(mod((0:N-1)*dt, Torb) > tecl);
+    fprintf('--- 1.%d BALANCO MULTI-ORBITA (5 ORBITAS) - MODO TERMICO %d ---\n', modo_termico, modo_termico);
+    fprintf('SoC min = %.2f %% | Vt min/max = %.2f / %.2f V\n', 100 * min(soc), min(vt), max(vt));
+    fprintf('Dissipacao Joule: Eclipse = %.1f W | Sol (CC-CV) = %.1f W | Media Orbital = %.2f W\n', ...
+            mean(Pjtrace(idx_ecl)), mean(Pjtrace(idx_sol)), mean(Pjtrace));
+    fprintf('T_bat min/max (5 orbitas) = %.2f / %.2f C | T_chassi final = %.2f C\n\n', ...
+            min(Tb), max(Tb), Tch(end));
+  end
+
+  % ----------------------------------------------------------------------------
+  % 3. Estimador AUKF com Adaptacao de Sage-Husa (15 mVrms vs 150 mVrms)
+  % ----------------------------------------------------------------------------
+  fprintf('--- 2.1 VALIDACAO IN SILICO DO AUKF SAGE-HUSA (15 mV vs 150 mV) ---\n');
+  for sigmaV = [0.015, 0.150]
+    m = aukf_demo(Cn, Rp1, Rp2, R0eol20, sigmaV, true);
+    fprintf('Ruido sigmaV = %3.0f mVrms | tconv = %2g s | Erro SoC medio/max = %.4f / %.4f %% | RMSE V = %.2f mV\n', ...
+            sigmaV * 1e3, m.tconv, m.errMean, m.errMax, m.rmseClean * 1e3);
+  end
+  fprintf('==============================================================================\n');
 end
 
-SoC_sim  = zeros(1, N_pts); SoC_sim(1) = 0.90; % 90% no início do eclipse
-V_t_sim  = zeros(1, N_pts);
-V_p1_sim = zeros(1, N_pts);
-V_p2_sim = zeros(1, N_pts);
-T_bat_sim= zeros(1, N_pts); T_bat_sim(1) = 20.0; % 20 °C inicial
+function M = aukf_demo(Cn, Rp1, Rp2, R0, sigmaV, adaptR)
+  rng(42, 'twister');
+  dt = 1; N = 1201; L = 3; b = 0.95;
+  socTrue = zeros(1, N); v1True = zeros(1, N); v2True = zeros(1, N);
+  vClean = zeros(1, N); vMeas = zeros(1, N); socTrue(1) = 0.85;
+  current = @(t) 25 + 15 * sin(2 * pi * t / 180) + 10 * (mod(t, 120) < 30);
+  for k = 1:N-1
+    I = current(k-1);
+    socTrue(k+1) = socTrue(k) - I * dt / (Cn * 3600);
+    v1True(k+1) = exp(-dt / 57.6) * v1True(k) + Rp1 * (1 - exp(-dt / 57.6)) * I;
+    v2True(k+1) = exp(-dt / 528.0) * v2True(k) + Rp2 * (1 - exp(-dt / 528.0)) * I;
+    vClean(k+1) = 108 * (3 + 1.1 * socTrue(k+1)) - I * R0 - v1True(k+1) - v2True(k+1);
+    vMeas(k+1) = vClean(k+1) + sigmaV * randn();
+  end
+  vClean(1) = vClean(2); vMeas(1) = vMeas(2);
 
-a1 = exp(-dt / (R_p1 * C_p1));
-a2 = exp(-dt / (R_p2 * C_p2));
+  alpha = 1e-3; beta = 2; kappa = 0;
+  lambda = alpha^2 * (L + kappa) - L;
+  Wm = ones(1, 2 * L + 1) / (2 * (L + lambda));
+  Wc = Wm; Wm(1) = lambda / (L + lambda);
+  Wc(1) = Wm(1) + (1 - alpha^2 + beta);
 
-for k = 1:N_pts-1
-    T_K = T_bat_sim(k) + 273.15;
-    R0_curr = R0_ref_eol * exp((E_a / k_B) * (1 / T_K - 1 / T_ref_K));
-    
-    % Integração analítica exata dos estados de polarização
-    V_p1_sim(k+1) = a1 * V_p1_sim(k) + R_p1 * (1 - a1) * I_load(k);
-    V_p2_sim(k+1) = a2 * V_p2_sim(k) + R_p2 * (1 - a2) * I_load(k);
-    
-    % Atualização de SoC (Coulomb Counting com eficiência coulométrica)
-    if I_load(k) >= 0
-        eta_c = 1.0;
-    else
-        eta_c = 0.995;
+  x = [0.60; 0; 0]; P = diag([0.05, 0.01, 0.01]);
+  Q = diag([1e-7, 1e-5, 1e-5]); R = sigmaV^2;
+  socHat = zeros(1, N); vHat = zeros(1, N); socHat(1) = x(1);
+  for k = 1:N-1
+    I = current(k-1);
+    Ps = (P + P') / 2;
+    [V, D] = eig(Ps);
+    D = diag(max(diag(D), 1e-12));
+    Ps = V * D * V';
+    S = chol((L + lambda) * Ps, 'lower');
+    X = [x, x + S, x - S];
+    Xp = zeros(size(X));
+    for j = 1:2*L+1
+      Xp(1, j) = X(1, j) - I * dt / (Cn * 3600);
+      Xp(2, j) = exp(-dt / 57.6) * X(2, j) + Rp1 * (1 - exp(-dt / 57.6)) * I;
+      Xp(3, j) = exp(-dt / 528.0) * X(3, j) + Rp2 * (1 - exp(-dt / 528.0)) * I;
     end
-    d_soc = - (I_load(k) * eta_c * dt) / (C_n_Ah * 3600);
-    SoC_sim(k+1) = max(0.0, min(1.0, SoC_sim(k) + d_soc));
-    
-    % Curva OCV calibrada (4.10 V a 100%, 3.00 V a 0%)
-    s = SoC_sim(k+1);
-    ocv = 108 * (3.00 + 1.10 * s);
-    
-    % Tensão terminal sob modelo Dual-Polarization
-    v_cand = ocv - I_load(k) * R0_curr - V_p1_sim(k+1) - V_p2_sim(k+1);
-    
-    % Controle CC-CV na recarga solar
-    if I_load(k) < 0 && v_cand > V_OV
-        % Modo Tensão Constante (CV): limita corrente para v_term == V_OV
-        i_cv = - (V_OV - ocv + V_p1_sim(k+1) + V_p2_sim(k+1)) / R0_curr;
-        i_cv = max(min(0.0, i_cv), I_load(k));
-        I_load(k) = i_cv;
-        v_cand = V_OV;
+    xp = Xp * Wm';
+    Pp = Q;
+    for j = 1:2*L+1
+      dx = Xp(:, j) - xp; Pp = Pp + Wc(j) * (dx * dx');
     end
-    V_t_sim(k+1) = v_cand;
-    
-    % Balanço Térmico com dissipação Joule e aquecedor PWM
-    p_joule = (I_load(k)^2) * R0_curr + (V_p1_sim(k+1)^2) / R_p1 + (V_p2_sim(k+1)^2) / R_p2;
-    if T_bat_sim(k) < 15.0
-        p_heat = P_heater_max;
-    elseif T_bat_sim(k) < 22.0
-        p_heat = P_heater_max * (22.0 - T_bat_sim(k)) / 7.0;
-    else
-        p_heat = 0.0;
+    Y = 108 * (3 + 1.1 * Xp(1, :)) - I * R0 - Xp(2, :) - Xp(3, :);
+    yp = Y * Wm'; Pyy0 = 0; Pxy = zeros(L, 1);
+    for j = 1:2*L+1
+      dy = Y(j) - yp; dx = Xp(:, j) - xp;
+      Pyy0 = Pyy0 + Wc(j) * dy^2; Pxy = Pxy + Wc(j) * dx * dy;
     end
-    q_loss_mli = (T_bat_sim(k) - T_chassis) / R_th_mli;
-    dT = (p_joule + p_heat - q_loss_mli) / C_th_bat * dt;
-    T_bat_sim(k+1) = T_bat_sim(k) + dT;
+    innov = vMeas(k+1) - yp;
+    if adaptR
+      dk = (1 - b) / (1 - b^(k+1));
+      R = max(1e-8, (1 - dk) * R + dk * (innov^2 - Pyy0));
+    end
+    Pyy = Pyy0 + R; K = Pxy / Pyy;
+    x = xp + K * innov; P = Pp - K * Pyy * K';
+    x(1) = min(1, max(0, x(1)));
+    socHat(k+1) = x(1);
+    vHat(k+1) = 108 * (3 + 1.1 * x(1)) - I * R0 - x(2) - x(3);
+  end
+  err = abs(socHat - socTrue) * 100;
+  idx = find(err > 1, 1, 'last');
+  if isempty(idx), M.tconv = 0; else M.tconv = idx - 1; end
+  M.errMean = mean(err(61:end)); M.errMax = max(err(61:end));
+  M.rmseClean = sqrt(mean((vHat(61:end) - vClean(61:end)).^2));
 end
-V_t_sim(1) = V_t_sim(2);
-
-fprintf('--- 2.1 BALANÇO DINÂMICO DP EM ÓRBITA SSO (EOL DEGRADADO) ---\n');
-fprintf('SoC Mínimo no Eclipse: %5.2f %% (Meta >= 20 %%) | Tensão Mínima: %5.1f V (UVLO: 324 V)\n', ...
-    min(SoC_sim)*100, min(V_t_sim));
-fprintf('Tensão Máxima na Recarga: %5.1f V (Teto OV: 442.8 V) | Controle CC-CV: CONFORME\n', max(V_t_sim));
-fprintf('Faixa Térmica do Pack: %4.1f °C a %4.1f °C (Faixa Operacional Segura: +10 °C a +35 °C)\n\n', ...
-    min(T_bat_sim), max(T_bat_sim));
-
-%% 3. ESTIMADOR ADAPTATIVO AUKF (UNSCENTED KALMAN FILTER) VS. COULOMB COUNTING
-fprintf('--- 3.1 VALIDAÇÃO DO ALGORITMO AUKF MATRICIAL COM CONVERGÊNCIA RÁPIDA ---\n');
-rng(42); % Fixação determinística de semente pseudo-aleatória (Auditoria Técnica)
-dt_kf = 1.0;
-t_kf = 0:dt_kf:1200; % 20 minutos de ensaio dinâmico
-N_kf = length(t_kf);
-
-% Perfil dinâmico com variação de corrente (pulsos de inferência de IA)
-soc_true = zeros(1, N_kf); soc_true(1) = 0.80; % 80% real
-vp1_true = zeros(1, N_kf);
-vp2_true = zeros(1, N_kf);
-vt_noisy = zeros(1, N_kf);
-sigma_v  = 0.015; % [V] Ruído de sensor de precisão (15 mVrms)
-
-for k = 1:N_kf-1
-    i_curr = 25.0 + 15.0 * sin(2 * pi * t_kf(k) / 180) + 10.0 * (mod(t_kf(k), 120) < 30);
-    soc_true(k+1) = soc_true(k) - (i_curr * dt_kf) / (C_n_Ah * 3600);
-    vp1_true(k+1) = exp(-dt_kf/57.6) * vp1_true(k) + R_p1 * (1 - exp(-dt_kf/57.6)) * i_curr;
-    vp2_true(k+1) = exp(-dt_kf/528)  * vp2_true(k) + R_p2 * (1 - exp(-dt_kf/528))  * i_curr;
-    
-    ocv_val = 108 * (3.00 + 1.10 * soc_true(k+1));
-    v_clean = ocv_val - i_curr * R0_ref_eol - vp1_true(k+1) - vp2_true(k+1);
-    vt_noisy(k+1) = v_clean + sigma_v * randn();
-end
-vt_noisy(1) = vt_noisy(2);
-
-% Inicialização do AUKF Matricial (Apêndice B.3 da Dissertação)
-L_state = 3; % Estados: x = [SoC; V_p1; V_p2]
-alpha_u = 1e-3;
-beta_u  = 2.0;
-kappa_u = 0.0;
-lambda_u = alpha_u^2 * (L_state + kappa_u) - L_state;
-
-Wm = zeros(1, 2 * L_state + 1);
-Wc = zeros(1, 2 * L_state + 1);
-Wm(1) = lambda_u / (L_state + lambda_u);
-Wc(1) = Wm(1) + (1 - alpha_u^2 + beta_u);
-for i = 2:(2 * L_state + 1)
-    Wm(i) = 1 / (2 * (L_state + lambda_u));
-    Wc(i) = Wm(i);
-end
-
-% Condição inicial com erro proposital severo (-25% de offset: 55% estimado vs. 80% real)
-x_est = [0.55; 0.0; 0.0];
-P_est = diag([0.05, 0.01, 0.01]);
-Q_mat = diag([1e-7, 1e-5, 1e-5]);
-R_mat = sigma_v^2;
-
-soc_aukf = zeros(1, N_kf); soc_aukf(1) = x_est(1);
-v_est    = zeros(1, N_kf); v_est(1)    = vt_noisy(1);
-
-% Estimador por Coulomb Counting com viés de calibração (+0.5 A de erro no sensor de corrente)
-soc_coulomb = zeros(1, N_kf); soc_coulomb(1) = soc_true(1);
-
-for k = 1:N_kf-1
-    i_curr = 25.0 + 15.0 * sin(2 * pi * t_kf(k) / 180) + 10.0 * (mod(t_kf(k), 120) < 30);
-    
-    % Coulomb Counting puro divergindo com o viés
-    soc_coulomb(k+1) = soc_coulomb(k) - ((i_curr + 0.50) * dt_kf) / (C_n_Ah * 3600);
-    
-    % Fatoração de Cholesky
-    P_sym = 0.5 * (P_est + P_est');
-    [V_p, D_p] = eig(P_sym);
-    D_p = max(D_p, 1e-12);
-    P_sym = V_p * D_p * V_p';
-    sqrt_P = chol((L_state + lambda_u) * P_sym, 'lower');
-    sigmas = [x_est, x_est + sqrt_P, x_est - sqrt_P];
-    
-    % Propagação temporal dos pontos sigma
-    sigmas_pred = zeros(size(sigmas));
-    for s = 1:(2 * L_state + 1)
-        sigmas_pred(1, s) = sigmas(1, s) - (i_curr * dt_kf) / (C_n_Ah * 3600);
-        sigmas_pred(2, s) = exp(-dt_kf/57.6) * sigmas(2, s) + R_p1 * (1 - exp(-dt_kf/57.6)) * i_curr;
-        sigmas_pred(3, s) = exp(-dt_kf/528)  * sigmas(3, s) + R_p2 * (1 - exp(-dt_kf/528))  * i_curr;
-    end
-    
-    x_pred = sum(sigmas_pred .* Wm, 2);
-    P_pred = Q_mat;
-    for s = 1:(2 * L_state + 1)
-        d_x = sigmas_pred(:, s) - x_pred;
-        P_pred = P_pred + Wc(s) * (d_x * d_x');
-    end
-    
-    % Transformação de medição não-linear OCV(SoC)
-    y_sigmas = zeros(1, 2 * L_state + 1);
-    for s = 1:(2 * L_state + 1)
-        s_soc = sigmas_pred(1, s);
-        ocv_s = 108 * (3.00 + 1.10 * s_soc);
-        y_sigmas(s) = ocv_s - i_curr * R0_ref_eol - sigmas_pred(2, s) - sigmas_pred(3, s);
-    end
-    y_pred = sum(y_sigmas .* Wm);
-    
-    P_yy = R_mat;
-    P_xy = zeros(L_state, 1);
-    for s = 1:(2 * L_state + 1)
-        d_y = y_sigmas(s) - y_pred;
-        d_x = sigmas_pred(:, s) - x_pred;
-        P_yy = P_yy + Wc(s) * (d_y^2);
-        P_xy = P_xy + Wc(s) * (d_x * d_y);
-    end
-    
-    % Atualização estocástica e ganho de Kalman
-    K_gain = P_xy / P_yy;
-    innov = vt_noisy(k+1) - y_pred;
-    
-    % Adaptação da matriz de covariância de inovação
-    x_est = x_pred + K_gain * innov;
-    P_est = P_pred - K_gain * P_yy * K_gain';
-    
-    soc_aukf(k+1) = max(0.0, min(1.0, x_est(1)));
-    % Tensão filtrada a posteriori (com os estados atualizados)
-    ocv_post = 108 * (3.00 + 1.10 * x_est(1));
-    v_est(k+1) = ocv_post - i_curr * R0_ref_eol - x_est(2) - x_est(3);
-end
-
-% Métricas de Convergência do AUKF
-idx_conv = find(t_kf >= 60, 1); % Após regime transitório de convergência inicial
-t_conv_s = t_kf(find(abs(soc_aukf - soc_true) <= 0.01, 1));
-
-erro_aukf_regime = abs(soc_aukf(idx_conv:end) - soc_true(idx_conv:end)) * 100;
-erro_coulomb_end = abs(soc_coulomb(end) - soc_true(end)) * 100;
-rmse_v_est = sqrt(mean((v_est(idx_conv:end) - (vt_noisy(idx_conv:end) - sigma_v*randn(size(vt_noisy(idx_conv:end))))).^2));
-
-fprintf('Tempo de Convergência AUKF (Erro Inicial de 25 %%): %4.1f s (Meta < 60 s)\n', t_conv_s);
-fprintf('Erro Médio de SoC em Regime Permanente (AUKF): %5.3f %% (Meta < 0.80 %%)\n', mean(erro_aukf_regime));
-fprintf('Erro Máximo de SoC em Regime Permanente (AUKF): %5.3f %%\n', max(erro_aukf_regime));
-fprintf('Erro Final de SoC por Coulomb Counting (Viés +0.5 A): %5.2f %% (Divergência Cumulativa)\n', erro_coulomb_end);
-fprintf('RMSE de Rastreamento de Tensão de Barramento: %5.2f mV (Meta < 25 mV)\n', rmse_v_est * 1e3);
-
-if max(erro_aukf_regime) <= 0.80 && rmse_v_est <= 0.025
-    fprintf('Status do Estimador: [VALIDADO COM SUCESSO] Alta Precisão Assegurada\n');
-else
-    fprintf('Status do Estimador: ATENÇÃO AOS LIMITES\n');
-end
-
-fprintf('==============================================================================\n');
-fprintf('SIMULAÇÃO 3.3 CONCLUÍDA COM SUCESSO: MODELO DP E AUKF RASTREÁVEIS.\n');
-fprintf('==============================================================================\n');

@@ -130,8 +130,8 @@ legend('Barramento 400 V (|r_{in}|)', 'Barramento 48 V (|r_{in}| \times 10)', 'l
 subplot(2, 2, 2);
 f_hz = logspace(1, 6, 500);
 w_rad = 2 * pi * f_hz;
-% Circuito de saída: L = 1.8 uH, R = 14 mOhm, C = 4.7 mF, ESR = 2 mOhm
-L_400 = 1.8e-6; R_400 = 14e-3; C_400 = 4.7e-3; ESR_400 = 2e-3;
+% Circuito de saída: L = 1.8 uH, R = 14 mOhm, C = 4.7 mF, ESR = 1.5 mOhm
+L_400 = 1.8e-6; R_400 = 14e-3; C_400 = 4.7e-3; ESR_400 = 1.5e-3;
 Z_line = R_400 + 1i * w_rad * L_400;
 Z_cap  = ESR_400 + 1 ./ (1i * w_rad * C_400);
 Z_out_400 = abs((Z_line .* Z_cap) ./ (Z_line + Z_cap));

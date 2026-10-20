@@ -1,269 +1,265 @@
-% ==============================================================================
-% SIMULACAO 3.2: GERADOR FOTOVOLTAICO MULTIJUNCAO AM0 (XTJ PRIME),
-% DEGRADACAO DDD, CONTINGENCIA DE HOT SPOT E MALHA DINAMICA DO MPPT
-% ==============================================================================
-% Dissertacao de Mestrado Profissional - ProPECAut / IFES
-% Autor: Dafnhe Thor Castro de Martins Barros
-% Revisao Tecnica: Stefan-Boltzmann Exato e Malha Fechada P&O-AP a 150 kHz
-% ==============================================================================
-clear; clc; close all;
+function simulacao_3_2_gerador_fotovoltaico_am0()
+  % ============================================================================
+  % SIMULACAO 3.2: GERADOR FOTOVOLTAICO MULTIJUNCAO AM0 (SPECTROLAB XTJ PRIME)
+  % MODELO FISICO DE 3 DIODOS INDEPENDENTES EM SERIE (GaInP / GaAs / Ge),
+  % DEGRADACAO DDD, HOT SPOT E CONVERSOR BUCK CHAVEADO (150 kHz)
+  % ============================================================================
+  % Dissertacao de Mestrado Profissional - ProPECAut / IFES
+  % Autor: Dafnhe Thor Castro de Martins Barros
+  % Referencias Primarias:
+  %   [1] Spectrolab XTJ Prime Space Solar Cell Datasheet (AM0, 1353 W/m^2, 28 C)
+  %   [2] Cotal et al. (2000), Triple-Junction Solar Cell Efficiencies Above 32%
+  % ============================================================================
+  close all; clc;
 
-fprintf('==============================================================================\n');
-fprintf('INICIANDO SIMULACAO 3.2: GERADOR FOTOVOLTAICO AM0, HOT SPOT E MPPT\n');
-fprintf('==============================================================================\n\n');
+  fprintf('==============================================================================\n');
+  fprintf('INICIANDO SIMULACAO 3.2: MODELO DE 3 DIODOS EM SERIE (GaInP/GaAs/Ge) E BUCK\n');
+  fprintf('==============================================================================\n\n');
 
-%% 1. PARAMETROS FUNDAMENTAIS E DA CELULA MULTIJUNCAO (SPECTROLAB XTJ PRIME)
-q_e  = 1.602176634e-19;    % [C] Carga elementar
-k_B  = 1.380649e-23;       % [J/K] Constante de Boltzmann
-sigma_SB = 5.670374e-8;    % [W/(m^2 K^4)] Constante de Stefan-Boltzmann
+  % ----------------------------------------------------------------------------
+  % 1. Constantes fisicas e parametros de datasheet (Spectrolab XTJ Prime)
+  % ----------------------------------------------------------------------------
+  qe = 1.602176634e-19;      % [C] Carga elementar
+  kB = 1.380649e-23;         % [J/K] Constante de Boltzmann
+  sigmaSB = 5.670374e-8;     % [W/(m^2 K^4)] Constante de Stefan-Boltzmann
 
-% Irradiancia e Temperaturas de Referencia
-T_ref = 28.0;              % [degC] Temperatura padrao de ensaio de catalogo
-T_ref_K = T_ref + 273.15;  % [K] 301.15 K
-G_datasheet = 1353.0;      % [W/m^2] Irradiancia de ensaio Spectrolab AM0
-G_AM0 = 1361.0;            % [W/m^2] Irradiancia solar extraterrestre LEO (ASTM E490)
-scale_AM0 = G_AM0 / G_datasheet; % 1.005912 (Escalonamento rigoroso)
+  Tref = 28.0;               % [degC] Temperatura padrao de ensaio
+  G_datasheet = 1353.0;      % [W/m^2] Irradiancia de ensaio Spectrolab AM0
+  G_AM0 = 1361.0;            % [W/m^2] Constante solar ASTM E490 (1 UA)
+  scale_AM0 = G_AM0 / G_datasheet;
 
-% Dados de Catalogo Spectrolab XTJ Prime (1 celula a 28 degC, AM0 1353 W/m^2)
-A_cel    = 30.18;          % [cm^2] Area ativa adotada
-A_cel_m2 = A_cel * 1e-4;   % [m^2] 30.18e-4 m^2
-V_oc_ref = 2.720;          % [V] Tensao de circuito aberto
-J_sc_ref = 18.00e-3;       % [A/cm^2] Densidade de curto-circuito (18.0 mA/cm^2)
-V_mp_ref = 2.406;          % [V] Tensao no ponto de maxima potencia
-J_mp_ref = 17.50e-3;       % [A/cm^2] Densidade de corrente no ponto MP
+  Acm2 = 30.18;              % [cm^2] Area ativa por celula
+  Am2  = Acm2 * 1e-4;        % [m^2]
+  VocRef_tot = 2.720;        % [V] Voc total do datasheet (1.42 + 1.01 + 0.29 V)
+  JscRef     = 18.0e-3;      % [A/cm^2] Densidade de corrente de curto-circuito
+  VmpRef_cat = 2.406;        % [V] Tensao MPP de catalogo
+  JmpRef     = 17.5e-3;      % [A/cm^2] Densidade de corrente MPP de catalogo
 
-% Correntes e potencias nominais por celula sob AM0 real (1361 W/m^2)
-I_sc_ref = J_sc_ref * A_cel * scale_AM0; % [A] 0.54645 A
-I_mp_ref = J_mp_ref * A_cel * scale_AM0; % [A] 0.53127 A
-P_mp_ref = V_mp_ref * I_mp_ref;          % [W] 1.2782 W por celula
+  IscRef = JscRef * Acm2 * scale_AM0; % [A] 0.5465 A sob 1361 W/m^2
+  ImpRef = JmpRef * Acm2 * scale_AM0; % [A] 0.5313 A sob 1361 W/m^2
 
-% Coeficientes de Temperatura Oficiais do Datasheet XTJ Prime (15 degC a 125 degC)
-dVoc_dT = -5.60e-3;        % [V/degC] Coeficiente termico de Voc
-dJsc_dT = +10.0e-6;        % [A/(cm^2 degC)] Coeficiente termico de Jsc
-dVmp_dT = -6.30e-3;        % [V/degC] Coeficiente termico de Vmp
-dJmp_dT = +5.0e-6;         % [A/(cm^2 degC)] Coeficiente termico de Jmp
+  % Coeficientes termicos oficiais do datasheet Spectrolab XTJ Prime
+  dVoc_dT_tot = -5.60e-3;    % [V/K] Coeficiente termico global de Voc
+  dJsc_dT     = +10.0e-6;    % [A/(cm^2 K)] Coeficiente termico de Jsc
+  dIsc_dT     = dJsc_dT * Acm2 * scale_AM0; % [A/K] +0.3036 mA/K
 
-dIsc_dT = dJsc_dT * A_cel * scale_AM0;  % [A/degC] +0.3036 mA/degC
-dImp_dT = dJmp_dT * A_cel * scale_AM0;  % [A/degC] +0.1518 mA/degC
+  % Parametros fisicos das 3 subcelulas em serie (GaInP / GaAs / Ge) a 28 C:
+  % [1: Top GaInP, 2: Middle GaAs, 3: Bottom Ge]
+  Voc_sub_ref = [1.420, 1.010, 0.290];        % [V] Soma = 2.720 V
+  n_sub       = [1.15,  1.15,  1.75];         % Fatores de idealidade por subcelula
+  Rsh_sub     = [2500.0, 3500.0, 200.0];      % [Ohm] Resistencias shunt individuais
+  % Fotocorrentes individuais a 28 C (GaAs limitante, GaInP levemente acima, Ge com excesso IR)
+  Iph_sub_ref = [1.012 * IscRef, 1.000 * IscRef, 1.550 * IscRef]; % [A]
+  % Reparticao dos coeficientes termicos de Voc e Isc pelas 3 subcelulas
+  dVoc_sub_dT = [-2.20e-3, -1.90e-3, -1.50e-3]; % [V/K] Soma = -5.60 mV/K
+  dIph_sub_dT = [0.85 * dIsc_dT, 1.00 * dIsc_dT, 1.80 * dIsc_dT]; % [A/K]
 
-% Arquitetura do Modulo Fotovoltaico por No Satelital (50 kW nominais)
-N_s = 166;                 % Celulas em serie por string (Vmp nominal = 399.4 V)
-N_p_no = 244;              % Strings em paralelo no no satelital
-N_cel_no = N_s * N_p_no;   % 40.504 celulas por satelite
-A_array_no = N_cel_no * A_cel_m2; % [m^2] Area ativa (122.24 m^2)
+  % Resistencia serie total (contatos metalicos + juncoes tunel)
+  Rs_total = 0.20;           % [Ohm/celula]
 
-% Potencia de Catalogo do No (28 degC, BOL)
-P_array_bol_cat = N_cel_no * P_mp_ref; % [W] 51.77 kW a 1361 W/m^2
+  % Arquitetura da matriz por no satelital (166S x 244P = 40.504 celulas)
+  Ns = 166;
+  Np = 244;
 
-fprintf('Configuracao do No: %d celulas em serie x %d strings em paralelo\n', N_s, N_p_no);
-fprintf('Potencia de Catalogo do No (28 degC, 1361 W/m^2): %5.2f kW | V_mp: %5.1f V | I_mp: %5.2f A\n\n', ...
-    P_array_bol_cat/1e3, N_s * V_mp_ref, N_p_no * I_mp_ref);
+  Pmp_cell_cat = VmpRef_cat * ImpRef;
+  eta_cell_cat = Pmp_cell_cat / (G_AM0 * Am2);
+  fprintf('--- 1.1 MODELO DE 3 DIODOS EM SERIE (GaInP / GaAs / Ge) ---\n');
+  fprintf('Subcelulas Voc(28 C): GaInP=%.2f V | GaAs=%.2f V | Ge=%.2f V (Total=%.3f V)\n', ...
+          Voc_sub_ref(1), Voc_sub_ref(2), Voc_sub_ref(3), sum(Voc_sub_ref));
+  fprintf('Fatores de idealidade: n = [%.2f, %.2f, %.2f] | Rsh = [%.0f, %.0f, %.0f] Ohm | Rs = %.2f Ohm\n', ...
+          n_sub(1), n_sub(2), n_sub(3), Rsh_sub(1), Rsh_sub(2), Rsh_sub(3), Rs_total);
+  fprintf('Matriz: %dS x %dP (%d celulas) | Pmp catalogo (28 C) = %.2f kW (eta = %.2f %%)\n\n', ...
+          Ns, Np, Ns * Np, (Ns * Np * Pmp_cell_cat) / 1e3, 100 * eta_cell_cat);
 
-%% 2. MODELO DE 1 DIODO MODIFICADO COM CALIBRACAO TERMICA RIGOROSA
-a_eq = 3.00;               % Fator de idealidade concentrado das 3 juncoes
-R_s_cel = 0.080;           % [Ohm] Resistencia serie por celula
-R_sh_cel = 1200.0;         % [Ohm] Resistencia paralelo shunt
+  % ----------------------------------------------------------------------------
+  % 2. Resolucao das curvas I-V e P-V do modelo de 3 diodos por temperatura
+  % ----------------------------------------------------------------------------
+  fprintf('--- 2.1 CURVAS I-V E P-V DO MODELO DE 3 DIODOS EM SERIE ---\n');
+  Tgrid = [15, 28, 45, 60, 85];
+  VcellGrid = linspace(0, 2.85, 600);
+  IcellGrid = zeros(numel(Tgrid), numel(VcellGrid));
+  PmpNode = zeros(size(Tgrid));
+  VmpNode = zeros(size(Tgrid));
+  ImpNode = zeros(size(Tgrid));
 
-% Temperaturas para curvas I-V e P-V no envelope operacional valido
-T_targets = [15.0, 28.0, 60.0, 85.0]; % [degC] Faixa qualificada pelo fabricante
-V_string_vec = linspace(0, N_s * 2.85, 400);
+  for m = 1:numel(Tgrid)
+    T = Tgrid(m);
+    dT = T - Tref;
+    TK = T + 273.15;
 
-curvas_iv = struct();
+    Iph_T = Iph_sub_ref + dIph_sub_dT * dT;
+    Voc_T = Voc_sub_ref + dVoc_sub_dT * dT;
+    Vth_T = (n_sub * kB * TK) / qe;
+    I0_T  = (Iph_T - Voc_T ./ Rsh_sub) ./ (exp(Voc_T ./ Vth_T) - 1);
 
-for m = 1:length(T_targets)
-    T_curr = T_targets(m);
-    delta_T = T_curr - T_ref;
-    T_curr_K = T_curr + 273.15;
-    
-    I_ph_cel = I_sc_ref + dIsc_dT * delta_T;
-    V_th_curr = (a_eq * k_B * T_curr_K) / q_e;
-    V_oc_curr = V_oc_ref + dVoc_dT * delta_T;
-    
-    I_0_curr = (I_ph_cel - V_oc_curr / R_sh_cel) / (exp(V_oc_curr / V_th_curr) - 1);
-    
-    I_node_vec = zeros(size(V_string_vec));
-    V_cel_vec = V_string_vec / N_s;
-    
-    for idx = 1:length(V_cel_vec)
-        v_c = V_cel_vec(idx);
-        i_c = I_ph_cel;
-        for iter = 1:20
-            f = I_ph_cel - I_0_curr * (exp((v_c + i_c * R_s_cel) / V_th_curr) - 1) ...
-                - (v_c + i_c * R_s_cel) / R_sh_cel - i_c;
-            df = - I_0_curr * (R_s_cel / V_th_curr) * exp((v_c + i_c * R_s_cel) / V_th_curr) ...
-                 - R_s_cel / R_sh_cel - 1;
-            di = f / df;
-            i_c = i_c - di;
-            if abs(di) < 1e-7, break; end
-        end
-        I_node_vec(idx) = max(0, i_c * N_p_no);
+    % Parametrizacao por corrente I_cel de 0 ate min(Iph_T) para obter V_cel(I)
+    I_sweep = linspace(0, min(Iph_T) * 0.9999, 1000);
+    V_sweep = zeros(size(I_sweep));
+    for k_i = 1:numel(I_sweep)
+      ic = I_sweep(k_i);
+      v_sum = 0.0;
+      for j_sub = 1:3
+        v_j = solve_subcell_voltage(ic, Iph_T(j_sub), I0_T(j_sub), Rsh_sub(j_sub), Vth_T(j_sub), Voc_T(j_sub));
+        v_sum = v_sum + v_j;
+      end
+      V_sweep(k_i) = max(0.0, v_sum - ic * Rs_total);
     end
-    
-    P_node_vec = V_string_vec .* I_node_vec;
-    [P_max_calc, idx_mp] = max(P_node_vec);
-    V_mp_calc = V_string_vec(idx_mp);
-    
-    curvas_iv(m).T = T_curr;
-    curvas_iv(m).V = V_string_vec;
-    curvas_iv(m).I = I_node_vec;
-    curvas_iv(m).P = P_node_vec;
-    curvas_iv(m).P_mp = P_max_calc;
-    curvas_iv(m).V_mp = V_mp_calc;
-    
-    fprintf('T = %3.0f degC | P_mp Calculada: %5.2f kW | V_mp: %5.1f V | I_mp: %5.2f A\n', ...
-        T_curr, P_max_calc/1e3, V_mp_calc, P_max_calc/V_mp_calc);
-end
-fprintf('\n');
 
-%% 3. MODELO DE DEGRADACAO TEMPORAL DDD (10 ANOS - SSO 700 km)
-anos = 0:0.2:10;
-% Fluencia anual calibrada para orbita de referencia SSO 700 km
-phi_anual = 2.5e13; % [e-/cm^2 por ano]
-phi_total = anos * phi_anual; % Atinge 2.5e14 e-/cm^2 aos 10 anos
+    % Interpolacao sobre a malha uniforme de tensao VcellGrid
+    [V_uniq, idx_u] = unique(V_sweep, 'stable');
+    I_uniq = I_sweep(idx_u);
+    IcellGrid(m, :) = interp1(V_uniq, I_uniq, VcellGrid, 'linear', 0.0);
 
-C_d = 0.12851;
-phi_x = 1.0e14;
-retencao_rad = 1 - C_d * log10(1 + phi_total / phi_x);
-perdas_ambiente = 1 - 0.0052 * anos; % Contaminacao e escurecimento do coverglass (0.52%/ano)
-retencao_total = retencao_rad .* perdas_ambiente;
+    Pcell = VcellGrid .* IcellGrid(m, :);
+    [pmax, idx] = max(Pcell);
+    PmpNode(m) = Ns * Np * pmax;
+    VmpNode(m) = Ns * VcellGrid(idx);
+    ImpNode(m) = Np * IcellGrid(m, idx);
+    fprintf('T = %3.0f C | Vmp_cel = %.3f V | Vmp_str = %5.1f V | Imp_no = %6.2f A | Pmp_no = %5.2f kW\n', ...
+            T, VcellGrid(idx), VmpNode(m), ImpNode(m), PmpNode(m) / 1e3);
+  end
+  fprintf('\n');
 
-P_array_temporal = P_array_bol_cat * retencao_total;
+  % ----------------------------------------------------------------------------
+  % 3. Cenario radiativo nominal (1 MeV eq., CMG 150 um, SSO 700 km)
+  % ----------------------------------------------------------------------------
+  fprintf('--- 3.1 DEGRADACAO DDD (EL. 1 MeV SOB COVERGLASS CMG 150 um EM SSO 700 km) ---\n');
+  years = 0:0.1:10;
+  Cd = 0.085;                % Eq. 34 da tese
+  PhiX = 1.0e14;             % [e-/cm^2]
+  PhiAnnual = 2.5e13;        % [e-/cm^2/ano] Fluencia eq. 1 MeV atras de CMG 150 um
+  lossEnv10 = 0.052;         % Escurecimento UV + micrometeoroides (5.2% em 10 anos)
+  Phi = years * PhiAnnual;
+  etaRad = 1 - Cd * log10(1 + Phi / PhiX);
+  etaEnv = 1 - lossEnv10 * years / 10;
+  etaTotal = etaRad .* etaEnv;
+  fprintf('Retencao DDD (10 anos) = %.2f %% | Retencao Ambiental = %.2f %% | Retencao Total EOL = %.2f %%\n', ...
+          100 * etaRad(end), 100 * etaEnv(end), 100 * etaTotal(end));
+  fprintf('Potencia EOL do no a 28 C (Modelo 3 Diodos) = %.2f kW\n\n', (PmpNode(2) / 1e3) * etaTotal(end));
 
-fprintf('Retencao Fotovoltaica aos 10 Anos (SSO 700 km): %5.2f %% | Potencia EOL (28 degC): %5.2f kW\n\n', ...
-    retencao_total(end)*100, P_array_temporal(end)/1e3);
-
-%% 4. CONTINGENCIA DE HOT SPOT POR STEFAN-BOLTZMANN EXATO NO VACUO
-% Celula sombreada polarizada em reversa pela corrente da string
-% Part Number de Referência: Spectrolab XTJ Prime 30.18 cm^2 (Ge/GaAs/InGaP, Tripla Junção)
-V_break_cel = -28.0;      % [V] Tensao de avalanche reversa
-V_schottky  = -0.35;      % [V] Queda de tensao direta do diodo Schottky de bypass
-I_string    = I_mp_ref;   % [A] 0.53127 A
-
-P_diss_sem = abs(V_break_cel) * I_string; % [W] 14.875 W
-P_diss_com = abs(V_schottky)  * I_string; % [W] 0.1859 W
-
-eps_cel = 0.85;           % Emissividade infravermelha de ambas as faces
-C_th_cel = 3.8;           % [J/K] Capacitancia termica da celula (massa 2.5 g + coverglass cerio-dopado)
-T_space = 3.0;            % [K] Fundo cosmico frio no vacuo profundo (ECSS-E-ST-31C)
-% Observação de balanço radiativo: Sob oclusão geométrica direta (antena/mastro), a incidência
-% ambiental difusa residual (albedo e IR terrestre) absorvida pela célula é da ordem de miliwatts
-% (q_amb_abs << P_diss_sem), de modo que a dissipação Joule reversa de avalanche (14.875 W) domina
-% amplamente a dinâmica de aquecimento, conduzindo ao pico assintótico de 201.7 °C e trip em 69.5 s.
-
-dt_hs = 0.1;              % [s] Passo de integracao
-t_hs = 0:dt_hs:180;       % [s] Ensaio de 3 minutos
-
-T_hs_sem_K = zeros(size(t_hs));
-T_hs_com_K = zeros(size(t_hs));
-T_hs_sem_K(1) = 60.0 + 273.15; % 60 degC inicial
-T_hs_com_K(1) = 60.0 + 273.15;
-
-for k = 1:length(t_hs)-1
-    % Radiacao termica por AMBAS as faces da celula: q_rad = 2 * eps * sigma * A * (T^4 - T_space^4)
-    q_rad_sem = 2.0 * eps_cel * sigma_SB * A_cel_m2 * (T_hs_sem_K(k)^4 - T_space^4);
-    q_rad_com = 2.0 * eps_cel * sigma_SB * A_cel_m2 * (T_hs_com_K(k)^4 - T_space^4);
-    
-    dT_sem = (P_diss_sem - q_rad_sem) / C_th_cel * dt_hs;
-    dT_com = (P_diss_com - q_rad_com) / C_th_cel * dt_hs;
-    
-    T_hs_sem_K(k+1) = T_hs_sem_K(k) + dT_sem;
-    T_hs_com_K(k+1) = T_hs_com_K(k) + dT_com;
-end
-
-idx_180 = find(T_hs_sem_K >= (180.0 + 273.15), 1);
-t_180_s = t_hs(idx_180);
-
-fprintf('--- 4.1 RESPOSTA TERMICA DE HOT SPOT NO VACUO (STEFAN-BOLTZMANN) ---\n');
-fprintf('Sem Bypass Schottky: Temperatura de Pico = %5.1f degC (Destrutivo > 180 degC atingido em %4.1f s)\n', ...
-    max(T_hs_sem_K)-273.15, t_180_s);
-fprintf('Com Bypass Schottky: Temperatura Estabilizada = %5.1f degC (Operacao Segura)\n\n', max(T_hs_com_K)-273.15);
-
-%% 5. MALHA DINAMICA DO MPPT ADAPTATIVO (P&O-AP) A 150 kHz NA SAIDA DO ECLIPSE
-% Frequencia de chaveamento do conversor Buck GaN
-f_sw = 150e3;             % [Hz] 150 kHz
-T_sw = 1 / f_sw;          % [s] ~6.667 us
-
-t_mppt_end = 0.200;       % [s] 200 ms de transiente
-t_mppt = 0:T_sw:t_mppt_end;
-N_steps = length(t_mppt);
-
-V_bus_est = 345.0;        % [V] Barramento descarregado do BESS na saída do eclipse (~345 V)
-
-% Perfil termico transitorio da celula na saida do eclipse (de -100 degC ate +60 degC)
-tau_th_pv = 0.050;        % [s] Constante de tempo de aquecimento rapido
-T_transiente = 60.0 - 160.0 * exp(-t_mppt / tau_th_pv);
-
-% Potencia analitica otima de referencia no ponto de maxima potencia
-V_mp_analitico = N_s * (V_mp_ref + dVmp_dT * (T_transiente - T_ref));
-I_mp_analitico = N_p_no * (I_mp_ref + dImp_dT * (T_transiente - T_ref));
-P_otima = V_mp_analitico .* I_mp_analitico;
-
-% Malha MPPT Adaptativa P&O-AP (Equacao 17 da Dissertacao: M = 1.2e-4 V/W)
-M_adapt = 1.2e-4;         % [V/W] Coeficiente adaptativo
-D_adapt = zeros(size(t_mppt));
-P_adapt = zeros(size(t_mppt));
-D_adapt(1) = 0.60;        % Duty cycle inicial perturbado para testar convergência rápida
-
-% Malha MPPT de Passo Fixo (Delta D = 0.008)
-delta_D_fixo = 0.008;
-D_fixo = zeros(size(t_mppt));
-P_fixo = zeros(size(t_mppt));
-D_fixo(1) = 0.60;
-
-d_c_a = D_adapt(1);
-d_c_f = D_fixo(1);
-v_prev_a = V_bus_est / d_c_a;
-v_prev_f = V_bus_est / d_c_f;
-p_prev_a = P_otima(1) * max(0, 1 - ((v_prev_a - V_mp_analitico(1)) / (0.45 * V_mp_analitico(1)))^2);
-p_prev_f = P_otima(1) * max(0, 1 - ((v_prev_f - V_mp_analitico(1)) / (0.45 * V_mp_analitico(1)))^2);
-dir_a = -1;
-dir_f = -1;
-
-for k = 1:N_steps-1
-    % 1. Algoritmo P&O-AP Adaptativo
-    v_a = V_bus_est / max(0.50, min(0.98, d_c_a));
-    p_a = max(0, P_otima(k) * (1 - ((v_a - V_mp_analitico(k)) / (0.45 * V_mp_analitico(k)))^2));
-    P_adapt(k) = p_a;
-    D_adapt(k) = d_c_a;
-    
-    dV_a = v_a - v_prev_a;
-    dP_a = p_a - p_prev_a;
-    if abs(dV_a) > 0.02
-        step_a = - M_adapt * (dP_a / dV_a);
-        step_a = max(-0.015, min(0.015, step_a));
-    else
-        step_a = 0.002 * dir_a;
+  % ----------------------------------------------------------------------------
+  % 4. Contingencia de Hot Spot no vacuo (Stefan-Boltzmann)
+  % ----------------------------------------------------------------------------
+  fprintf('--- 4.1 CONTINGENCIA DE HOT SPOT NO VACUO (STEFAN-BOLTZMANN) ---\n');
+  Vbreak = 28.0; Vsch = 0.35; Istring = ImpRef;
+  Psem = Vbreak * Istring; Pcom = Vsch * Istring;
+  epsCell = 0.85; Cth = 3.8; Tspace = 3.0;
+  for nFaces = [1, 2]
+    dt_hs = 0.01; t_hs = 0:dt_hs:240;
+    Tsem = zeros(size(t_hs)); Tsem(1) = 60 + 273.15;
+    for k = 1:numel(t_hs)-1
+      qsem = nFaces * epsCell * sigmaSB * Am2 * (Tsem(k)^4 - Tspace^4);
+      Tsem(k+1) = Tsem(k) + (Psem - qsem) * dt_hs / Cth;
     end
-    if dP_a < 0, dir_a = -dir_a; end
-    d_c_a = max(0.50, min(0.98, d_c_a + step_a));
-    v_prev_a = v_a;
-    p_prev_a = p_a;
-    
-    % 2. Algoritmo P&O de Passo Fixo
-    v_f = V_bus_est / max(0.50, min(0.98, d_c_f));
-    p_f = max(0, P_otima(k) * (1 - ((v_f - V_mp_analitico(k)) / (0.45 * V_mp_analitico(k)))^2));
-    P_fixo(k) = p_f;
-    D_fixo(k) = d_c_f;
-    
-    dP_f = p_f - p_prev_f;
-    if dP_f < 0, dir_f = -dir_f; end
-    step_f = delta_D_fixo * dir_f;
-    d_c_f = max(0.50, min(0.98, d_c_f + step_f));
-    v_prev_f = v_f;
-    p_prev_f = p_f;
+    idx180 = find(Tsem >= 180 + 273.15, 1);
+    TeqSem = (Psem / (nFaces * epsCell * sigmaSB * Am2) + Tspace^4)^0.25 - 273.15;
+    TeqCom = (Pcom / (nFaces * epsCell * sigmaSB * Am2) + Tspace^4)^0.25 - 273.15;
+    fprintf('nFaces = %d: P_sem = %.2f W | t(180 C) = %.2f s | Teq_sem = %.2f C | Teq_com = %.2f C\n', ...
+            nFaces, Psem, t_hs(idx180), TeqSem, TeqCom);
+  end
+  fprintf('\n');
+
+  % ----------------------------------------------------------------------------
+  % 5. MALHA DINAMICA DO BUCK (150 kHz) E MPPT ADAPTATIVO P&O-AP (10 kHz)
+  % ----------------------------------------------------------------------------
+  fprintf('--- 5.1 DINAMICA DO CONVERSOR BUCK E MPPT ADAPTATIVO P&O-AP (150 kHz, T = 45 C) ---\n');
+  V_bus_nom = 345.0;         % [V] Barramento pos-eclipse (janela 324-442.8 V do BESS 108S)
+  L_buck    = 45.0e-6;       % [H] Indutancia do Buck (45 uH)
+  C_in_buck = 250.0e-6;      % [F] Capacitancia de entrada (250 uF)
+  R_L_buck  = 0.008;         % [Ohm] Resistencia parasita serie do indutor
+
+  f_sw   = 150e3;            % [Hz] Frequencia de chaveamento PWM (150 kHz)
+  dt_sim = 1 / f_sw;         % [s] Passo de integracao no periodo medio PWM (~6.667 us)
+  t_end  = 0.050;            % [s] Janela transitoria de 50 ms
+  t_mppt = 0:dt_sim:t_end;
+  N_steps = numel(t_mppt);
+
+  f_mppt = 10e3;             % [Hz] Frequencia do algoritmo MPPT (10 kHz)
+  N_sync = round(f_sw / f_mppt); % 15 ciclos PWM
+
+  M_adapt    = 1.2e-4;       % [V/W] Ganho adaptativo (Eq. eq:po_adaptativo)
+  dD_max     = 0.002;        % Limite de saturacao de passo por amostragem
+  delta_fixo = 0.005;        % Passo fixo comparativo
+
+  % Curva de 3 Diodos em T = 45 C (indice 3: Vmp = 373.4 V, Pmp = 48.94 kW)
+  V_curve_45 = Ns * VcellGrid;
+  I_curve_45 = Np * IcellGrid(3, :);
+
+  V_pv_a = zeros(1, N_steps); I_L_a = zeros(1, N_steps); D_a = zeros(1, N_steps); P_pv_a = zeros(1, N_steps);
+  V_pv_f = zeros(1, N_steps); I_L_f = zeros(1, N_steps); D_f = zeros(1, N_steps); P_pv_f = zeros(1, N_steps);
+
+  % Condicao inicial fora do MPP (partida em tensao elevada pos-eclipse: 410 V)
+  V_pv_a(1) = 410.0; I_L_a(1) = 125.0; D_a(1) = V_bus_nom / V_pv_a(1);
+  V_pv_f(1) = 410.0; I_L_f(1) = 125.0; D_f(1) = D_a(1);
+
+  v_prev_mppt_a = V_pv_a(1);
+  p_prev_mppt_a = V_pv_a(1) * interp1(V_curve_45, I_curve_45, V_pv_a(1), 'linear', 0.0);
+  v_prev_mppt_f = V_pv_f(1);
+  p_prev_mppt_f = p_prev_mppt_a;
+
+  for k = 1:N_steps-1
+    % Corrente exata interpolada da curva de 3 Diodos (GaInP/GaAs/Ge)
+    I_pv_now_a = interp1(V_curve_45, I_curve_45, V_pv_a(k), 'linear', 0.0);
+    I_pv_now_f = interp1(V_curve_45, I_curve_45, V_pv_f(k), 'linear', 0.0);
+    P_pv_a(k)  = V_pv_a(k) * I_pv_now_a;
+    P_pv_f(k)  = V_pv_f(k) * I_pv_now_f;
+
+    if mod(k, N_sync) == 0
+      % 1. MPPT Adaptativo P&O-AP: D[k] = D[k-1] - M * (dP/dV)
+      dV_a = V_pv_a(k) - v_prev_mppt_a;
+      dP_a = P_pv_a(k) - p_prev_mppt_a;
+      if abs(dV_a) > 1e-4
+        slope_a = dP_a / dV_a;
+        step_adapt = - min(dD_max, max(-dD_max, M_adapt * slope_a));
+        D_a(k) = max(0.50, min(0.96, D_a(k) + step_adapt));
+      end
+      v_prev_mppt_a = V_pv_a(k);
+      p_prev_mppt_a = P_pv_a(k);
+
+      % 2. MPPT de Passo Fixo Convencional
+      dV_f = V_pv_f(k) - v_prev_mppt_f;
+      dP_f = P_pv_f(k) - p_prev_mppt_f;
+      if abs(dV_f) > 1e-4
+        D_f(k) = max(0.50, min(0.96, D_f(k) - delta_fixo * sign(dP_f / dV_f)));
+      end
+      v_prev_mppt_f = V_pv_f(k);
+      p_prev_mppt_f = P_pv_f(k);
+    end
+
+    D_a(k+1) = D_a(k);
+    D_f(k+1) = D_f(k);
+
+    % Integracao Euler-Cromer das EDOs do filtro LC do Buck
+    dVpv_dt_a = (I_pv_now_a - D_a(k) * I_L_a(k)) / C_in_buck;
+    V_pv_a(k+1) = max(0, V_pv_a(k) + dVpv_dt_a * dt_sim);
+    dIL_dt_a = (D_a(k) * V_pv_a(k+1) - V_bus_nom - R_L_buck * I_L_a(k)) / L_buck;
+    I_L_a(k+1) = max(0, I_L_a(k) + dIL_dt_a * dt_sim);
+
+    dVpv_dt_f = (I_pv_now_f - D_f(k) * I_L_f(k)) / C_in_buck;
+    V_pv_f(k+1) = max(0, V_pv_f(k) + dVpv_dt_f * dt_sim);
+    dIL_dt_f = (D_f(k) * V_pv_f(k+1) - V_bus_nom - R_L_buck * I_L_f(k)) / L_buck;
+    I_L_f(k+1) = max(0, I_L_f(k) + dIL_dt_f * dt_sim);
+  end
+  P_pv_a(end) = V_pv_a(end) * interp1(V_curve_45, I_curve_45, V_pv_a(end), 'linear', 0.0);
+  P_pv_f(end) = V_pv_f(end) * interp1(V_curve_45, I_curve_45, V_pv_f(end), 'linear', 0.0);
+
+  idx_reg = (N_steps - 2000):N_steps;
+  fprintf('Tensao media no painel P&O-AP (Vin): %.2f V (Vmp 3-Diodos a 45 C = %.1f V)\n', ...
+          mean(V_pv_a(idx_reg)), VmpNode(3));
+  fprintf('Corrente media no indutor (IL): %.2f A\n', mean(I_L_a(idx_reg)));
+  fprintf('Potencia extraida no MPP (45 C): %.2f kW (Eficiencia MPPT P&O-AP: %.2f %% vs Fixo: %.2f %%)\n', ...
+          mean(P_pv_a(idx_reg)) / 1e3, 100 * mean(P_pv_a(idx_reg)) / PmpNode(3), 100 * mean(P_pv_f(idx_reg)) / PmpNode(3));
+  fprintf('==============================================================================\n');
 end
 
-P_adapt(N_steps) = P_adapt(N_steps-1);
-P_fixo(N_steps)  = P_fixo(N_steps-1);
-D_adapt(N_steps) = D_adapt(N_steps-1);
-D_fixo(N_steps)  = D_fixo(N_steps-1);
-
-fprintf('--- 5.1 DESEMPENHO DINAMICO DO MPPT P&O-AP (150 kHz) ---\n');
-fprintf('Tempo de Convergencia P&O-AP (< 15 ms): Confirmado com Erro < 0.8 %%\n');
-fprintf('Rendimento Dinamico Medio Adaptativo: %5.2f %% (Meta > 99 %%)\n', ...
-    mean(P_adapt(1500:end) ./ P_otima(1500:end)) * 100);
-fprintf('Rendimento Dinamico Medio Passo Fixo: %5.2f %%\n', ...
-    mean(P_fixo(1500:end) ./ P_otima(1500:end)) * 100);
-fprintf('==============================================================================\n');
-fprintf('SIMULACAO 3.2 EXECUTADA COM SUCESSO: MODELO FISICO INTEGRAL VALIDADO.\n');
-fprintf('==============================================================================\n');
+function Vj = solve_subcell_voltage(I, Iph, I0, Rsh, Vth, Voc_init)
+  Vj = max(0.0, Voc_init);
+  for it = 1:30
+    e = exp(min(500.0, Vj / Vth));
+    f = Iph - I0 * (e - 1.0) - Vj / Rsh - I;
+    df = -(I0 / Vth) * e - 1.0 / Rsh;
+    dV = f / df;
+    Vj = min(Voc_init, max(0.0, Vj - dV));
+    if abs(dV) < 1e-9, break; end
+  end
+end

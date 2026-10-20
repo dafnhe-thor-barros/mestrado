@@ -186,6 +186,7 @@ x_est = [0.55; 0.0; 0.0]; % Erro inicial deliberado de -25% (0.55 vs 0.80)
 P_est = diag([0.05, 0.01, 0.01]);
 Q_mat = diag([1e-7, 1e-5, 1e-5]);
 R_mat = sigma_v^2;
+C_0k  = R_mat;            % Covariância residual filtrada inicial (Apêndice B.3)
 soc_aukf = zeros(1, N_kf); soc_aukf(1) = x_est(1);
 v_filtrada = zeros(1, N_kf); v_filtrada(1) = vt_noisy(1);
 % Método de Coulomb Counting com viés (+0.5 A) para comparação
@@ -209,10 +210,10 @@ for k = 1:N_kf-1
     end
     
     x_pred = sum(sigmas_pred .* Wm, 2);
-    P_pred = Q_mat;
+    P_xx_star = zeros(L_state, L_state);
     for s = 1:(2 * L_state + 1)
         d_x = sigmas_pred(:, s) - x_pred;
-        P_pred = P_pred + Wc(s) * (d_x * d_x');
+        P_xx_star = P_xx_star + Wc(s) * (d_x * d_x');
     end
     
     % Propagação da saída através da curva não-linear OCV(SoC)
@@ -224,20 +225,26 @@ for k = 1:N_kf-1
     end
     y_pred = sum(y_sigmas .* Wm);
     
-    P_yy = R_mat;
+    P_yy_0 = 0.0;
     P_xy = zeros(L_state, 1);
     for s = 1:(2 * L_state + 1)
         d_y = y_sigmas(s) - y_pred;
         d_x = sigmas_pred(:, s) - x_pred;
-        P_yy = P_yy + Wc(s) * (d_y^2);
+        P_yy_0 = P_yy_0 + Wc(s) * (d_y^2);
         P_xy = P_xy + Wc(s) * (d_x * d_y);
     end
     
-    % Atualização estocástica com ganho de Kalman
-    K_gain = P_xy / P_yy;
+    % Inovação e Fator de Esquecimento Adaptativo Robusto (Apêndice B.3 / Sage-Husa)
     innov = vt_noisy(k+1) - y_pred;
-    x_est = x_pred + K_gain * innov;
-    P_est = P_pred - K_gain * P_yy * K_gain';
+    C_0k  = 0.95 * C_0k + 0.05 * (innov^2);
+    lambda_ad = max(1.0, (C_0k - R_mat) / max(1e-12, P_yy_0));
+    
+    P_pred = lambda_ad * P_xx_star + Q_mat;
+    P_yy   = lambda_ad * P_yy_0 + R_mat;
+    K_gain = (lambda_ad * P_xy) / P_yy;
+    x_est  = x_pred + K_gain * innov;
+    P_est  = P_pred - K_gain * P_yy * K_gain';
+    P_est  = 0.5 * (P_est + P_est'); % Simetrização estrita
     
     soc_aukf(k+1) = max(0.0, min(1.0, x_est(1)));
     v_filtrada(k+1) = y_pred + K_gain(1) * innov;

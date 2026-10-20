@@ -9,10 +9,10 @@
 % ------------------------------------------------------------------------------
 % APÊNDICE B
 % ------------------------------------------------------------------------------
-\subsection*{APÊNDICE B -- Deduções Algébricas e Modelagem Analítica Detalhada}
-\addcontentsline{toc}{subsection}{APÊNDICE B -- Deduções Algébricas e Modelagem Analítica Detalhada}
+\subsection*{APÊNDICE A -- Deduções Algébricas e Modelagem Analítica Detalhada}
+\addcontentsline{toc}{subsection}{APÊNDICE A -- Deduções Algébricas e Modelagem Analítica Detalhada}
 
-\subsubsection*{B.1 Dedução da Relação de Massa entre Condutores de Alumínio e Cobre}
+\subsubsection*{A.1 Dedução da Relação de Massa entre Condutores de Alumínio e Cobre}
 
 Para dois chicotes elétricos de mesmo comprimento $L$ e mesma resistência elétrica total $R$, a resistência ôhmica é dada por $R = \rho \frac{L}{A}$, onde $\rho$ é a resistividade e $A$ é a área de seção transversal condutora. Igualando as resistências dos condutores de Alumínio ($Al$) e Cobre ($Cu$):
 \begin{equation}
@@ -30,7 +30,7 @@ Substituindo a razão de áreas na razão de massas:
 \end{equation}
 Demonstra-se analiticamente que o condutor de alumínio proporciona uma redução de massa de $1 - 0{,}494 = 0{,}506$ ($50{,}6\%$) em relação ao condutor de cobre equivalente.
 
-\subsubsection*{B.2 Dedução da Corrente de Saturação Reversa por Subcélula (Modelo de 3 Diodos)}
+\subsubsection*{A.2 Dedução da Corrente de Saturação Reversa por Subcélula (Modelo de 3 Diodos)}
 
 No modelo de 3 diodos independentes em série ($\text{GaInP}/\text{GaAs}/\text{Ge}$), cada subcélula $i \in \{1, 2, 3\}$ obedece a:
 \begin{equation}
@@ -43,7 +43,7 @@ Na condição de circuito aberto ($I = 0$, $V_i = V_{oc,i}$):
 \end{equation}
 Com os valores da Spectrolab XTJ Prime a $T_{ref} = 301{,}15\text{ K}$ ($V_{oc} = [1{,}42;\, 1{,}01;\, 0{,}29]\text{ V}$, $n = [1{,}15;\, 1{,}15;\, 1{,}75]$, $R_{sh} = [2500;\, 3500;\, 200]\,\Omega$, $R_s = 0{,}20\,\Omega$), cada subcélula tem sua corrente de saturação $I_{0,i}$ univocamente determinada.
 
-\subsubsection*{B.3 Formulação Matricial da Transformada Unscented e Fator de Esquecimento do AUKF}
+\subsubsection*{A.3 Formulação Matricial da Transformada Unscented e Fator de Esquecimento do AUKF}
 
 Para um sistema não linear com dimensão de estado $L = 3$, o conjunto de $2L+1 = 7$ pontos sigma é calculado a partir da média $\hat{\mathbf{x}}_{k-1}$ e da matriz de covariância de erro $\mathbf{P}_{k-1}$ por:
 \begin{align}
@@ -61,17 +61,18 @@ A matriz de raiz quadrada é calculada deterministicamente através da fatoraç�
     \hat{\mathbf{x}}_{k|k-1} = \sum_{i=0}^{2L} W_m^{(i)} \boldsymbol{\chi}_{i, k|k-1}
 \end{equation}
 
-A covariância a priori $\mathbf{P}_{k|k-1}$ incorpora o fator de esquecimento adaptativo $\lambda_{ad,k} \ge 1$ para mitigar erros de modelagem sob transientes extremos de IA:
+A formulação de Sage--Husa por subtração matricial direta (Equação~\ref{eq:sage_husa_ukf}) é suscetível a instabilidades numéricas em ponto flutuante, podendo gerar autovalores negativos em $\mathbf{Q}_k$ durante variações bruscas de corrente. Para garantir por projeto que a matriz de covariância permaneça estritamente simétrica e positiva definida ($\mathbf{P}_{k|k-1} \succ 0$), implementa-se a regulação baseada no princípio de ortogonalidade dos resíduos de inovação via fator de esquecimento adaptativo $\lambda_{ad,k}$ (FENG et al., 2022) atuando sobre a dispersão predita dos pontos sigma $\mathbf{P}_{xx, k|k-1}^* = \sum_{i=0}^{2L} W_c^{(i)} [\boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1}][\boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1}]^T$:
 \begin{equation}
-    \mathbf{P}_{k|k-1} = \lambda_{ad,k} \sum_{i=0}^{2L} W_c^{(i)} \left[ \boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1} \right] \left[ \boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1} \right]^T + \mathbf{Q}_k
+    \mathbf{P}_{k|k-1} = \lambda_{ad,k} \mathbf{P}_{xx, k|k-1}^* + \mathbf{Q}_0
+    \label{eq:aukf_fading_sigma}
 \end{equation}
-em que $\lambda_{ad,k}$ é modulado pela inovação $e_k = y_k - \hat{y}_{k|k-1}$ e pela covariância residual filtrada recursivamente $\mathcal{C}_{0,k} = \rho \mathcal{C}_{0,k-1} + (1 - \rho) e_k^2$ com memória $\rho = 0{,}95$:
+em que $\lambda_{ad,k} \ge 1$ dilata os pontos sigma preditos sempre que a covariância amostral filtrada da inovação $\mathbf{C}_{0,k} = \rho \mathbf{C}_{0,k-1} + (1 - \rho) \mathbf{e}_k \mathbf{e}_k^T$ ($\rho = 0{,}95$) exceder a dispersão prevista $\mathbf{P}_{yy, k|k-1}^0 = \sum_{i=0}^{2L} W_c^{(i)} (\boldsymbol{\gamma}_{i, k|k-1} - \hat{\mathbf{y}}_{k|k-1})(\boldsymbol{\gamma}_{i, k|k-1} - \hat{\mathbf{y}}_{k|k-1})^T$:
 \begin{equation}
-    \lambda_{ad,k} = \max\left( 1, \, \frac{\mathcal{C}_{0,k} - R_{meas}}{P_{yy,k} - R_{meas}} \right)
+    \lambda_{ad,k} = \max\left( 1, \, \frac{\operatorname{tr}\left(\mathbf{C}_{0,k} - \mathbf{R}_k\right)}{\operatorname{tr}\left(\mathbf{P}_{yy, k|k-1}^0\right)} \right)
 \end{equation}
-assegurando convergência estritamente estável mesmo sob desvios severos de condição inicial.
+estabelecendo correspondência biunívoca com a teoria de Sage--Husa ao representar um incremento adaptativo equivalente $\Delta \mathbf{Q}_k = (\lambda_{ad,k} - 1)\mathbf{P}_{xx, k|k-1}^* \succeq 0$, o que preserva a semidefinição positiva da covariância sob desvios severos de condição inicial.
 
-\subsubsection*{B.4 Condição de Fuga Térmica de GaN e Critério de Impedância de Middlebrook}
+\subsubsection*{A.4 Condição de Fuga Térmica de GaN e Critério de Impedância de Middlebrook}
 
 A condição de estabilidade térmica de regime estacionário para um semicondutor de potência operando com calor de condução termodependente $P_{loss}(T_j) = P_{cond}(T_j) + P_{sw}$ em contato térmico com dissipador em temperatura $T_c$ via resistência térmica $R_{th}$ é dada pelo balanço:
 \begin{equation}
@@ -104,7 +105,7 @@ onde a razão de impedâncias minorante de Middlebrook é $T_m(s) = \frac{Z_{out
     |Z_{out}(j\omega)| \le \frac{1}{GM} |Z_{in,CPL}(j\omega)| \implies |Z_{out}(j\omega)| \le 0{,}10 \frac{V_{bus}^2}{P_{CPL}}, \quad \forall \omega
 \end{equation}
 
-\subsubsection*{B.5 Dedução em Forma Fechada da Área de Sobreposição Cônica Solar}
+\subsubsection*{A.5 Dedução em Forma Fechada da Área de Sobreposição Cônica Solar}
 
 Para a geometria de penumbra entre o disco solar de semi-ângulo aparente $\alpha_\odot$ e o disco terrestre de semi-ângulo aparente $\alpha_E$ separados pela distância angular de centros $\gamma$, a área de interseção de dois círculos $A_{ocultada}$ é deduzida pela soma dos dois setores circulares subtraída da área dos triângulos centrais correspondentes:
 \begin{align}
@@ -113,7 +114,7 @@ Para a geometria de penumbra entre o disco solar de semi-ângulo aparente $\alph
 \end{align}
 Essa expressão fornece transição estritamente contínua de classe $C^1$ entre iluminação plena ($S=1$) e umbra total ($S=0$).
 
-\subsubsection*{B.6 Formulação Integral do Fator de Visão de Calota Esférica (ECSS)}
+\subsubsection*{A.6 Formulação Integral do Fator de Visão de Calota Esférica (ECSS)}
 
 O fator de visão geométrico $F_{k-E}$ para uma superfície plana com inclinação $\phi_k$ em relação ao vetor Nadir a partir de uma calota esférica visível com semi-ângulo $\theta_m = \arcsin(1/H)$, onde $H = (R_E + h)/R_E$, obedece à integração analítica da norma ECSS-E-HB-31-01 Parte 1:
 \begin{equation}
@@ -130,7 +131,7 @@ O fator de visão geométrico $F_{k-E}$ para uma superfície plana com inclinaç
     \label{eq:fator_visao_ecss_apendice}
 \end{equation}
 
-\subsubsection*{B.7 Modelo BSIM de Corrente de Fuga Sublimiar de Transistores Nanométricos}
+\subsubsection*{A.7 Modelo BSIM de Corrente de Fuga Sublimiar de Transistores Nanométricos}
 
 A dependência termodinâmica da corrente de fuga por tunelamento e emissão termoiônica em transistores FinFET e GAA sub-7~nm é expressa pela formulação eletrotérmica de referência (SKADRON et al., 2004; MURALI et al., 2007; LE SUEUR; HEISER, 2010):
 \begin{align}
@@ -139,7 +140,7 @@ A dependência termodinâmica da corrente de fuga por tunelamento e emissão ter
 \end{align}
 com parâmetros $V_{th0} \approx 0{,}28\text{ V}$, $\kappa_T \approx 1{,}10\text{ mV/K}$ e $\eta_{sub} \approx 1{,}25$.
 
-\subsubsection*{B.8 Linearização da Equação da Aleta de APG e Expansão de Taylor de Lyapunov}
+\subsubsection*{A.8 Linearização da Equação da Aleta de APG e Expansão de Taylor de Lyapunov}
 
 Na aleta sanduíche de APG ($k_{eff} t_{fin} \frac{d^2 T}{dx^2} = 2 \varepsilon_{ir} \sigma (T^4 - T_{space}^4)$, com $T(0)=T_{root}$ e $dT/dx|_{L_{fin}}=0$), fatora-se $T^4 - T_{space}^4 = (T - T_{space})(T + T_{space})(T^2 + T_{space}^2) \approx h_{rad}(T - T_{space})$, onde $h_{rad} = \varepsilon_{ir}\sigma(T_{root} + T_{space})(T_{root}^2 + T_{space}^2) \approx 1{,}512\text{ W/(m}^2\text{K)}$. Integrando a EDO linearizada $d^2\theta/dx^2 - m^2\theta = 0$ ($\theta = T - T_{space}$, $m = \sqrt{2h_{rad}/(k_{eff}t_{fin})} \approx 1{,}089\text{ m}^{-1}$), obtém-se $\theta(x) = \theta_{root}\cosh[m(L_{fin}-x)]/\cosh(mL_{fin})$ e $\eta_{fin,ideal} = \tanh(mL_{fin})/(mL_{fin}) \approx 0{,}9978$.
 
@@ -153,19 +154,19 @@ exigindo $\partial P_{leak}/\partial T_j|_{T_j^*} < d\dot{Q}_{out}/dT_j|_{T_j^*}
 % ------------------------------------------------------------------------------
 % APÊNDICE C
 % ------------------------------------------------------------------------------
-\subsection*{APÊNDICE C -- Rotinas Computacionais em GNU Octave}
-\addcontentsline{toc}{subsection}{APÊNDICE C -- Rotinas Computacionais em GNU Octave}
+\subsection*{APÊNDICE B -- Rotinas Computacionais em GNU Octave e Python}
+\addcontentsline{toc}{subsection}{APÊNDICE B -- Rotinas Computacionais em GNU Octave e Python}
 
 As rotinas computacionais desenvolvidas para as simulações multifísicas encontram-se estruturadas no diretório \texttt{simulacoes/} do repositório da pesquisa:
 \begin{itemize}[noitemsep,topsep=2pt,leftmargin=*]
     \item \texttt{simulacao\_3\_1\_barramento\_hvdc.m}: Dinâmica do barramento de 400~V, balanço orbital multicíclico do BESS (5 órbitas), amortecimento RLC e estresse $I^2t$ do SSPC.
-    \item \texttt{simulacao\_3\_2\_gerador\_fotovoltaico\_am0.m}: Curvas $I-V/P-V$ multijunção, degradação temporal DDD (10 anos), avalanche reversa em hot spot e dinâmica do MPPT.
+    \item \texttt{simulacao\_3\_2\_gerador\_fotovoltaico\_am0.m}: Curvas $I-V/P-V$ multijunção (modelo de 3 diodos em série $\text{GaInP}/\text{GaAs}/\text{Ge}$), degradação temporal DDD (10 anos), avalanche reversa em hot spot e dinâmica do MPPT Buck a 150~kHz.
     \item \texttt{gerar\_figuras\_compostas\_3\_1.m}: Consolidação de dados e renderização das Figuras 3.1 (balanço BESS) e 3.2 (curto-circuito e acoplamento térmico LHP).
     \item \texttt{gerar\_figuras\_compostas\_3\_2.m}: Renderização das Figuras 3.3 (curvas AM0 térmicas e DDD) e 3.4 (hot spot e transiente do MPPT GaN).
     \item \texttt{gerar\_figuras\_compostas\_3\_3.m}: Modelo eletroquímico Dual-Polarization (DP) 2ª ordem, cinética de Arrhenius, estimador AUKF e colapso por subtensão (Figuras 3.5 e 3.6).
     \item \texttt{gerar\_figuras\_compostas\_3\_4.m}: Modelo eletrotérmico GaN, perdas de Steinmetz a 150~kHz, estabilidade de Middlebrook sob CPL e desacoplamento de rack a 48~V (Figuras 3.7 e 3.8).
     \item \texttt{simulacao\_4\_1\_fluxos\_orbitais.m}: Propagação kepleriana, ocultação cônica exata, fatores de forma ECSS $F_{rad-E}(h, \phi)$, fluxos ambientais e sensibilidade de atitude.
     \item \texttt{simulacao\_4\_6\_fadiga\_bga\_pue.m}: Modelo Coffin-Manson-Engelmaier para soldas BGA SAC305, matriz fatorial orbital/TEMS, indicador $PUE_{orbital}$ e rendimento computacional TOPS/W.
-    \item \texttt{gerar\_figuras\_compostas\_capitulo4.py}: Script multifísico para renderização das Figuras 4.1 (fluxos orbitais), 4.2 (rede nodal 5 nós), 4.3 (co-design FinFET/runaway) e 4.4 (NMPC).
+    \item \texttt{gerar\_figuras\_compostas\_capitulo3.py} e \texttt{gerar\_figuras\_compostas\_capitulo4.py}: Scripts multifísicos em Python (NumPy, SciPy, Matplotlib) para renderização sincronizada das Figuras 3.1 a 3.8 (Capítulo~3) e Figuras 4.1 a 4.4 (Capítulo~4).
 \end{itemize}
 

@@ -1,128 +1,139 @@
-% ==============================================================================
-% SIMULAÇÃO 3.4: MODELAGEM ELETROTÉRMICA GaN, PERDAS DE STEINMETZ,
-% CRITÉRIO DE FUGA TÉRMICA E ESTABILIDADE DE MIDDLEBROOK SOB CARGAS CPL
-% ==============================================================================
-% Dissertação de Mestrado Profissional - ProPECAut / IFES
-% Autor: Dafnhê Thor Castro de Martins Barros
-% ==============================================================================
-clear; clc; close all;
-fprintf('==============================================================================\n');
-fprintf('INICIANDO SIMULAÇÃO 3.4: CONVERSORES GaN, STEINMETZ E ESTABILIDADE CPL\n');
-fprintf('==============================================================================\n\n');
-%% 1. PARÂMETROS ELETROFÍSICOS DO MÓDULO CONVERSOR DE 20 kW (400 V / 48 V)
-P_mod_nom    = 20000.0;     % [W] Potência nominal por módulo
-V_in_nom     = 400.0;       % [V] Barramento primário
-V_out_nom    = 48.0;        % [V] Barramento intermediário de rack
-f_sw         = 150.0e3;     % [Hz] Frequência de chaveamento primário
-% Semicondutores GaN HEMT Primários (Tabela 20 da Dissertação)
-R_on25_pri   = 18.0e-3;     % [Ohm] Resistência de canal a 25 °C
-alpha_sc     = 0.0065;      % [1/K] Coeficiente térmico de canal
-t_r          = 12.0e-9;     % [s] Tempo de subida
-t_f          = 15.0e-9;     % [s] Tempo de descida
-C_oss        = 120.0e-12;   % [F] Capacitância de saída a 400 V
-Q_g          = 6.0e-9;      % [C] Carga de gate
-V_gate       = 5.0;         % [V] Tensão de driver
-% Retificação Síncrona Secundária GaN (48 V)
-R_on25_sec   = 0.80e-3;     % [Ohm] Arranjo paralelo a 25 °C
-alpha_sec    = 0.0040;      % [1/K]
-% Parâmetros Magnéticos (Ferrite MnZn grau Ferroxcube 3C95 - Equação 246 do Capítulo 3)
-k_fe         = 0.6715;      % [W/(m^3 Hz^alpha T^beta)] Coeficiente calibrado para P_core = 95.3 W
-alpha_st     = 1.46;        % Expoente de frequência
-beta_st      = 2.52;        % Expoente de indução
-V_e          = 4.5e-4;      % [m^3] Volume efetivo do núcleo magnético
-delta_B      = 0.15;        % [T] Excursão de indução de pico
-R_ac_pri     = 15.0e-3;     % [Ohm] Resistência CA dos enrolamentos primários
-R_ac_sec     = 0.25e-3;     % [Ohm] Resistência CA secundária
-%% 2. BALANÇO DE PERDAS E EFICIÊNCIA EM PLENA CARGA (20 kW, Tj = 80 °C)
-T_j_target   = 80.0;        % [°C] Temperatura operacional de junção
-I_in_nom     = P_mod_nom / V_in_nom; % 50.0 A
-I_out_nom    = P_mod_nom / V_out_nom;% 416.7 A
-% Topologia Interleaved Bifásica (2 fases de 10 kW em paralelo com defasagem de 180°)
-N_phases     = 2;
-I_phase_nom  = I_in_nom / N_phases;  % 25.0 A por ramo de conversão
-% Correntes eficazes nas chaves (Full-Bridge D = 0.45 por fase)
-D_eff = 0.45;
-I_rms_sw_pri = I_phase_nom * sqrt(D_eff); % 16.77 A por chave individual
-I_rms_pri    = I_in_nom * sqrt(D_eff);
-I_rms_sec    = I_out_nom;
-% Perdas por Condução
-R_on_pri_Tj = R_on25_pri * (1 + alpha_sc * (T_j_target - 25));
-P_cond_pri  = (4 * N_phases) * (I_rms_sw_pri^2) * R_on_pri_Tj; % 8 transistores primários (2 pontes completas)
-R_on_sec_Tj = R_on25_sec * (1 + alpha_sec * (T_j_target - 25));
-P_cond_sec  = (I_out_nom^2) * R_on_sec_Tj;
-% Perdas por Comutação GaN Primária (Interleaved bifásica, 4 chaves por fase comutam I_phase_nom)
-P_sw_overlap = (4 * N_phases) * (V_in_nom * I_phase_nom * f_sw * (t_r + t_f) / 4);
-P_sw_coss    = (4 * N_phases) * (0.5 * C_oss * (V_in_nom^2) * f_sw);
-P_gate       = (4 * N_phases) * (Q_g * V_gate * f_sw);
-P_sw_total   = P_sw_overlap + P_sw_coss + P_gate;
-% Perdas Magnéticas (Equação de Steinmetz e perdas ôhmicas de cobre)
-P_core = k_fe * (f_sw^alpha_st) * (delta_B^beta_st) * V_e; % 95.3 W
-P_cu   = (I_rms_pri^2) * R_ac_pri + (I_rms_sec^2) * R_ac_sec;
-P_mag  = P_core + P_cu;
-P_loss_total = P_cond_pri + P_cond_sec + P_sw_total + P_mag;
-rendimento_global = (P_mod_nom / (P_mod_nom + P_loss_total)) * 100;
-fprintf('--- 2.1 BALANÇO DE PERDAS NO MÓDULO DE 20 kW (Tj = 80 °C) ---\n');
-fprintf('Perdas em Condução Primária:   %5.1f W (%4.1f %%)\n', P_cond_pri, P_cond_pri/P_loss_total*100);
-fprintf('Perdas em Condução Secundária: %5.1f W (%4.1f %%)\n', P_cond_sec, P_cond_sec/P_loss_total*100);
-fprintf('Perdas por Comutação GaN:      %5.1f W (%4.1f %%)\n', P_sw_total, P_sw_total/P_loss_total*100);
-fprintf('Perdas Magnéticas (Steinmetz): %5.1f W (%4.1f %%)\n', P_mag, P_mag/P_loss_total*100);
-fprintf('Perda Total Dissipada:         %5.1f W | Rendimento Global: %5.2f %%\n\n', ...
-    P_loss_total, rendimento_global);
-%% 3. ANÁLISE DE FUGA TÉRMICA (THERMAL RUNAWAY - CRITÉRIO ET-F01)
-% Critério da Equação 22: dP_loss/dT_j < 1 / R_th
-dPloss_dTj = 4 * (I_rms_sw_pri^2) * R_on25_pri * alpha_sc; % [W/K]
-R_th_crit = 1 / dPloss_dTj;
-fprintf('--- 3.1 CRITÉRIO DE ESTABILIDADE E FUGA TÉRMICA DE GaN (ET-F01) ---\n');
-fprintf('Gradiente de Geração Térmica (dP/dTj): %4.2f W/K\n', dPloss_dTj);
-fprintf('Resistência Térmica Crítica de Runaway: %4.2f K/W\n', R_th_crit);
-% Teste com Interfaces Térmicas
-R_th_nominal   = 1.0; % [K/W] Interface saudável com pasta e espalhador de cobre
-R_th_degradada = 4.0; % [K/W] Degradação severa de TIM no vácuo (pump-out)
-fprintf('Interface Nominal   (R_th = 1.0 K/W): Margem Térmica: +%4.2f K/W | Status: ESTÁVEL\n', ...
-    R_th_crit - R_th_nominal);
-fprintf('Interface Degradada (R_th = 4.0 K/W): Margem Térmica: +%4.2f K/W | ', ...
-    R_th_crit - R_th_degradada);
-if R_th_degradada >= R_th_crit
-    fprintf('Status: [FALHA CATÁSTROFICA ET-F01] Fuga Térmica Iminente!\n\n');
-else
-    fprintf('Status: PRÓXIMO AO LIMIAR CRÍTICO\n\n');
+function simulacao_3_4_conversores_gan_middlebrook()
+  % ============================================================================
+  % SIMULACAO 3.4: CONVERSORES GaN (GS66516T), STEINMETZ MODIFICADO (MSE,
+  % NUCLEO FERROXCUBE U93/152/30 3C95), INTERFACE AlN+PGS E MIDDLEBROOK
+  % ============================================================================
+  % Dissertacao de Mestrado Profissional - ProPECAut / IFES
+  % Autor: Dafnhe Thor Castro de Martins Barros
+  % ============================================================================
+  close all; clc;
+
+  % Parametros de Operacao do Conversor
+  Pmod = 20000;      % Potencia modular (20 kW)
+  Vin = 400;         % Tensao de entrada (400 V)
+  Vout = 48;         % Tensao de saida (48 V)
+  fsw = 150e3;       % Frequencia de chaveamento (150 kHz)
+  Nsw = 4;           % Quatro chaves no caso de ponte unica
+  D = 0.45;          % Razao de ciclo (Duty cycle)
+  Iin = 51.2;        % Corrente de entrada (A)
+  Iout = Pmod / Vout;% Corrente de saida (A)
+  Tc = 60;           % Temperatura do case/chassi (C)
+
+  % GS66516T: Dados nominais extraidos do datasheet (Infineon/GaN Systems)
+  Ron25 = 25e-3;
+  alpha = (65e-3 / Ron25 - 1) / (150 - 25); % Coeficiente termico (0.0128 1/K)
+  Coss = 207e-12;    % Capacitancia equivalente de saida
+  Qg = 14.2e-9;      % Carga de gate total
+  Vgate = 6;         % Tensao de acionamento do gate (V)
+  tr = 12e-9;        % Tempo de subida (Rise time)
+  tf = 15e-9;        % Tempo de descida (Fall time)
+  Isw = 25;          % Corrente de comutacao considerada
+  Rth_jc  = 0.27;    % Resistencia juncao-case do GS66516T (K/W)
+  Rth_tim = 0.85;    % Isolador ceramico AlN + folha grafite pirolitico PGS a vacuo (K/W)
+  Rth_total_hw = Rth_jc + Rth_tim; % 1.12 K/W
+
+  % Parametros do Secundario e Elementos Magneticos (Par U93/152/30, Ferrite 3C95)
+  RonSec25 = 0.80e-3;
+  alphaSec = 0.004;
+  kfe = 0.70;        % Coeficiente efetivo MSE (excitacao trapezoidal)
+  alphaSt = 1.46;
+  betaSt = 2.52;
+  Ve = 4.5e-4;       % Volume efetivo U93/152/30 = 450.000 mm^3 (Ae=840 mm^2, le=536 mm)
+  dB = 0.15;
+  RacPri = 15e-3;
+  RacSec = 0.25e-3;
+
+  % Calculo das Correntes e Perdas por Conducao
+  Irms = Iin * sqrt(D);
+  Tj_est = 80; % Temperatura de juncao estimada inicial para perdas nominais
+  RonT = Ron25 * (1 + alpha * (Tj_est - 25));
+  PcondPri = Nsw * (Irms^2) * RonT;
+
+  RonSecT = RonSec25 * (1 + alphaSec * (Tj_est - 25));
+  PcondSec = (Iout^2) * RonSecT;
+
+  % Perdas por Chaveamento (Por chave e total)
+  PoverlapOne = Vin * Isw * fsw * (tr + tf) / 2;
+  PossOne = 0.5 * Coss * (Vin^2) * fsw;
+  PgateOne = Qg * Vgate * fsw;
+  Psw = Nsw * (PoverlapOne + PossOne + PgateOne);
+
+  % Perdas Magneticas (Nucleo + Cobre corrigido por Irms no primario)
+  Pcore = kfe * (fsw^alphaSt) * (dB^betaSt) * Ve;
+  Pcu = (Irms^2) * RacPri + (Iout^2) * RacSec;
+  Pmag = Pcore + Pcu;
+
+  % Perda Total e Eficiencia
+  Ploss = PcondPri + PcondSec + Psw + Pmag;
+  eta = 100 * Pmod / (Pmod + Ploss);
+
+  % Derivada termica e limites de estabilidade intrinseca
+  dPdT_one = (Irms^2) * Ron25 * alpha;
+  dPdT = Nsw * dPdT_one;
+  Rcrit_one = 1 / dPdT_one;
+  Rcrit = 1 / dPdT;
+  Icrit4 = sqrt(1 / (4 * Ron25 * alpha));
+
+  fprintf('--- ANALISE DE PERDAS E EFICIENCIA NOMINAL ---\n');
+  fprintf('Ron(%.0f C) = %.2f mOhm; perda total = %.2f W; eta = %.3f %%\n', Tj_est, 1e3*RonT, Ploss, eta);
+  fprintf('Conducao prim. = %.2f W; comutacao = %.2f W; secundaria = %.2f W\n', PcondPri, Psw, PcondSec);
+  fprintf('Nucleo (U93/152/30 3C95, MSE) = %.2f W; cobre = %.2f W\n', Pcore, Pcu);
+  fprintf('dPloss/dT (1 chave) = %.4f W/K (Rcrit_1 = %.3f K/W)\n', dPdT_one, Rcrit_one);
+  fprintf('dPloss/dT (4 chaves) = %.4f W/K (Rcrit_4 = %.3f K/W); Icrit(Rth=4) = %.2f A\n\n', dPdT, Rcrit, Icrit4);
+
+  % Equilibrio Termico Iterativo da Chave Primaria (incluindo Rth_total_hw = 1.12 K/W)
+  fprintf('--- ANALISE DE EQUILIBRIO TERMICO DA CHAVE (AlN + PGS: Rth_total = %.2f K/W) ---\n', Rth_total_hw);
+  PswOne = PoverlapOne + PossOne + PgateOne;
+  for Rth = [0.27, 1.00, Rth_total_hw, 2.00, 4.00]
+    Tje = Tc;
+    stable = true;
+    for n = 1:500
+      Pj = (Irms^2) * Ron25 * (1 + alpha * (Tje - 25)) + PswOne;
+      Tnew = Tc + Rth * Pj;
+      if Tnew > 400
+        stable = false;
+        break;
+      end
+      if abs(Tnew - Tje) < 1e-5
+        Tje = Tnew;
+        break;
+      end
+      Tje = Tnew;
+    end
+    if stable
+      fprintf('Rth = %.2f K/W: Tj estimada = %.2f C\n', Rth, Tje);
+    else
+      fprintf('Rth = %.2f K/W: SEM EQUILIBRIO (fuga termica / limite do modelo)\n', Rth);
+    end
+  end
+  fprintf('\n');
+
+  % Criterio de Estabilidade de Middlebrook no Barramento de 48 V
+  fprintf('--- ANALISE DE ESTABILIDADE DE MIDDLEBROOK ---\n');
+  rin = -(Vout^2) / Pmod;
+  Zlim = 0.10 * abs(rin);
+  freq = logspace(1, 6, 5000);
+  s = 1i * 2 * pi * freq;
+  Lline = 200e-9;
+  Rline = 0.8e-3;
+
+  cases = {15e-3, 1.2e-3; 3e-3, 8e-3; 2.5e-3, 9.5e-3; 2.2e-3, 3e-3; 0.44e-3, 15e-3};
+  names = {'Saudavel', 'WCA texto tese', 'Script antigo', 'Figura operacional', 'Figura falha'};
+
+  fprintf('rin = %.5f ohm; limite (Middlebrook 10%%) = %.5f ohm\n', rin, Zlim);
+  for j = 1:size(cases, 1)
+    C = cases{j, 1};
+    ESR = cases{j, 2};
+    Z1 = s * Lline + Rline;
+    Z2 = 1 ./ (s * C) + ESR;
+    Z = abs((Z1 .* Z2) ./ (Z1 + Z2));
+    [Zpeak, k] = max(Z);
+    if Zpeak <= Zlim
+      status = 'ESTAVEL';
+    else
+      status = 'VIOLA';
+    end
+    fprintf('%-18s: C = %6.3g F  ESR = %6.3g ohm | pico = %.5f ohm em %7.1f Hz | %s\n', ...
+            names{j}, C, ESR, Zpeak, freq(k), status);
+  end
 end
-%% 4. CRITÉRIO DE MIDDLEBROOK SOB CARGAS CPL (48 V / 20 kW - FALHA DC-F03)
-r_in_CPL = - (V_out_nom^2) / P_mod_nom; % -0.1152 Ohm (Equação 25)
-Z_limite_middlebrook = 0.10 * abs(r_in_CPL); % Margem de 10x (0.0115 Ohm)
-% Parâmetros do Barramento de 48 V:
-% Caso A: Banco Saudável (C = 15 mF, ESR = 1.2 mOhm, L_dist = 0.2 uH)
-% Caso B: Modo de Falha DC-F03 (Degradação WCA: C = 3.0 mF, ESR = 8.0 mOhm)
-freq = logspace(1, 6, 500);
-omega = 2 * pi * freq;
-% Impedância de saída do filtro do barramento:
-% Z_out(s) = (s*L + R) || (1/(s*C) + ESR)
-L_line_48V = 0.20e-6; % [H] 200 nH
-R_line_48V = 0.80e-3; % [Ohm]
-% Caso A: Saudável
-C_A   = 15.0e-3;
-ESR_A = 1.2e-3;
-Z_num_A = (1i * omega * L_line_48V + R_line_48V) .* (1 ./ (1i * omega * C_A) + ESR_A);
-Z_den_A = (1i * omega * L_line_48V + R_line_48V) + (1 ./ (1i * omega * C_A) + ESR_A);
-Z_out_A = abs(Z_num_A ./ Z_den_A);
-% Caso B: Falha DC-F03 (Degradação Severa WCA: C = 2.5 mF, ESR = 9.5 mOhm)
-C_B   = 2.5e-3;
-ESR_B = 9.5e-3;
-Z_num_B = (1i * omega * L_line_48V + R_line_48V) .* (1 ./ (1i * omega * C_B) + ESR_B);
-Z_den_B = (1i * omega * L_line_48V + R_line_48V) + (1 ./ (1i * omega * C_B) + ESR_B);
-Z_out_B = abs(Z_num_B ./ Z_den_B);
-pico_Z_A = max(Z_out_A);
-pico_Z_B = max(Z_out_B);
-fprintf('--- 4.1 ESTABILIDADE DE IMPEDÂNCIA DE MIDDLEBROOK NO BARRAMENTO 48 V ---\n');
-fprintf('Resistência Incremental de Carga (CPL): rin = %6.4f Ohm\n', r_in_CPL);
-fprintf('Teto de Impedância de Middlebrook (|Zout| <= 0.1|rin|): %6.4f Ohm\n', Z_limite_middlebrook);
-fprintf('Banco Saudável (15 mF, 1.2 mOhm): Pico |Zout| = %6.4f Ohm | Status: ESTABILIDADE ASSEGURADA\n', pico_Z_A);
-fprintf('Banco Degradado (2.5 mF, 9.5 mOhm): Pico |Zout| = %6.4f Ohm | ', pico_Z_B);
-if pico_Z_B > Z_limite_middlebrook
-    fprintf('Status: [FALHA DC-F03: INSTABILIDADE CPL] Violação de Middlebrook!\n');
-else
-    fprintf('Status: ESTÁVEL\n');
-end
-fprintf('==============================================================================\n');
-fprintf('SIMULAÇÃO 3.4 CONCLUÍDA COM SUCESSO.\n');
-fprintf('==============================================================================\n');
