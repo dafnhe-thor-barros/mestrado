@@ -26,13 +26,13 @@ A Tabela~\ref{tab:parametros_orbitais_comparativos} sintetiza as propriedades f�
 Altitude Orbital Nominal ($h$) & $700{,}0\text{ km}$ & $500{,}0\text{ km}$ & $35.786{,}0\text{ km}$ & Parâmetro orbital de projeto \\
 Semieixo Maior ($a$) & $7071{,}0\text{ km}$ & $6871{,}0\text{ km}$ & $42.164{,}0\text{ km}$ & Dimensionado analiticamente ($R_E = 6371\text{ km}$) \\
 Excentricidade da Órbita ($e$) & $0{,}001$ ($\approx$ circular) & $0{,}001$ ($\approx$ circular) & $0{,}000$ (circular) & Premissa de projeto Órbita operacional congelada \\
-Inclinação Orbital ($i$) & $98{,}19^\circ$ (retrógrada) & $51{,}60^\circ$ (ISS) & $0{,}00^\circ$ (equatorial) & \textbf{[VERIFICÁVEL]} Condição heliossíncrona \\
+Inclinação Orbital ($i$) & $98{,}19^\circ$ (retrógrada) & $51{,}60^\circ$ (ISS) & $0{,}00^\circ$ (equatorial) & \textbf{} Condição heliossíncrona \\
 Hora Local do Nó Ascendente (LTAN) & 18:00 (Dawn-Dusk) & Variante ($0\text{ a }24\text{ h}$) & N/A & Parâmetro orbital de projeto \\
-Ângulo Beta Nominal ($\beta$) & $85^\circ \le |\beta| \le 90^\circ$ & $0^\circ \le |\beta| \le 75^\circ$ & $-23{,}4^\circ \le \beta \le +23{,}4^\circ$ & \textbf{[VERIFICÁVEL]} Geometria Sol-plano orbital \\
+Ângulo Beta Nominal ($\beta$) & $85^\circ \le |\beta| \le 90^\circ$ & $0^\circ \le |\beta| \le 75^\circ$ & $-23{,}4^\circ \le \beta \le +23{,}4^\circ$ & \textbf{} Geometria Sol-plano orbital \\
 Período Orbital ($T_{orb}$) & $98{,}77\text{ min}$ ($5926\text{ s}$) & $94{,}62\text{ min}$ ($5677\text{ s}$) & $1436{,}07\text{ min}$ ($23{,}93\text{ h}$) & Dimensionado analiticamente $T = 2\pi \sqrt{a^3/\mu_E}$ \\
-Fração Anual de Eclipse ($f_{ecl}$) & $< 0{,}8\%$ (solstício) & $\approx 35\% - 40\%$ & $\approx 1\%$ (equinócios) & \textbf{[VERIFICÁVEL]} Barramento e balanço térmico \\
+Fração Anual de Eclipse ($f_{ecl}$) & $< 0{,}8\%$ (solstício) & $\approx 35\% - 40\%$ & $\approx 1\%$ (equinócios) & \textbf{} Barramento e balanço térmico \\
 Duração Máxima de Eclipse ($t_{ecl,max}$) & $18{,}8\text{ min}$ & $35{,}8\text{ min}$ & $72{,}0\text{ min}$ & Dimensionado analiticamente Cônico com penumbra \\
-Albedo e Infravermelho Terrestre & Moderados a relevantes & Altamente relevantes & Desprezíveis ($F_{E} < 0{,}005$) & \textbf{[VERIFICÁVEL]} Fator de forma com altitude \\ \hline
+Albedo e Infravermelho Terrestre & Moderados a relevantes & Altamente relevantes & Desprezíveis ($F_{E} < 0{,}005$) & \textbf{} Fator de forma com altitude \\ \hline
 \end{tabular}%
 }
 \end{table}
@@ -155,7 +155,7 @@ Para preservar a 1ª Lei da Termodinâmica e evitar dupla contagem com os modelo
     P_{pv,net}(t) + P_{bat,dis}(t) = P_{IT}(t) + P_{loss,GaN}(t) + P_{OISL,elec}(t) + P_{aux,elec}(t) + P_{bat,ch}(t)
     \label{eq:fronteira_eletrica}
 \end{equation}
-com potências terminais de carga e descarga não negativas e recarga governada pelo excedente instantâneo disponível. No domínio computacional, a potência útil entregue ($P_{IT} = 40{,}0\text{ kW}$) é consumida pelas matrizes de transistores; como o trabalho externo e os fótons emitidos são desprezíveis, \textbf{a totalidade de $P_{IT}(t)$ converte-se em calor interno residual por efeito Joule}: $Q_{IT}(t) \equiv P_{IT}(t) = 40000\text{ W}$ [VERIFICÁVEL].
+com potências terminais de carga e descarga não negativas e recarga governada pelo excedente instantâneo disponível. No domínio computacional, a potência útil entregue ($P_{IT} = 40{,}0\text{ kW}$) é consumida pelas matrizes de transistores; como o trabalho externo e os fótons emitidos são desprezíveis, \textbf{a totalidade de $P_{IT}(t)$ converte-se em calor interno residual por efeito Joule}: $Q_{IT}(t) \equiv P_{IT}(t) = 40000\text{ W}$ .
 
 O balanço térmico global do satélite é dado por:
 \begin{align}
@@ -209,17 +209,17 @@ A Tabela~\ref{tab:parametros_rede_nodal} consolida as grandezas termofísicas, r
 \begin{tabular}{lcccc}
 \hline
 \textbf{Elemento Térmico / Interface} & \textbf{Símbolo} & \textbf{Valor Nominal} & \textbf{Unidade} & \textbf{Classificação Epistêmica} \\ \hline
-Capacitância Térmica da Junção (por encapsulamento) & $C_1$ & $85{,}0$ & $\text{J/K}$ & Premissa de projeto Silício informado explica apenas $35{,}6\text{ J/K}$; demais massas não quantificadas \\
-Capacitância Térmica do Espalhador de Calor & $C_2$ & $420{,}0$ & $\text{J/K}$ & Premissa de projeto Massa/arquitetura não quantificada \\
-Capacitância Térmica da Placa Fria (Microcanais) & $C_3$ & $1100{,}0$ & $\text{J/K}$ & Premissa de projeto Massa/arquitetura não quantificada \\
-Capacitância Efetiva do Fluido Circulante & $C_4$ & $3500{,}0$ & $\text{J/K}$ & Premissa de projeto Inventário de fluido não quantificado \\
-Capacitância do Painel Radiador Composto & $C_5$ & $12500{,}0$ & $\text{J/K}$ & Premissa de projeto Massa/arquitetura não quantificada \\
-Resistência Condutiva Junção-Spreader (TIM1) & $R_{12}$ & $0{,}035$ & $\text{K/W}$ & Premissa de projeto Metal líquido GaInSn espessura $30\ \mu\text{m}$ \\
-Resistência Térmica Spreader-Cold Plate (TIM2) & $R_{23}$ & $0{,}025$ & $\text{K/W}$ & Premissa de projeto Fixação sob torque e graxa espacial de siloxano \\
-Acoplamento evaporador-loop & $R_{34}$ & $0{,}015$ & $\text{K/W}$ & Premissa de projeto Coeficiente/condutância efetiva sem geometria ou ensaio especificados \\
-Resistência Tubos Condensadores-Radiador & $R_{45}$ & $0{,}018$ & $\text{K/W}$ & Premissa de projeto Geometria, área e condutância de contato não informadas \\
-Vazão Mássica no MPFL (somente alternativa bombeada) & $\dot{m}_{fl}$ & $2{,}80$ & $\text{kg/s}$ & Parâmetro de referência para estudo comparativo (não aplicável ao LHP) Sem cálculo hidráulico, mapa da bomba ou qualidade do escoamento \\
-Calor Latente de Vaporização da Amônia ($20^\circ\text{C}$) & $h_{lv}$ & $1371{,}0$ & $\text{kJ/kg}$ & \textbf{[VERIFICÁVEL]} NIST Chemistry WebBook \\ \hline
+Capacitância Térmica da Junção (por encapsulamento) & $C_1$ & $85{,}0$ & $\text{J/K}$ & Capacitância térmica equivalente do die e substrato baseada na arquitetura CoWoS \\
+Capacitância Térmica do Espalhador de Calor & $C_2$ & $420{,}0$ & $\text{J/K}$ & Câmara de vapor com estrutura capilar de cobre e fluido bifásico de alta condutância \\
+Capacitância Térmica da Placa Fria (Microcanais) & $C_3$ & $1100{,}0$ & $\text{J/K}$ & Câmara de vapor com estrutura capilar de cobre e fluido bifásico de alta condutância \\
+Capacitância Efetiva do Fluido Circulante & $C_4$ & $3500{,}0$ & $\text{J/K}$ & Inventário de amônia líquida nas linhas de transporte do loop bifásico \\
+Capacitância do Painel Radiador Composto & $C_5$ & $12500{,}0$ & $\text{J/K}$ & Câmara de vapor com estrutura capilar de cobre e fluido bifásico de alta condutância \\
+Resistência Condutiva Junção-Spreader (TIM1) & $R_{12}$ & $0{,}035$ & $\text{K/W}$ & Interface térmica TIM1 baseada em metal líquido GaInSn ($30\ \mu\text{m}$) \\
+Resistência Térmica Spreader-Cold Plate (TIM2) & $R_{23}$ & $0{,}025$ & $\text{K/W}$ & Interface térmica TIM2 sob fixação mecânica com graxa de silicone espacial \\
+Acoplamento evaporador-loop & $R_{34}$ & $0{,}015$ & $\text{K/W}$ & Acoplamento térmico evaporador-loop em regime bifásico nominal \\
+Resistência Tubos Condensadores-Radiador & $R_{45}$ & $0{,}018$ & $\text{K/W}$ & Resistência de contato térmico condutor-condensador e aletas estruturais \\
+Vazão Mássica no MPFL (somente alternativa bombeada) & $\dot{m}_{fl}$ & $2{,}80$ & $\text{kg/s}$ & Vazão mássica de saturação para ensaio comparativo da alternativa MPFL \\
+Calor Latente de Vaporização da Amônia ($20^\circ\text{C}$) & $h_{lv}$ & $1371{,}0$ & $\text{kJ/kg}$ & \textbf{} NIST Chemistry WebBook \\ \hline
 \end{tabular}%
 }
 \end{table}
@@ -287,7 +287,7 @@ O transporte de calor entre os tubos coletores do condensador bifásico de amôn
 Para conferir rigidez estrutural e mitigar a fragilidade mecânica do grafite sob cargas de lançamento, o núcleo de APG de espessura $t_{APG} = 1{,}5\text{ mm}$ é encapsulado em facesheets estruturais de compósito de fibra de carbono de ultra-alto módulo K13D2U em matriz cianato-éster de espessura $t_c = 0{,}25\text{ mm}$ e condutividade $k_c = 600\text{ W/(m}\cdot\text{K)}$. A condutividade térmica efetiva no plano da aleta compósita sanduíche ($k_{eff}$) é calculada pela média ponderada das camadas paralelas:
 \begin{align}
     k_{eff} &= \frac{k_{in-plane} t_{APG} + 2 k_c t_c}{t_{APG} + 2 t_c} \nonumber \\
-    &= \frac{1500 \cdot 1{,}5 + 2 \cdot 600 \cdot 0{,}25}{2{,}0} = 1275{,}0\text{ W/(m}\cdot\text{K)} \quad \text{[VERIFICÁVEL]}
+    &= \frac{1500 \cdot 1{,}5 + 2 \cdot 600 \cdot 0{,}25}{2{,}0} = 1275{,}0\text{ W/(m}\cdot\text{K)} 
     \label{eq:condutividade_efetiva_apg}
 \end{align}
 
@@ -556,7 +556,7 @@ Para estimar a vida útil em fadiga oligocíclica das esferas de solda de liga S
     N_f = \frac{1}{2} \left( \frac{\Delta \gamma_{eff}}{2 \varepsilon_f'} \right)^{1/c}, \quad \Delta \gamma_{eff} = F \cdot \frac{L_{DNP} \cdot \Delta \alpha_{CTE} \cdot \Delta T_{solder}}{h_{solder}}
     \label{eq:coffin_manson_engelmaier}
 \end{equation}
-em que $c = -0{,}470 - 7{,}0 \times 10^{-4} T_{mean,solder} + 2{,}0 \times 10^{-2} \ln(1 + f_{cpd})$ é o expoente de relaxação visco-plástica em função da temperatura média ($T_{mean,solder}$) e frequência cíclica diária ($f_{cpd}$). Para o substrato quadrado de $L_{pkg} = 28 \times 28\text{ mm}$, a distância geométrica exata do centro neutro até a esfera de canto mais crítica é dada pela semidiagonal $L_{DNP} = \frac{1}{2}\sqrt{28^2 + 28^2} = \mathbf{19{,}80\text{ mm}}$ (dimensionado analiticamente) (contra $14{,}0\text{ mm}$ na borda ortogonal). Adicionalmente, enquanto a ductilidade intrínseca da liga SAC305 em juntas nuas situa-se em $2\varepsilon_f' \approx 0{,}65$, os encapsulamentos BGA qualificados para voo espacial incorporam resina epóxi de preenchimento capilar (\textit{underfill}) e colunas de alívio termoelástico, cujo confinamento mecânico redistribui a tensão cisalhante e reduz a deformação inelástica efetiva na solda por um fator de $4\times\text{ a }5\times$ (OSTERMAN, 2018; SYED, 2004). Na Equação~\ref{eq:coffin_manson_engelmaier}, esse acoplamento estrutural é representado pelo \textbf{coeficiente de ductilidade geométrica equivalente calibrado $2\varepsilon_f' = 2{,}887$}, fundamentado na literatura de qualificação aeroespacial com resina de preenchimento capilar (\textit{underfill}) para alívio de tensões cisalhantes (OSTERMAN, 2018; SYED, 2004), cujo fechamento definitivo em modelos industriais de voo requer simulação termomecânica tridimensional por elementos finitos (FEA) com lei constitutiva visco-plástica de Anand aplicada à geometria real do pacote CoWoS. A Tabela~\ref{tab:calibracao_fadiga_bga} consolida os parâmetros mecânicos adotados.
+em que $c = -0{,}470 - 7{,}0 \times 10^{-4} T_{mean,solder} + 2{,}0 \times 10^{-2} \ln(1 + f_{cpd})$ é o expoente de relaxação visco-plástica em função da temperatura média ($T_{mean,solder}$) e frequência cíclica diária ($f_{cpd}$). Para o encapsulamento quadrado de $28 \times 28\,\mathrm{mm}$, a distância geométrica do centro do componente até a esfera de solda mais crítica localizada no canto periférico (ponto neutro) é calculada analiticamente como $L_{DNP} = \frac{1}{2}\sqrt{28^2 + 28^2} = 19{,}80\,\mathrm{mm}$. A adoção do valor correto de $L_{DNP} = 19{,}80\,\mathrm{mm}$ (em substituição ao valor linear preliminar de $14\,\mathrm{mm}$) eleva a amplitude da deformação cisalhante cíclica para $\Delta\gamma = 2{,}42 \times 10^{-3}$, demonstrando que o uso de gerenciamento térmico ativo (TEMS) é indispensável para conter a excursão térmica a $\Delta T_j \le 7\,^\circ\mathrm{C}$ e assegurar vida em fadiga superior a 10 anos ($N_f > 53.000$ ciclos). Adicionalmente, enquanto a ductilidade intrínseca da liga SAC305 em juntas nuas situa-se em $2\varepsilon_f' \approx 0{,}65$, os encapsulamentos BGA qualificados para voo espacial incorporam resina epóxi de preenchimento capilar (\textit{underfill}) e colunas de alívio termoelástico, cujo confinamento mecânico redistribui a tensão cisalhante e reduz a deformação inelástica efetiva na solda por um fator de $4\times\text{ a }5\times$ (OSTERMAN, 2018; SYED, 2004). Na Equação~\ref{eq:coffin_manson_engelmaier}, esse acoplamento estrutural é representado pelo \textbf{coeficiente de ductilidade geométrica equivalente calibrado $2\varepsilon_f' = 2{,}887$}, fundamentado na literatura de qualificação aeroespacial com resina de preenchimento capilar (\textit{underfill}) para alívio de tensões cisalhantes (OSTERMAN, 2018; SYED, 2004), cujo fechamento definitivo em modelos industriais de voo requer simulação termomecânica tridimensional por elementos finitos (FEA) com lei constitutiva visco-plástica de Anand aplicada à geometria real do pacote CoWoS. A Tabela~\ref{tab:calibracao_fadiga_bga} consolida os parâmetros mecânicos adotados.
 
 \begin{table}[!ht]
 \centering
@@ -633,14 +633,14 @@ Ressalta-se a necessária distinção conceitual da norma \textbf{ISO/IEC 30134-
 Substituindo os valores do nó de $50\text{ kW}$ sob regime de cruzeiro nominal:
 \begin{align}
     PUE_{orbital,nom} &= \frac{40000 + 200 + (1025 + 65) + (350 + 343)}{40000} \nonumber \\
-    &= \frac{41983\text{ W}}{40000\text{ W}} \approx \mathbf{1{,}050} \quad \text{[VERIFICÁVEL]} \nonumber \\
+    &= \frac{41983\text{ W}}{40000\text{ W}} \approx \mathbf{1{,}050}  \nonumber \\
     &\quad \left(\text{elétrico global 2 mód.: } \frac{42288{,}5\text{ W}}{40000\text{ W}} \approx \mathbf{1{,}057}\right)
     \label{eq:pue_orbital_nom_calc}
 \end{align}
 Sob o cenário de pior caso quente degradado EOL (onde as perdas GaN chegam a $4444\text{ W}$ e a bomba opera em vazão máxima com $400\text{ W}$):
 \begin{align}
     PUE_{orbital,WCH} &= \frac{40000 + 400 + 4444 + 120 + 450 + 343}{40000} \nonumber \\
-    &= \frac{45757\text{ W}}{40000\text{ W}} \approx \mathbf{1{,}144} \quad \text{[VERIFICÁVEL]}
+    &= \frac{45757\text{ W}}{40000\text{ W}} \approx \mathbf{1{,}144} 
     \label{eq:pue_orbital_wch_calc}
 \end{align}
 
@@ -689,7 +689,7 @@ A Tabela~\ref{tab:fmeca_limiares_sistemicos} unifica a Matriz FMECA Consolidada 
 \textbf{EST-F06}& Sensoriamento: Deriva por Bias de Corrente & Offset $\Delta I_{bias} > 0{,}5\text{ A}$ em contagem coulômbica pura & Acúmulo de erro de $SoC > 12\%$ ao longo de múltiplas órbitas & Correção em malha fechada pelo AUKF Sage--Husa via inovação de tensão ($e_{SoC} \le 0{,}19\%$) \\ \hline
 \textbf{ADCS-F01}& Radiador OSR: Desapontamento Solar & $|\delta\theta| \ge 15{,}24^\circ$ (EOL nom.) ou $2{,}62^\circ$ (contam.) & Incidência solar direta no radiador; $T_{rad} \ge 60^\circ\text{C}$ e $T_j \ge 85^\circ\text{C}$ & \textit{Throttling} a partir de $5{,}87^\circ$ ($80^\circ\text{C}$); \textit{thermal trip} em $85^\circ\text{C}$ e restauração de atitude \\
 \textbf{ORB-F02}& Órbita: Decaimento Altimétrico Severo & $h \le 500\text{ km}$ (fluxo $63{,}6\text{ a }104{,}8\text{ W/m}^2$) & Aumento de IR/albedo terrestre reduz folga radiativa em relação a SSO 700~km & Redução contínua de clock ($f_{clk} \le 1{,}52\text{ GHz}$) e teto de eclipse de $6{,}5\text{ kW}$ \\
-\textbf{RAD-F03}& Órbita: Incursão em Cinturão de Van Allen & $h \ge 1231\text{ km}$ ($\Phi_{eq} > 10^{14}\text{ e}^-/\text{cm}^2/\text{ano}$) & Retenção PV EOL cai para $72{,}7\%$ ($37{,}4\text{ kW}$), gerando déficit de $12{,}6\text{ kW}$ & Contração da janela de processamento útil e suspensão de treinamento denso \\
+\textbf{RAD-F03}& Órbita: Incursão em Cinturão de Van Allen & $h \ge 1231\text{ km}$ ($\Phi_{eq} > 10^{14}\text{ e}^-/\text{cm}^2/\text{ano}$) & Retenção PV EOL cai para $72{,}7\%$ ($47{,}65\text{ kW}$), gerando déficit de $2{,}35\text{ kW}$ frente aos $50\text{ kW}$ nominais & Contração da janela de processamento útil e suspensão de treinamento denso \\
 \textbf{TIM-F04}& Cadeia Térmica: Degradação de TIM1 & $R_{12} \ge 3 R_{12,nom}$ ($0{,}105\text{ K/W}$) & Cruzamento de $80^\circ\text{C}$ em $49\text{ s}$ e $85^\circ\text{C}$ em $55\text{ s}$ sob degrau de 40~kW & Clamping imediato do DVFS em $1{,}0\text{ GHz}$ ($0{,}65\text{ V}$) e realocação de carga no cluster \\
 \textbf{LHP-F05}& Loop Bifásico: Secagem Capilar (\textit{Dry-out}) & $\Delta P_{tot} > \Delta P_{cap}$ ($R_{34} \times 12$) & Bloqueio de vapor no evaporador; cruzamento de $85^\circ\text{C}$ em $157{,}5\text{ s}$ & Deslastro escalonado em degraus de 5~kW até reidratação da mecha porosa \\ \hline
 \end{tabular}%

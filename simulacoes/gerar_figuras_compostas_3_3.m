@@ -61,22 +61,22 @@ a2 = exp(-dt / (R_p2 * C_p2));
 for k = 1:N_pts-1
     T_K = T_bat(k) + 273.15;
     R0_curr = R0_ref_eol * exp((E_a / k_B) * (1 / T_K - 1 / T_ref_K));
-    
+
     % Integração exata dos estados de relaxação DP
     V_p1(k+1) = a1 * V_p1(k) + R_p1 * (1 - a1) * I_load(k);
     V_p2(k+1) = a2 * V_p2(k) + R_p2 * (1 - a2) * I_load(k);
-    
+
     % Evolução do Estado de Carga sem travas artificiais
     d_soc = - (I_load(k) * dt) / (C_n_Ah * 3600);
     SoC(k+1) = max(0.0, min(1.0, SoC(k) + d_soc));
-    
+
     % Tensão de Circuito Aberto OCV empírica 108S
     ocv = 108 * (3.0 + 1.15 * SoC(k+1) - 0.25 * (1 - SoC(k+1))^2);
     V_t(k+1) = ocv - I_load(k) * R0_curr - V_p1(k+1) - V_p2(k+1);
-    
+
     % Balanço Térmico Real com Manta MLI e Aquecedor PWM Termostatizado
     p_joule = (I_load(k)^2) * R0_curr + (V_p1(k+1)^2) / R_p1 + (V_p2(k+1)^2) / R_p2;
-    
+
     % Controle Termostático PWM do Aquecedor (+10 °C a +25 °C)
     if T_bat(k) < 12.0
         p_heat = P_heater_max;
@@ -85,7 +85,7 @@ for k = 1:N_pts-1
     else
         p_heat = 0.0;
     end
-    
+
     q_loss_mli = (T_bat(k) - T_chassis) / R_th_mli;
     dT = (p_joule + p_heat - q_loss_mli) / C_th_bat * dt;
     T_bat(k+1) = T_bat(k) + dT;
@@ -162,7 +162,7 @@ for k = 1:N_kf-1
     soc_true(k+1) = soc_true(k) - (i_curr * dt_kf) / (C_n_Ah * 3600);
     vp1_true(k+1) = exp(-dt_kf/57.6) * vp1_true(k) + R_p1 * (1 - exp(-dt_kf/57.6)) * i_curr;
     vp2_true(k+1) = exp(-dt_kf/528) * vp2_true(k) + R_p2 * (1 - exp(-dt_kf/528)) * i_curr;
-    
+
     ocv_val = 108 * (3.0 + 1.15 * soc_true(k+1) - 0.25 * (1 - soc_true(k+1))^2);
     v_clean = ocv_val - i_curr * R0_ref_eol - vp1_true(k+1) - vp2_true(k+1);
     vt_noisy(k+1) = v_clean + sigma_v * randn();
@@ -193,14 +193,14 @@ v_filtrada = zeros(1, N_kf); v_filtrada(1) = vt_noisy(1);
 soc_coulomb = zeros(1, N_kf); soc_coulomb(1) = soc_true(1);
 for k = 1:N_kf-1
     i_curr = 20.0 + 5.0 * sin(2 * pi * t_kf(k) / 200);
-    
+
     % Deriva divergente por viés de sensor (+0.5 A)
     soc_coulomb(k+1) = soc_coulomb(k) - ((i_curr + 0.50) * dt_kf) / (C_n_Ah * 3600);
-    
+
     % Fatoração de Cholesky para pontos sigma determinísticos
     sqrt_P = chol((L_state + lambda_u) * P_est, 'lower');
     sigmas = [x_est, x_est + sqrt_P, x_est - sqrt_P];
-    
+
     % Propagação temporal dos pontos sigma
     sigmas_pred = zeros(size(sigmas));
     for s = 1:(2 * L_state + 1)
@@ -208,14 +208,14 @@ for k = 1:N_kf-1
         sigmas_pred(2, s) = exp(-dt_kf/57.6) * sigmas(2, s) + R_p1 * (1 - exp(-dt_kf/57.6)) * i_curr;
         sigmas_pred(3, s) = exp(-dt_kf/528) * sigmas(3, s) + R_p2 * (1 - exp(-dt_kf/528)) * i_curr;
     end
-    
+
     x_pred = sum(sigmas_pred .* Wm, 2);
     P_xx_star = zeros(L_state, L_state);
     for s = 1:(2 * L_state + 1)
         d_x = sigmas_pred(:, s) - x_pred;
         P_xx_star = P_xx_star + Wc(s) * (d_x * d_x');
     end
-    
+
     % Propagação da saída através da curva não-linear OCV(SoC)
     y_sigmas = zeros(1, 2 * L_state + 1);
     for s = 1:(2 * L_state + 1)
@@ -224,7 +224,7 @@ for k = 1:N_kf-1
         y_sigmas(s) = ocv_s - i_curr * R0_ref_eol - sigmas_pred(2, s) - sigmas_pred(3, s);
     end
     y_pred = sum(y_sigmas .* Wm);
-    
+
     P_yy_0 = 0.0;
     P_xy = zeros(L_state, 1);
     for s = 1:(2 * L_state + 1)
@@ -233,19 +233,19 @@ for k = 1:N_kf-1
         P_yy_0 = P_yy_0 + Wc(s) * (d_y^2);
         P_xy = P_xy + Wc(s) * (d_x * d_y);
     end
-    
+
     % Inovação e Fator de Esquecimento Adaptativo Robusto (Apêndice B.3 / Sage-Husa)
     innov = vt_noisy(k+1) - y_pred;
     C_0k  = 0.95 * C_0k + 0.05 * (innov^2);
     lambda_ad = max(1.0, (C_0k - R_mat) / max(1e-12, P_yy_0));
-    
+
     P_pred = lambda_ad * P_xx_star + Q_mat;
     P_yy   = lambda_ad * P_yy_0 + R_mat;
     K_gain = (lambda_ad * P_xy) / P_yy;
     x_est  = x_pred + K_gain * innov;
     P_est  = P_pred - K_gain * P_yy * K_gain';
     P_est  = 0.5 * (P_est + P_est'); % Simetrização estrita
-    
+
     soc_aukf(k+1) = max(0.0, min(1.0, x_est(1)));
     v_filtrada(k+1) = y_pred + K_gain(1) * innov;
 end
@@ -264,13 +264,13 @@ for idx = 1:N_p_pts-1
     else
         i_p = 5.0;
     end
-    
+
     % Integração transitória das sobretensões capacitivas
     vp1_p20 = exp(-0.2/57.6) * vp1_p20 + R_p1 * (1 - exp(-0.2/57.6)) * i_p;
     vp2_p20 = exp(-0.2/528)  * vp2_p20 + R_p2 * (1 - exp(-0.2/528))  * i_p;
     ocv_20 = 108 * (3.0 + 1.15 * 0.20 - 0.25 * (0.80)^2);
     v_pulse_20(idx+1) = ocv_20 - i_p * R0_ref_eol - vp1_p20 - vp2_p20;
-    
+
     vp1_p2 = exp(-0.2/57.6) * vp1_p2 + R_p1 * (1 - exp(-0.2/57.6)) * i_p;
     vp2_p2 = exp(-0.2/528)  * vp2_p2 + R_p2 * (1 - exp(-0.2/528))  * i_p;
     ocv_2 = 108 * (3.0 + 1.15 * 0.02 - 0.25 * (0.98)^2);
