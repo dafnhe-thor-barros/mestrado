@@ -163,7 +163,7 @@ def gerar_figura_4_1():
     axs[0, 0].plot(t_sso/60, S_sso, 'b-', lw=1.8, label='SSO Dawn-Dusk (700 km, solstício)')
     axs[0, 0].plot(t_leo/60, S_leo, 'r--', lw=1.6, label='LEO Convencional (500 km, eclipse 35,8 min)')
     axs[0, 0].set_xlabel('Tempo Orbital (min)')
-    axs[0, 0].set_ylabel('Fator de Iluminação Solar S(t) [-]')
+    axs[0, 0].set_ylabel('Fator de Iluminação Solar S(t) (adim.)')
     axs[0, 0].set_title('(a1) Modelo de Ocultação Cônica Suave (Umbra/Penumbra)')
     axs[0, 0].grid(True, linestyle=':', alpha=0.7)
     axs[0, 0].legend(loc='lower left', framealpha=0.9)

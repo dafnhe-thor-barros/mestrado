@@ -261,7 +261,7 @@ onde:
     \item $A_{rad}$ é a área superficial total de emissão radiativa livre (para painéis desdobráveis bifaciais com ambas as faces expostas ao espaço, $A_{rad} = 2 A_{painel}$);
     \item $\eta_{fin}$ é a eficiência média de aleta radiativa;
     \item $T_{rad}(t)$ é a temperatura média termodinâmica absoluta da superfície externa do radiador;
-    \item $T_{space}=3{,}0\text{ K}$ é a temperatura de fundo usada no termo de emissão. A absorção de IR terrestre e albedo é contabilizada uma única vez em $P_{abs,amb}$, na Equação~(\ref{eq:potencia_parasita_absorvida}); portanto, não se inclui simultaneamente um sumidouro terrestre equivalente em $Q_{emit}$. Esta é uma aproximação de balanço concentrado: a emissão do radiador para o disco terrestre não é modelada como uma rede radiativa própria.
+    \item $T_{space}=3{,}0\text{ K}$ é a temperatura de fundo usada no termo de emissão. Em estrita conformidade com a norma \textbf{ECSS-E-ST-31C} (\textit{Space Engineering --- Thermal Control General Requirements}), para evitar a dupla contagem das cargas térmicas ambientais ($Q_{sol}, Q_{alb}, Q_{ir}$), a absorção de infravermelho terrestre e albedo é contabilizada uma única vez em $P_{abs,amb}$, na Equação~(\ref{eq:potencia_parasita_absorvida}); portanto, não se inclui simultaneamente um sumidouro terrestre equivalente ($T_{sink}$) em $Q_{emit}$. Esta formulação nodal adota rejeição direta para o vácuo profundo considerando o fundo cósmico a $T_{space} \approx 3\text{ K}$.
 \end{itemize}
 
 A potência ambiental parasita total absorvida ($P_{abs,amb}$) decompõe-se rigorosamente nas áreas projetadas e fatores de forma geométricos:
@@ -279,7 +279,7 @@ O transporte de calor entre os tubos coletores do condensador bifásico de amôn
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.75\textwidth]{figuras/figura_4_3_1_condução_bidirecional.png}
+    \includegraphics[width=0.75\textwidth]{figuras/figura_4_3_1_conducao_bidirecional.png}
     \caption{Conceito estrutural de radiador espacial multifuncional com revestimento de espelhos ópticos OSR e condutores térmicos de alta condutividade planar embutidos. Fonte: Pederson et al. (2024).}
     \label{fig:pederson_radiador_apg}
 \end{figure}
@@ -613,11 +613,11 @@ O indicador tradicional de Eficácia do Uso de Energia (\textit{Power Usage Effe
     PUE_{orbital}(t) = \frac{P_{total,no}(t)}{P_{IT}(t)} = \frac{P_{IT}(t) + P_{cooling}(t) + P_{elec,loss}(t) + P_{aux}(t)}{P_{IT}(t)}
     \label{eq:pue_orbital_rigoroso}
 \end{equation}
-onde a fronteira do denominador $P_{IT}(t)$ compreende estritamente a potência consumida pelos chips aceleradores neurais nos cálculos de inteligência artificial ($40{,}0\text{ kW}$ em carga nominal). No numerador, as parcelas auxiliares e perdas de conversão compreendem:
+Ressalta-se a necessária distinção conceitual da norma \textbf{ISO/IEC 30134-2:2016/Amd 1:2026}: originalmente formulada para centros de dados terrestres baseados em infraestrutura predial com resfriamento atmosférico (chillers, torres e ventiladores), no ambiente de vácuo orbital a métrica de eficácia no uso de energia computa na infraestrutura de resfriamento exclusivamente a potência consumida pelo bombeamento mecânico de fluido bifásico (MPFL), motores de posicionamento dos radiadores e aquecedores resistivos de sobrevivência. A fronteira do denominador $P_{IT}(t)$ compreende estritamente a potência consumida pelos chips aceleradores neurais nos cálculos de inteligência artificial ($40{,}0\text{ kW}$ em carga nominal). No numerador, as parcelas auxiliares e perdas de conversão compreendem:
 \begin{itemize}[leftmargin=*]
     \item $P_{cooling}(t) = P_{MPFL,pump}(t) + P_{heaters}(t)$: potência consumida pela bomba de circulação bifásica ($200\text{ W}$ nominal) e aquecedores de sobrevivência em eclipse ($0\text{ W}$ em cruzeiro);
-    \item $P_{elec,loss}(t) = P_{loss,GaN}(t) + P_{loss,BESS}(t)$: perdas nos conversores GaN ($1025\text{ W}$ sob compartilhamento de carga $N+1$ entre os 3 módulos a $13{,}33\text{ kW}$ cada, ou $1235{,}7\text{ W}$ com 2 módulos ativos a plena carga de $20\text{ kW}$ e $\eta = 97{,}003\%$, conforme Seção~\ref{sec:estabilidade_conversores}) e dissipação ôhmica do BESS ($65{,}56\text{ W} \approx 65\text{ W}$ durante a janela de recarga em insolação, equivalendo à média orbital ponderada $\bar{P}_{Joule,orb} = 52{,}82\text{ W}$ na Seção~\ref{sec:bess_aukf});
-    \item $P_{aux}(t) = P_{avionics}(t) + P_{OISL}(t) + P_{ADCS}(t)$: potência da aviônica e controle de atitude ADCS ($350\text{--}360\text{ W}$, compondo $P_{aux,plat} = 560\text{ W}$ junto aos $200\text{ W}$ da bomba MPFL na Seção~\ref{sec:arquitetura_barramento}) e dos quatro transceivers ópticos laser OISL ($440\text{ W}$ de consumo elétrico total, dos quais $78\%$ ou $343{,}2\text{ W} \approx 343\text{ W}$ convertem-se em calor interno rejeitado pelo radiador e $96{,}8\text{ W}$ são emitidos opticamente ao espaço).
+    \item $P_{elec,loss}(t) = P_{loss,GaN}(t) + P_{loss,BESS}(t)$: perdas nos conversores GaN ($1025\text{ W}$ sob compartilhamento de carga $N+1$ entre os 3 módulos a $13{,}33\text{ kW}$ cada, ou $1235{,}7\text{ W}$ com 2 módulos ativos a plena carga de $20\text{ kW}$ e $\eta = 97{,}003\%$, conforme Seção~\ref{sec:conversores_estaticos}) e dissipação ôhmica do BESS ($65{,}56\text{ W} \approx 65\text{ W}$ durante a janela de recarga em insolação, equivalendo à média orbital ponderada $\bar{P}_{Joule,orb} = 52{,}82\text{ W}$ na Seção~\ref{sec:bess_eletrotermica_aukf});
+    \item $P_{aux}(t) = P_{avionics}(t) + P_{OISL}(t) + P_{ADCS}(t)$: potência da aviônica e controle de atitude ADCS ($350\text{--}360\text{ W}$, compondo $P_{aux,plat} = 560\text{ W}$ junto aos $200\text{ W}$ da bomba MPFL na Seção~\ref{sec:arquitetura_barramento_balanco}) e dos quatro transceivers ópticos laser OISL ($440\text{ W}$ de consumo elétrico total, dos quais $78\%$ ou $343{,}2\text{ W} \approx 343\text{ W}$ convertem-se em calor interno rejeitado pelo radiador e $96{,}8\text{ W}$ são emitidos opticamente ao espaço).
 \end{itemize}
 
 Substituindo os valores do nó de $50\text{ kW}$ sob regime de cruzeiro nominal:

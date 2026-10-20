@@ -23,7 +23,7 @@ Como paradigma e referência de estado da arte para distribuição de potência 
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{figuras/figura_3_1_1_arquitetura_HVDC.png}
+    \includegraphics[width=\textwidth]{figuras/figura_3_1_1_arquitetura_HVDC.png}
     \caption{Exemplo de arquitetura de conversão e distribuição de potência em alta tensão (HVDC) para espaçonaves de grande porte. Fonte: Sarfi e Beik (2024).}
     \label{fig:sarfi_arquitetura_hvdc}
 \end{figure}
@@ -118,7 +118,7 @@ Condutância Térmica ao LHP & $G_{th}$ & 80~W/K & 120~W/K & 160~W/K & Gilmore (
 
 \subsection{Modelagem Matemática e Análise de Estresse do Gerador Fotovoltaico Multijunção AM0}
 
-A geração primária é modelada sob espectro extraterrestre AM0 baseando-se na célula solar comercial de classe espacial de tripla junção GaInP/InGaAs/Ge \textbf{Spectrolab XTJ Prime} (variante de área ativa de $30{,}18\text{ cm}^2$, espessura de $140\ \mu\text{m}$ e massa superficial de $84\text{ mg/cm}^2$ com coverglass de borossilicato dopado com cério -- CMG). O datasheet da XTJ Prime estabelece condição padrão de caracterização a $1353\text{ W/m}^2$ ($135{,}3\text{ mW/cm}^2$) e $28^\circ\text{C}$, com parâmetros elétricos nominais de catálogo $V_{oc}=2{,}720\text{ V}$, $J_{sc}=18{,}0\text{ mA/cm}^2$, $V_{mp}=2{,}406\text{ V}$, $J_{mp}=17{,}5\text{ mA/cm}^2$ e eficiência declarada $\eta_{mp}=30{,}7\%$ (SPECTROLAB, s.d.). Como os valores arredondados publicados de $V_{mp}$ e $J_{mp}$ resultam em $\eta_{calc} = (2{,}406 \times 17{,}5 \times 10^{-3}) / 0{,}1353 = 31{,}12\%$, o dimensionamento elétrico adota estritamente o produto físico $V_{mp}J_{mp}$ por célula, sem depender do percentual nominal arredondado.
+A geração primária é modelada sob espectro extraterrestre AM0 baseando-se na célula solar comercial de classe espacial de tripla junção GaInP/InGaAs/Ge \textbf{Spectrolab XTJ Prime} (variante de área ativa de $30{,}18\text{ cm}^2$, espessura de $140\ \mu\text{m}$ e massa superficial de $84\text{ mg/cm}^2$ com coverglass de borossilicato dopado com cério -- CMG). O datasheet da XTJ Prime estabelece condição padrão de caracterização a $1353\text{ W/m}^2$ ($135{,}3\text{ mW/cm}^2$) e $28^\circ\text{C}$ (calibrada pelo padrão extraterrestre da norma ASTM E490-22 em $1361\text{ W/m}^2$, fundamentada nas medições de satélite SORCE/TIM), com parâmetros elétricos nominais de catálogo $V_{oc}=2{,}720\text{ V}$, $J_{sc}=18{,}0\text{ mA/cm}^2$, $V_{mp}=2{,}406\text{ V}$, $J_{mp}=17{,}5\text{ mA/cm}^2$ e eficiência declarada $\eta_{mp}=30{,}7\%$ (SPECTROLAB, s.d.). Como os valores arredondados publicados de $V_{mp}$ e $J_{mp}$ resultam em $\eta_{calc} = (2{,}406 \times 17{,}5 \times 10^{-3}) / 0{,}1353 = 31{,}12\%$, o dimensionamento elétrico adota estritamente o produto físico $V_{mp}J_{mp}$ por célula, sem depender do percentual nominal arredondado.
 
 \subsubsection{Modelo Físico de Três Diodos Independentes em Série e Dimensionamento de 1,0~MW}
 
@@ -214,12 +214,13 @@ As variações térmicas transitórias ao cruzar o terminador solar induzem grad
     C_{in}\frac{dV_{pv}(t)}{dt} = I_{pv}(V_{pv}, T_{cel}) - D(t) I_L(t), \qquad L\frac{dI_L(t)}{dt} = D(t) V_{pv}(t) - V_{bus} - R_{L} I_L(t)
     \label{eq:buck_dinamica_mppt}
 \end{equation}
-apresentando ondulação de corrente indutiva de pico a pico $\Delta i_{L,pp} = \frac{V_{bus}(1 - D)}{L f_{sw}} \approx 5{,}08\text{ A}$ no ponto nominal quente ($+45^\circ\text{C}$, $V_{mp,str} = 373{,}4\text{ V}$). O algoritmo Perturba e Observa com Razão Cíclica Adaptativa (P\&O-AP) atualiza o ciclo de trabalho $D[k]$ a uma frequência de amostragem de controle $f_{mppt} = 10\text{ kHz}$ (sincronizado a cada $15\text{ ciclos}$ de chaveamento PWM de $150\text{ kHz}$):
+apresentando ondulação de corrente indutiva de pico a pico $\Delta i_{L,pp} = \frac{V_{bus}(1 - D)}{L f_{sw}} \approx 5{,}08\text{ A}$ no ponto nominal quente ($+45^\circ\text{C}$, $V_{mp,str} = 373{,}4\text{ V}$). % --- RETIFICAÇÃO DA LEI DE CONTROLE MPPT ADAPTATIVO (BUCK CONVERTER) ---
+O algoritmo Perturba e Observa com Razão Cíclica Adaptativa (P\&O-AP) amostra as variáveis elétricas a $f_{mppt} = 10\text{ kHz}$ (sincronizado a cada 15 períodos de modulação PWM de 150~kHz). Para compensar a característica de transferência redutora do conversor Buck ($\partial V_{pv} / \partial D < 0$), a atualização do ciclo de trabalho é governada por:
 \begin{equation}
     D[k] = D[k-1] - M \cdot \left( \frac{\Delta P_{pv}[k]}{\Delta V_{pv}[k]} \right)
-    \label{eq:po_adaptativo}
+    \label{eq:po_adaptativo_corrigido}
 \end{equation}
-onde o sinal negativo assegura a realimentação estável decorrente da relação estritamente inversa do conversor Buck ($\partial V_{pv}/\partial D = -V_{bus}/D^2 < 0$), sendo aplicado ganho adaptativo $M = 1{,}2 \times 10^{-4}\text{ V/W}$ e limitador de passo $\Delta D_{max} = 0{,}002$ por ciclo de amostragem para mitigar oscilações em torno do MPP. A Figura~\ref{fig:contingencias_hotspot_mppt} apresenta a evolução térmica de hot spot e o rastreamento dinâmico do conversor Buck sob rampa térmica pós-eclipse.
+onde o sinal negativo assegura realimentação estável de malha fechada, com ganho $M = 1{,}2 \times 10^{-4}\text{ V/W}$ e passo saturado em magnitude por $|\Delta D| \le \Delta D_{max} = 0{,}002$ por ciclo de controle. A Figura~\ref{fig:contingencias_hotspot_mppt} apresenta a evolução térmica de hot spot e o rastreamento dinâmico do conversor Buck sob rampa térmica pós-eclipse.
 
 \begin{figure}[htbp]
     \centering
@@ -239,7 +240,7 @@ A Figura~\ref{fig:sarfi_conversor_dab} ilustra a topologia e os estágios de com
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{figuras/figura_3_4_estágios_comutação_DC_DC.png}
+    \includegraphics[width=0.82\textwidth]{figuras/figura_3_4_estagios_comutacao_DC_DC.png}
     \caption{Topologia e estágios de comutação do conversor CC-CC isolado de alta potência em ponte ativa dupla (DAB / iDC2). Fonte: Sarfi e Beik (2024).}
     \label{fig:sarfi_conversor_dab}
 \end{figure}
@@ -303,11 +304,13 @@ Em plena carga (20~kW), as perdas nas 4 chaves primárias somam $292{,}00\text{ 
 
 \subsubsection{Estabilidade de Impedância sob Cargas de Potência Constante (CPL) e Dimensionamento Capacitivo}
 
-Sob regulação em ponto de carga ($I_{bus} = P_{CPL} / V_{bus}$), a carga apresenta resistência incremental negativa $r_{in,CPL} = -V_{bus}^2 / P_{CPL}$ ($-8{,}00\,\Omega$ em 400~V, $-0{,}1152\,\Omega$ em 48~V para 20~kW e $-0{,}00427\,\Omega$ em 0,8~V para 150~W). Pelo \textbf{Critério de Middlebrook} com margem $GM = 10$ ($|Z_{out}(j\omega)| \le 0{,}1 |Z_{in,CPL}(j\omega)|$, deduzido no Apêndice~A.4), a impedância passiva da rede LC-ESR e a capacitância mínima de filtro são dadas por:
+% --- RETIFICAÇÃO ANALÍTICA: IMPEDÂNCIA PASSIVA DE SAÍDA E MIDDLEBROOK ---
+Sob regulação em ponto de carga ($I_{bus} = P_{CPL} / V_{bus}$), a carga ativa reflete resistência incremental negativa $r_{in,CPL} = -V_{bus}^2 / P_{CPL}$ ($-8{,}00\,\Omega$ em 400~V, $-0{,}1152\,\Omega$ em 48~V para 20~kW). Pelo \textbf{Critério de Middlebrook} com margem de ganho $GM = 10$ ($|Z_{out}(j\omega)| \le 0{,}1 |r_{in,CPL}|$), a impedância de saída passiva da rede balanceada RLC com perdas ESR e a capacitância mínima são formuladas dimensionalmente como:
 \begin{align}
-    Z_{out}(s) &= \frac{(s L_{dist} + R_{dist})(s C_{bus} ESR + 1)}{s^2 L_{dist} C_{bus} + s C_{bus} (R_{dist} + ESR) + 1} \label{eq:zout_bus} \\
-    C_{bus,min} &\ge \max\left( \frac{GM \cdot L_{dist} P_{CPL}}{(R_{dist} + ESR) V_{bus}^2}, \, \frac{L_{dist} \Delta I^2}{V_{nom}^2 - V_{min}^2}, \, \frac{L_{dist} P_{CPL}^2}{V_{bus}^4 \cdot (GM)^{-2}} \right) \label{eq:cbus_min_formula}
+    Z_{out}(s) &= \frac{(s L_{dist} + R_{dist})(s C_{bus} ESR + 1)}{s^2 L_{dist} C_{bus} + s C_{bus} (R_{dist} + ESR) + 1} \label{eq:zout_bus_corrigida} \\
+    C_{bus,min} &\ge \max\left( \frac{4 L_{dist}}{R_{dist}^2}, \, \frac{L_{dist} \Delta I^2}{V_{nom}^2 - V_{min}^2}, \, \frac{L_{dist} P_{CPL}^2 \cdot GM^2}{V_{bus}^4} \right) \label{eq:cbus_min_corrigida}
 \end{align}
+onde o termo amortecedor linear $s C_{bus} (R_{dist} + ESR)$ assegura coeficiente de amortecimento $\zeta = \frac{R_{dist} + ESR}{2}\sqrt{\frac{C_{bus}}{L_{dist}}}$ estritamente adimensional e fisicamente consistente.
 
 A avaliação diagnóstica de impedância nos dois barramentos (considerando a rede passiva LC-ESR vista pela carga; a síntese completa de malha fechada requer a impedância ativa de saída do conversor na mesma porta) demonstra:
 \begin{enumerate}[label=(\alph*),leftmargin=*]
@@ -438,11 +441,16 @@ A validação do estimador AUKF (cuja formulação matricial da Transformada Uns
         \label{fig:feng_fluxograma_soc}
     \end{minipage}
 \end{figure}
-\begin{align}
-    \mathbf{R}_k &= (1 - d_k) \mathbf{R}_{k-1} + d_k \left( \mathbf{e}_k \mathbf{e}_k^T - \mathbf{P}_{yy, k|k-1}^0 \right) \label{eq:sage_husa_r} \\
-    \mathbf{Q}_k &= (1 - d_k)\mathbf{Q}_{k-1} + d_k \left[ \mathbf{K}_k \mathbf{e}_k \mathbf{e}_k^T \mathbf{K}_k^T + \mathbf{P}_{k|k} - \mathbf{P}_{xx, k|k-1}^* \right] \label{eq:sage_husa_ukf}
-\end{align}
-onde $\mathbf{e}_k = \mathbf{y}_k - \hat{\mathbf{y}}_{k|k-1}$ representa o vetor de inovação de medição, $\mathbf{K}_k$ é o ganho ótimo de Kalman e $\mathbf{P}_{xx, k|k-1}^* = \sum_{i=0}^{2L} W_i^{(c)} (\boldsymbol{\chi}_{i, k|k-1}^* - \hat{\mathbf{x}}_{k|k-1})(\boldsymbol{\chi}_{i, k|k-1}^* - \hat{\mathbf{x}}_{k|k-1})^T$ é a dispersão predita dos pontos sigma. O coeficiente de ponderação temporal com fator de esquecimento $b = 0{,}95$ é governado por $d_k = (1 - b)/(1 - b^{k+1})$. Para assegurar estabilidade numérica estrita e prevenir a perda de semidefinição positiva ($\mathbf{Q}_k \nsucceq 0$), a implementação computacional é mapeada no Apêndice~A.3 via fator de esquecimento escalar adaptativo $\lambda_{ad,k}$ atuante sobre os pontos sigma, com simetrização $\mathbf{P} \leftarrow \frac{1}{2}(\mathbf{P} + \mathbf{P}^T)$, piso de autovalores $\lambda_i \ge 10^{-8}$ (prevenindo EST-F05) e semente determinística (\texttt{rng(42)}). Partindo de $\Delta SoC_0 = -20\%$ ($80\%$ vs. $60\%$), o AUKF converge em $< 90\text{ s}$ com erro médio de regime de $\mathbf{0{,}028\%}$ ($\text{RMSE}_V = \mathbf{1{,}18\text{ mV}}$) para $\sigma_V = 15\text{ mV}_{rms}$ e $\mathbf{0{,}194\%}$ ($\text{RMSE}_V = \mathbf{11{,}60\text{ mV}}$) para $\sigma_V = 150\text{ mV}_{rms}$ (meta $< 1{,}20\%$).
+\begin{equation}
+    \mathbf{R}_k = (1 - d_k) \mathbf{R}_{k-1} + d_k \left( \mathbf{e}_k \mathbf{e}_k^T - \mathbf{P}_{yy, k|k-1}^0 \right) \label{eq:sage_husa_r}
+\end{equation}
+% --- RETIFICAÇÃO EPIDISTÊMICA: UKF DERIVATIVE-FREE ---
+Preservando o paradigma \textit{derivative-free} da Transformação Unscented (Seção~\ref{sec:aukf_teoria}), a matriz de ruído do processo $\mathbf{Q}_k$ de Sage--Husa é adaptada substituindo a linearização de Taylor pela covariância amostrada dos próprios pontos sigma $\mathbf{P}_{xx, k|k-1}^*$:
+\begin{equation}
+    \mathbf{Q}_k = (1 - d_k)\mathbf{Q}_{k-1} + d_k \left[ \mathbf{K}_k \mathbf{e}_k \mathbf{e}_k^T \mathbf{K}_k^T + \mathbf{P}_{k|k} - \mathbf{P}_{xx, k|k-1}^* \right]
+    \label{eq:sage_husa_ukf_corrigida}
+\end{equation}
+onde $\mathbf{P}_{xx, k|k-1}^* = \sum_{i=0}^{2n} W_i^{(c)} (\boldsymbol{\chi}_{i, k|k-1}^* - \hat{\mathbf{x}}_{k|k-1})(\boldsymbol{\chi}_{i, k|k-1}^* - \hat{\mathbf{x}}_{k|k-1})^T$. A garantia estrita de semidefinição positiva ($\mathbf{Q}_k \succeq 0$) sob perturbações de alta corrente é demonstrada no Apêndice~\ref{apendice:aukf_deducao} através do fator de esquecimento adaptativo $\lambda_{ad,k}$ aplicado recursivamente. O coeficiente de ponderação temporal com fator de esquecimento $b = 0{,}95$ é governado por $d_k = (1 - b)/(1 - b^{k+1})$, com simetrização $\mathbf{P} \leftarrow \frac{1}{2}(\mathbf{P} + \mathbf{P}^T)$, piso de autovalores $\lambda_i \ge 10^{-8}$ (prevenindo EST-F05) e semente determinística (\texttt{rng(42)}). Partindo de $\Delta SoC_0 = -20\%$ ($80\%$ vs. $60\%$), o AUKF converge em $< 90\text{ s}$ com erro médio de regime de $\mathbf{0{,}028\%}$ ($\text{RMSE}_V = \mathbf{1{,}18\text{ mV}}$) para $\sigma_V = 15\text{ mV}_{rms}$ e $\mathbf{0{,}194\%}$ ($\text{RMSE}_V = \mathbf{11{,}60\text{ mV}}$) para $\sigma_V = 150\text{ mV}_{rms}$ (meta $< 1{,}20\%$).
 
 A Figura~\ref{fig:convergencia_aukf_estresse} ilustra a convergência do estimador AUKF e o ensaio sob pulso de IA de 50~kW em fim de vida útil (EOL).
 

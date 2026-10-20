@@ -129,13 +129,13 @@ legend('Sem Bypass Schottky (Destrutivo)', 'Com Diodo Schottky Protegido', ...
 subplot(2, 2, 3);
 % PLOTA OS VETORES REAIS SIMULADOS DA SEÇÃO 5 DO SCRIPT 3.2 (SEM DADOS FORJADOS)
 t_ms = t_mppt * 1e3;
-V_mppt_adapt = V_bus_est ./ max(0.2, min(0.95, D_adapt));
-V_mppt_fixo  = V_bus_est ./ max(0.2, min(0.95, D_fixo));
+V_mppt_adapt = V_pv_dyn;
+V_mppt_fixo  = V_pv_fixo;
 plot(t_ms, V_mppt_adapt, 'g-', 'linewidth', 2.0); hold on;
 plot(t_ms, V_mppt_fixo, 'r-', 'linewidth', 1.5);
 plot(t_ms, N_s * (V_mp_ref + dVmp_dT * (T_transiente - T_ref)), 'k--', 'linewidth', 1.2);
 grid on;
-xlim([0, 200]);
+xlim([0, max(t_ms)]);
 ylim([300, 650]);
 xlabel('Tempo após Saída do Eclipse (ms)', 'fontsize', 10, 'fontweight', 'bold');
 ylabel('Tensão da Matriz FV (V)', 'fontsize', 10, 'fontweight', 'bold');
@@ -152,7 +152,7 @@ plot(t_ms, eff_dyn_fixo, 'r-', 'linewidth', 1.5);
 plot([0, 200], [99.0, 99.0], 'k:', 'linewidth', 1.4);
 text(10, 98.2, 'Meta de Desempenho P&O-AP (> 99%)', 'fontsize', 8, 'fontweight', 'bold');
 grid on;
-xlim([0, 200]);
+xlim([0, max(t_ms)]);
 ylim([40, 102]);
 xlabel('Tempo após Saída do Eclipse (ms)', 'fontsize', 10, 'fontweight', 'bold');
 ylabel('Rendimento Dinâmico (%)', 'fontsize', 10, 'fontweight', 'bold');

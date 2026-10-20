@@ -44,6 +44,7 @@ Na condição de circuito aberto ($I = 0$, $V_i = V_{oc,i}$):
 Com os valores da Spectrolab XTJ Prime a $T_{ref} = 301{,}15\text{ K}$ ($V_{oc} = [1{,}42;\, 1{,}01;\, 0{,}29]\text{ V}$, $n = [1{,}15;\, 1{,}15;\, 1{,}75]$, $R_{sh} = [2500;\, 3500;\, 200]\,\Omega$, $R_s = 0{,}20\,\Omega$), cada subcélula tem sua corrente de saturação $I_{0,i}$ univocamente determinada.
 
 \subsubsection*{A.3 Formulação Matricial da Transformada Unscented e Fator de Esquecimento do AUKF}
+\label{apendice:aukf_deducao}
 
 Para um sistema não linear com dimensão de estado $L = 3$, o conjunto de $2L+1 = 7$ pontos sigma é calculado a partir da média $\hat{\mathbf{x}}_{k-1}$ e da matriz de covariância de erro $\mathbf{P}_{k-1}$ por:
 \begin{align}
@@ -61,7 +62,7 @@ A matriz de raiz quadrada é calculada deterministicamente através da fatoraç�
     \hat{\mathbf{x}}_{k|k-1} = \sum_{i=0}^{2L} W_m^{(i)} \boldsymbol{\chi}_{i, k|k-1}
 \end{equation}
 
-A formulação de Sage--Husa por subtração matricial direta (Equação~\ref{eq:sage_husa_ukf}) é suscetível a instabilidades numéricas em ponto flutuante, podendo gerar autovalores negativos em $\mathbf{Q}_k$ durante variações bruscas de corrente. Para garantir por projeto que a matriz de covariância permaneça estritamente simétrica e positiva definida ($\mathbf{P}_{k|k-1} \succ 0$), implementa-se a regulação baseada no princípio de ortogonalidade dos resíduos de inovação via fator de esquecimento adaptativo $\lambda_{ad,k}$ (FENG et al., 2022) atuando sobre a dispersão predita dos pontos sigma $\mathbf{P}_{xx, k|k-1}^* = \sum_{i=0}^{2L} W_c^{(i)} [\boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1}][\boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1}]^T$:
+A formulação de Sage--Husa por subtração matricial direta (Equação~\ref{eq:sage_husa_ukf_corrigida}) é suscetível a instabilidades numéricas em ponto flutuante, podendo gerar autovalores negativos em $\mathbf{Q}_k$ durante variações bruscas de corrente. Para garantir por projeto que a matriz de covariância permaneça estritamente simétrica e positiva definida ($\mathbf{P}_{k|k-1} \succ 0$), implementa-se a regulação baseada no princípio de ortogonalidade dos resíduos de inovação via fator de esquecimento adaptativo $\lambda_{ad,k}$ (FENG et al., 2022) atuando sobre a dispersão predita dos pontos sigma $\mathbf{P}_{xx, k|k-1}^* = \sum_{i=0}^{2L} W_c^{(i)} [\boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1}][\boldsymbol{\chi}_{i, k|k-1} - \hat{\mathbf{x}}_{k|k-1}]^T$:
 \begin{equation}
     \mathbf{P}_{k|k-1} = \lambda_{ad,k} \mathbf{P}_{xx, k|k-1}^* + \mathbf{Q}_0
     \label{eq:aukf_fading_sigma}
@@ -100,10 +101,16 @@ A função de transferência de laço fechado da tensão de barramento sob inter
 \begin{equation}
     T_{bus}(s) = \frac{Z_{in,CPL}(s)}{Z_{out}(s) + Z_{in,CPL}(s)} = \frac{1}{1 + \frac{Z_{out}(s)}{Z_{in,CPL}(s)}} = \frac{1}{1 + T_m(s)}
 \end{equation}
-onde a razão de impedâncias minorante de Middlebrook é $T_m(s) = \frac{Z_{out}(s)}{Z_{in,CPL}(s)}$. Como $Z_{in,CPL}$ possui fase de $-180^\circ$ no plano complexo, o sistema em malha fechada possui polos no semiplano direito se o diagrama polar de $T_m(j\omega)$ envolver o ponto crítico $(-1, j0)$. Para evitar qualquer encadeamento oscilatório ou desamortecimento na presença de incertezas e variações de carga, estabelece-se a envoltória conservadora de Middlebrook:
+onde a razão de impedâncias minorante de Middlebrook é $T_m(s) = \frac{Z_{out}(s)}{Z_{in,CPL}(s)}$. Como $Z_{in,CPL}$ possui fase de $-180^\circ$ no plano complexo, o sistema em malha fechada possui polos no semiplano direito se o diagrama polar de $T_m(j\omega)$ envolver o ponto crítico $(-1, j0)$. Para evitar qualquer encadeamento oscilatório ou desamortecimento na presença de incertezas e variações de carga, estabelece-se a envoltória conservadora de Middlebrook com margem $GM = 10$:
 \begin{equation}
     |Z_{out}(j\omega)| \le \frac{1}{GM} |Z_{in,CPL}(j\omega)| \implies |Z_{out}(j\omega)| \le 0{,}10 \frac{V_{bus}^2}{P_{CPL}}, \quad \forall \omega
 \end{equation}
+A impedância passiva de saída da rede de distribuição balanceada RLC com perdas ESR e a capacitância mínima associada são formuladas dimensionalmente como:
+\begin{align}
+    Z_{out}(s) &= \frac{(s L_{dist} + R_{dist})(s C_{bus} ESR + 1)}{s^2 L_{dist} C_{bus} + s C_{bus} (R_{dist} + ESR) + 1} \\
+    C_{bus,min} &\ge \max\left( \frac{4 L_{dist}}{R_{dist}^2}, \, \frac{L_{dist} \Delta I^2}{V_{nom}^2 - V_{min}^2}, \, \frac{L_{dist} P_{CPL}^2 \cdot GM^2}{V_{bus}^4} \right)
+\end{align}
+onde o termo amortecedor linear $s C_{bus} (R_{dist} + ESR)$ assegura coeficiente de amortecimento $\zeta = \frac{R_{dist} + ESR}{2}\sqrt{\frac{C_{bus}}{L_{dist}}}$ estritamente adimensional e fisicamente consistente.
 
 \subsubsection*{A.5 Dedução em Forma Fechada da Área de Sobreposição Cônica Solar}
 

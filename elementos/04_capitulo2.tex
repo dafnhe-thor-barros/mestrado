@@ -103,6 +103,7 @@ O TEMS orquestra duas variáveis de controle primárias em tempo real:
 Essa orquestração é estruturada através de Controle Preditivo Baseado em Modelo Não Linear (NMPC), formulado como um problema de otimização dinâmica em horizonte deslizante sujeito aos limites rígidos de temperatura de junção ($T_j \le 85^\circ\text{C}$), restrições de potência disponível e metas de vazão computacional ($PUE_{orbital} \rightarrow 1{,}05$). A dedução e a implementação computacional do algoritmo NMPC acoplado à rede térmica são desenvolvidas no Capítulo~4.
 
 \subsection{Tecnologia Complementar: Estimativa de Estado de Carga (SoC) via Filtro de Kalman Adaptativo}
+\label{sec:aukf_teoria}
 
 Embora a órbita heliossíncrona SSO \textit{dawn-dusk} proporcione insolação direta contínua, bancos de baterias eletroquímicas de íons de lítio são componentes indispensáveis para: (i) sustentação do barramento durante manobras orbitais em que os painéis perdem temporariamente a visada solar; (ii) filtragem de picos transitórios de corrente ($\text{kA}/\mu\text{s}$) exigidos por rajadas computacionais; e (iii) redundância vital de segurança operacional (NASA, 2026, p. 40; CAPPELLETTI; BATTISTINI; MALPHRUS, 2020, p. 112).
 
