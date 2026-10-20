@@ -120,11 +120,12 @@ text(0.1, 67.5, 'Limite Máximo Operacional (65,0 °C)', ...
     'fontsize', 9, 'fontweight', 'bold', 'color', [0.8, 0, 0]);
 grid on;
 xlim([0, max(t_th)/3600]);
-ylim([20, 75]);
+ylim([20, 125]);
+set(gca, 'ytick', 20:20:120);
 xlabel('Tempo de Operação (Horas)', 'fontsize', 10, 'fontweight', 'bold');
 ylabel('Temperatura do Chassi (°C)', 'fontsize', 10, 'fontweight', 'bold');
 title('(b2) Resposta Eletrotérmica Transiente do Chassi', 'fontsize', 11, 'fontweight', 'bold');
-legend('GaN Nominal (97,5%, 120 W/K)', 'Pior Caso WCA (90,0%, 120 W/K)', ...
+legend('GaN Nominal (97,5%, 120 W/K)', 'Pior Caso WCA (90,0%, 80 W/K)', ...
        'location', 'southeast', 'fontsize', 8);
 print(fig2, '../figuras/figura_3_2_falhas_eletrotermicas_sspc.png', '-dpng', '-r300');
 fprintf('Figura 3.2 exportada com sucesso: ../figuras/figura_3_2_falhas_eletrotermicas_sspc.png\n');
