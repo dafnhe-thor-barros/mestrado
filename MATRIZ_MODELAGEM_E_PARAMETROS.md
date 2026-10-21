@@ -53,16 +53,16 @@
 #### 1.2 Catálogo de Parâmetros do Painel Solar (Spectrolab XTJ Prime — 3 Diodos)
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $G_{AM0}$ | Irradiância solar extraterrestre a 1 UA | $1361{,}0$ | $\text{W/m}^2$ | **[VERIFICÁVEL]** ASTM E490-22; cenário operacional AM0 |
-| $G_{datasheet}$ | Irradiância de ensaio de catálogo XTJ Prime | $1353{,}0$ | $\text{W/m}^2$ | **[VERIFICÁVEL]** Spectrolab XTJ Prime Datasheet ($28^\circ\text{C}$) |
+| $G_{AM0}$ | Irradiância solar extraterrestre a 1 UA | $1361{,}0$ | $\text{W/m}^2$ | *(Especificação de catálogo COTS / Referência validada)* ASTM E490-22; cenário operacional AM0 |
+| $G_{datasheet}$ | Irradiância de ensaio de catálogo XTJ Prime | $1353{,}0$ | $\text{W/m}^2$ | *(Especificação de catálogo COTS / Referência validada)* Spectrolab XTJ Prime Datasheet ($28^\circ\text{C}$) |
 | $A_{cel}$ | Área ativa adotada por célula | $30{,}18$ | $\text{cm}^2$ | **Premissa de geometria:** Célula espacial de grande área |
-| $V_{oc,1..3}$ | Tensões de circuito aberto por subcélula ($28^\circ\text{C}$) | $1{,}42 / 1{,}01 / 0{,}29$ | $\text{V}$ | **[VERIFICÁVEL]** GaInP / GaAs / Ge; soma $V_{oc} = 2{,}720\text{ V}$ (COTAL et al., 2000) |
-| $n_{1..3}$ | Fatores de idealidade por subcélula | $1{,}15 / 1{,}15 / 1{,}75$ | -- | **[VERIFICÁVEL]** Faixas físicas $1{,}1\text{--}1{,}2$ (GaInP/GaAs) e $1{,}5\text{--}2{,}0$ (Ge) |
-| $R_{sh,1..3}$ | Resistências shunt por subcélula | $2500 / 3500 / 200$ | $\Omega$ | **[VERIFICÁVEL]** GaInP ($>2000\,\Omega$), GaAs ($>3000\,\Omega$), Ge ($\approx 200\,\Omega$) |
-| $R_s$ | Resistência série total (contatos + junções túnel) | $0{,}20$ | $\Omega$ | **[VERIFICÁVEL]** Arquitetura monolítica em série (COTAL et al., 2000) |
-| $J_{sc,cel}, J_{mp,cel}$ | Densidades de corrente de catálogo ($1353\text{ W/m}^2$) | $18{,}0 / 17{,}5$ | $\text{mA/cm}^2$ | **[VERIFICÁVEL]** Datasheet Spectrolab XTJ Prime ($V_{mp,cat}=2{,}406\text{ V}$) |
+| $V_{oc,1..3}$ | Tensões de circuito aberto por subcélula ($28^\circ\text{C}$) | $1{,}42 / 1{,}01 / 0{,}29$ | $\text{V}$ | *(Especificação de catálogo COTS / Referência validada)* GaInP / GaAs / Ge; soma $V_{oc} = 2{,}720\text{ V}$ (COTAL et al., 2000) |
+| $n_{1..3}$ | Fatores de idealidade por subcélula | $1{,}15 / 1{,}15 / 1{,}75$ | -- | *(Especificação de catálogo COTS / Referência validada)* Faixas físicas $1{,}1\text{--}1{,}2$ (GaInP/GaAs) e $1{,}5\text{--}2{,}0$ (Ge) |
+| $R_{sh,1..3}$ | Resistências shunt por subcélula | $2500 / 3500 / 200$ | $\Omega$ | *(Especificação de catálogo COTS / Referência validada)* GaInP ($>2000\,\Omega$), GaAs ($>3000\,\Omega$), Ge ($\approx 200\,\Omega$) |
+| $R_s$ | Resistência série total (contatos + junções túnel) | $0{,}20$ | $\Omega$ | *(Especificação de catálogo COTS / Referência validada)* Arquitetura monolítica em série (COTAL et al., 2000) |
+| $J_{sc,cel}, J_{mp,cel}$ | Densidades de corrente de catálogo ($1353\text{ W/m}^2$) | $18{,}0 / 17{,}5$ | $\text{mA/cm}^2$ | *(Especificação de catálogo COTS / Referência validada)* Datasheet Spectrolab XTJ Prime ($V_{mp,cat}=2{,}406\text{ V}$) |
 | $I_{sc,ref}, I_{mp,ref}$ | Correntes escaladas para $1361\text{ W/m}^2$ ($30{,}18\text{ cm}^2$) | $0{,}5465 / 0{,}5313$ | $\text{A}$ | **(dimensionado analiticamente)** $J \times A_{cel} \times (1361/1353)$ |
-| $K_V, K_I$ | Coeficientes térmicos globais de $V_{oc}$ e $I_{sc}$ | $-5{,}60\text{ mV/K}, +0{,}3036\text{ mA/K}$ | -- | **[VERIFICÁVEL]** Datasheet XTJ Prime ($dJ_{sc}/dT = +10\,\mu\text{A/cm}^2\text{K}$) |
+| $K_V, K_I$ | Coeficientes térmicos globais de $V_{oc}$ e $I_{sc}$ | $-5{,}60\text{ mV/K}, +0{,}3036\text{ mA/K}$ | -- | *(Especificação de catálogo COTS / Referência validada)* Datasheet XTJ Prime ($dJ_{sc}/dT = +10\,\mu\text{A/cm}^2\text{K}$) |
 | $N_{s,no}, N_{p,no}$ | Células em série / strings em paralelo por satélite | $208 \times 252$ | -- | **(dimensionado analiticamente)** $52.416\text{ células/nó}$ ($A_{ativa,no} = 158{,}19\text{ m}^2$) |
 | $A_{array,cluster}$ | Área ativa total na constelação (20 nós) | $3163{,}8$ | $\text{m}^2$ | **(dimensionado analiticamente)** $1.048.320\text{ células}$ no cluster de $1{,}0\text{ MW}$ EOL |
 | $V_{mp,str}(28^\circ\text{C})$ | Tensão MPP por string a $28^\circ\text{C}$ (3 diodos / catálogo) | $489{,}6 / 500{,}45$ | $\text{V}$ | **(dimensionado analiticamente)** $489{,}6\text{ V}$ ($2{,}354\text{ V/cel}$ com $R_s=0{,}20\,\Omega$) / $500{,}45\text{ V}$ catálogo |
@@ -115,12 +115,12 @@
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
 | $V_{bus,prim}$ | Tensão nominal do barramento primário HVDC | $400{,}0$ | $\text{V}$ | **(dimensionado analiticamente)** Faixa $324{,}0\text{ V}$ (UVLO) a $442{,}8\text{ V}$ (OV) (BEVER et al., 2006; FERGUSON, 2006) |
-| $V_{bus,sec}$ | Tensão do barramento intermediário de rack | $48{,}0$ | $\text{V}$ | **[VERIFICÁVEL]** Padrão Open Compute / conversores PoL sub-1 V |
+| $V_{bus,sec}$ | Tensão do barramento intermediário de rack | $48{,}0$ | $\text{V}$ | *(Especificação de catálogo COTS / Referência validada)* Padrão Open Compute / conversores PoL sub-1 V |
 | $f_{sw}$ | Frequência de chaveamento do conversor isolado | $150{,}0$ | $\text{kHz}$ | **[PROJETO]** Ponte completa GaN + transformador planar 3C95 |
-| $R_{on,25}, \alpha_{sc}$ | Resistência a $25^\circ\text{C}$ e coef. térmico (GS66516T) | $25{,}0\text{ m}\Omega, \, 0{,}0128\text{ K}^{-1}$ | -- | **[VERIFICÁVEL]** Datasheet Infineon GS66516T ($R_{on,150}=65\text{ m}\Omega$; $42{,}60\text{ m}\Omega$ a $80^\circ\text{C}$) |
-| $C_{oss}, Q_g$ | Capacitância de saída e carga de porta ($Q_{rr}=0$) | $207\text{ pF}, \, 14{,}2\text{ nC}$ | -- | **[VERIFICÁVEL]** Datasheet Infineon GS66516T ($V_{gate}=6{,}0\text{ V}$) |
+| $R_{on,25}, \alpha_{sc}$ | Resistência a $25^\circ\text{C}$ e coef. térmico (GS66516T) | $25{,}0\text{ m}\Omega, \, 0{,}0128\text{ K}^{-1}$ | -- | *(Especificação de catálogo COTS / Referência validada)* Datasheet Infineon GS66516T ($R_{on,150}=65\text{ m}\Omega$; $42{,}60\text{ m}\Omega$ a $80^\circ\text{C}$) |
+| $C_{oss}, Q_g$ | Capacitância de saída e carga de porta ($Q_{rr}=0$) | $207\text{ pF}, \, 14{,}2\text{ nC}$ | -- | *(Especificação de catálogo COTS / Referência validada)* Datasheet Infineon GS66516T ($V_{gate}=6{,}0\text{ V}$) |
 | $t_r, t_f$ | Tempos de subida e descida de comutação | $12, \, 15$ | $\text{ns}$ | **[PREMISSA DE GATE]** Encapsulamento GaNPX top-side cooled |
-| $R_{th,total}$ | Resistência térmica junção-dissipador (GaNPX + AlN/PGS) | $1{,}12$ | $\text{K/W}$ | **[VERIFICÁVEL]** $R_{th,jc}=0{,}27\text{ K/W} + R_{th,TIM}=0{,}85\text{ K/W}$ |
+| $R_{th,total}$ | Resistência térmica junção-dissipador (GaNPX + AlN/PGS) | $1{,}12$ | $\text{K/W}$ | *(Especificação de catálogo COTS / Referência validada)* $R_{th,jc}=0{,}27\text{ K/W} + R_{th,TIM}=0{,}85\text{ K/W}$ |
 | $R_{th,crit,1}, R_{th,crit,4}$ | Resistência térmica crítica de fuga térmica (1 ch / 4 ch) | $2{,}65 / 0{,}662$ | $\text{K/W}$ | **(dimensionado analiticamente)** $\partial P/\partial T_j = 0{,}3775\text{ W/K}$ por chave a $I_{rms}=34{,}35\text{ A}$ |
 | $P_{core}, P_{cu}$ | Perdas no núcleo (Ferroxcube U93/152/30 3C95) e cobre | $95{,}31 / 61{,}10$ | $\text{W}$ | **(dimensionado analiticamente)** $V_e=450\text{ cm}^3, \Delta B=0{,}15\text{ T}, k_{fe}=0{,}70, \alpha=1{,}46, \beta=2{,}52$ |
 | $P_{loss,total}, \eta_{20kW}$ | Dissipação total e rendimento em plena carga ($20\text{ kW}$) | $617{,}85\text{ W} / 97{,}003\%$ | -- | **(dimensionado analiticamente)** $201{,}01\text{ W}$ pri + $90{,}99\text{ W}$ sw + $169{,}44\text{ W}$ sec + $156{,}41\text{ W}$ mag |
@@ -178,7 +178,7 @@
 #### 5.2 Catálogo de Parâmetros do Estimador AUKF
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
-| $\alpha_{ut}, \beta_{ut}, \kappa_{ut}$ | Parâmetros da Transformada Unscented | $10^{-3}, \, 2{,}0, \, 0$ | -- | **[VERIFICÁVEL]** Fator de memória de Sage–Husa $b = 0{,}95$ |
+| $\alpha_{ut}, \beta_{ut}, \kappa_{ut}$ | Parâmetros da Transformada Unscented | $10^{-3}, \, 2{,}0, \, 0$ | -- | *(Especificação de catálogo COTS / Referência validada)* Fator de memória de Sage–Husa $b = 0{,}95$ |
 | $\sigma_{V,meas}$ | Cenários de ruído do sensor de tensão avaliados | $15{,}0\text{ e }150{,}0$ | $\text{mV}_{rms}$ | **Ensaio de sensibilidade:** Precisão ($R_0=2{,}25\times 10^{-4}\text{ V}^2$) vs. EMI ($0{,}0225\text{ V}^2$) |
 | $e_{SoC,15mV}$ | Erro médio de regime de SoC sob $\sigma_V = 15\text{ mV}_{rms}$ | $0{,}028$ ($\approx 0{,}03$) | $\%$ | **(dimensionado analiticamente)** $\text{RMSE}_V = 1{,}18\text{ mV}$, convergência $< 90\text{ s}$ (\texttt{rng(42)}) |
 | $e_{SoC,150mV}$ | Erro médio de regime de SoC sob $\sigma_V = 150\text{ mV}_{rms}$ | $0{,}194$ ($\approx 0{,}19$) | $\%$ | **(dimensionado analiticamente)** $\text{RMSE}_V = 11{,}60\text{ mV}$, atende folgadamente à meta $< 1{,}20\%$ |
@@ -217,7 +217,7 @@
 | :--- | :--- | :---: | :---: | :--- |
 | $h_{orb}$ | Altitudes avaliadas (SSO / LEO / GEO) | $700 / 500 / 35.786$ | $\text{km}$ | **[PARÂMETRO ORBITAL]** SSO Dawn-Dusk ($i=98{,}19^\circ$) como projeto nominal |
 | $T_{orb}, t_{ecl,max}$ | Período orbital e eclipse máximo em SSO / LEO / GEO | $98{,}8 / 94{,}6 / 1436\text{ min}$ | -- | **(dimensionado analiticamente)** Eclipses máximos: $18{,}8\text{ min}$ (SSO), $35{,}8\text{ min}$ (LEO), $72{,}0\text{ min}$ (GEO) |
-| $\alpha_{s,EOL}, \varepsilon_{ir,EOL}$ | Propriedades termo-ópticas EOL do espelho OSR (10 anos) | $0{,}14, \, 0{,}88$ | -- | **[VERIFICÁVEL]** Tabela 10 ($\alpha_{s,BOL}=0{,}08$; ECSS-E-HB-31-01 Parte 6; GILMORE, 2002) |
+| $\alpha_{s,EOL}, \varepsilon_{ir,EOL}$ | Propriedades termo-ópticas EOL do espelho OSR (10 anos) | $0{,}14, \, 0{,}88$ | -- | *(Especificação de catálogo COTS / Referência validada)* Tabela 10 ($\alpha_{s,BOL}=0{,}08$; ECSS-E-HB-31-01 Parte 6; GILMORE, 2002) |
 | $F_{rad-E}(90^\circ)$ | Fator de visão analítico placa--Terra ($\phi_{rad}=90^\circ$) | $0{,}23282 / 0{,}27125 / 0{,}00729$ | -- | **(dimensionado analiticamente)** SSO ($700\text{ km}$), LEO ($500\text{ km}$; ou $0{,}4473$ inclinado), GEO ($35.786\text{ km}$) |
 | $K_{alb}$ | Fator médio orbital de iluminação de albedo | $0{,}32 / 0{,}45 / 0{,}10$ | -- | **Parâmetro de referência:** Curvas de Lambert NASA TM-4527 para SSO / LEO / GEO |
 | $q_{amb,EOL}$ | Fluxo ambiental absorvido em EOL (SSO / LEO / GEO) | $52{,}82 / 63{,}55\text{ (104,79)} / 1{,}56$ | $\text{W/m}^2$ | **(dimensionado analiticamente)** Em SSO: $4{,}26\text{ W/m}^2$ (albedo) $+ 48{,}56\text{ W/m}^2$ (IR) |
@@ -293,7 +293,7 @@
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
 | $L_{DNP}$ | Distância do centro neutro à esfera de canto ($28\times 28\text{ mm}$) | $19{,}80$ | $\text{mm}$ | **(dimensionado analiticamente)** Semidiagonal exata $\frac{1}{2}\sqrt{28^2 + 28^2} = 19{,}799\text{ mm}$ |
-| $h_{solder}, \Delta\alpha_{CTE}$ | Altura da esfera BGA e descasamento de expansão térmica | $0{,}18\text{ mm}, \, 14{,}0\times 10^{-6}\text{ K}^{-1}$ | -- | **[VERIFICÁVEL]** IPC-9701A / IPC-SM-785 ($F = 0{,}90$, $k_{att} = 0{,}85$ (premissa de modelagem)) |
+| $h_{solder}, \Delta\alpha_{CTE}$ | Altura da esfera BGA e descasamento de expansão térmica | $0{,}18\text{ mm}, \, 14{,}0\times 10^{-6}\text{ K}^{-1}$ | -- | *(Especificação de catálogo COTS / Referência validada)* IPC-9701A / IPC-SM-785 ($F = 0{,}90$, $k_{att} = 0{,}85$ (premissa de modelagem)) |
 | $2\varepsilon_f'$ | Coeficiente de ductilidade equivalente com *underfill* | $2{,}887$ ($0{,}65$ sem underfill) | -- | **Calibração empírica equivalente:** Redistribuição por *underfill* epóxi (OSTERMAN, 2018; SYED, 2004) |
 | $N_f, \text{Vida}_{SSO+TEMS}$ | Vida em fadiga no cenário nominal (`SSO + TEMS`, $\Delta T_j \le 7^\circ\text{C}$) | $73.063\text{ ciclos} / 13{,}72\text{ anos}$ | -- | **(dimensionado analiticamente)** $L_{DNP}=19{,}80\text{ mm}$; margem $+37{,}2\%$ sobre 10 anos (LEO sem TEMS: $3.165\text{ ciclos} / 6{,}8\text{ meses}$) |
 | $PUE_{orbital}$ | Eficácia energética orbital (Nominal / Pior Caso WCH) | $1{,}050 / 1{,}144$ | -- | **(dimensionado analiticamente)** $41.983\text{ W}/40.000\text{ W}$ (nom.) e $45.757\text{ W}/40.000\text{ W}$ (WCH); $\eta_{comp}=0{,}476\text{ TOPS/W}$ |

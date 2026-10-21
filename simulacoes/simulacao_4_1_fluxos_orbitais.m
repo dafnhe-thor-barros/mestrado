@@ -1,30 +1,20 @@
 function simulacao_4_1_fluxos_orbitais()
-  % ============================================================================
-  % SIMULACAO 4.1: FLUXOS RADIATIVOS ORBITAIS (SSO, LEO E GEO), FATOR DE VISAO
-  % ANALITICO (EQ. 75), OCULTACAO CONICA E BALANCO TERMICO EOL (TABELA 10)
-  % ============================================================================
-  % Dissertacao de Mestrado Profissional - ProPECAut / IFES
-  % Autor: Dafnhe Thor Castro de Martins Barros
-  % ============================================================================
-function simulacao_4_1_fluxos_orbitais()
+  % SIMULACAO 4.1 - FLUXOS ORBITAIS E BALANCO TERMICO DOS RADIADORES
   close all; clc;
 
-  % =========================================================================
-  % 1. Constantes e Propriedades Termo-Opticas EOL (Tabela 10)
-  % =========================================================================
   sigma = 5.670374e-8; G0 = 1361.0; qEarth_IR = 237.0; albedo = 0.30;
   RE = 6371e3; RSun = 696340e3; dES = 1.496e11;
-
-  alphaEOL = 0.14; epsEOL = 0.88; % OSR de fim de vida (EOL)
+  
+  alphaEOL = 0.14; epsEOL = 0.88; % OSR EOL
   etaFin = 0.945; Qint = 41983.0; Arad = 88.6; dT_cond = 25.0;
-  phiRad = 90.0;              % Radiadores normais ao plano orbital (graus)
-  Trad_lim = 55.0;            % Limite para Tj <= 80 C
+  phiRad = 90.0;
+  Trad_lim = 55.0;
 
   hkm = [700 500 35786];
   labels = {'SSO 700 km', 'LEO 500 km', 'GEO'};
-  Kalb = [0.32 0.45 0.10];     % Coeficientes de incidencia de albedo
+  Kalb = [0.32 0.45 0.10];
 
-  fprintf('=== 1. Balanco Termico dos Radiadores em Regime Permanente ===\n');
+  fprintf('=== 1. Balanco Termico dos Radiadores ===\n');
   q_emit_max = etaFin * epsEOL * sigma * (Trad_lim + 273.15)^4;
 
   for j = 1:numel(hkm)
@@ -32,11 +22,11 @@ function simulacao_4_1_fluxos_orbitais()
     qAlb = alphaEOL * G0 * albedo * F * Kalb(j);
     qIR = epsEOL * qEarth_IR * F;
     qAmb = qAlb + qIR;
-
+    
     Trad = ((Qint/Arad + qAmb) / (etaFin * epsEOL * sigma))^0.25 - 273.15;
     Tj = Trad + dT_cond;
     Areq = Qint / (q_emit_max - qAmb);
-
+    
     fprintf('%s:\n', labels{j});
     fprintf('  F_rad_E: %.5f | Carga Ambiental: %.2f W/m2 (Albedo: %.1f, IR: %.1f)\n', ...
             F, qAmb, qAlb, qIR);
@@ -45,23 +35,20 @@ function simulacao_4_1_fluxos_orbitais()
     avalia_margem_atitude(qAmb, alphaEOL, G0, Qint, Arad, etaFin, epsEOL, sigma, dT_cond);
   end
 
-  % =========================================================================
   % 2. Geometria de Eclipse Conico em LEO 500 km
-  % =========================================================================
   h_leo = 500e3; mu = 398600.4418e9;
   Torb_leo = 2 * pi * sqrt((RE + h_leo)^3 / mu);
   t_vec = linspace(0, Torb_leo, 3000);
   aEarth = asin(RE / (RE + h_leo));
   aSun = asin(RSun / dES);
-
+  
   S_frac = ones(size(t_vec));
   for k = 1:numel(t_vec)
     theta = 2 * pi * t_vec(k) / Torb_leo;
     gamma = acos(max(-1, min(1, -cos(theta))));
     if gamma <= aEarth - aSun
-      S_frac(k) = 0.0; % Umbra total
+      S_frac(k) = 0.0;
     elseif gamma < aEarth + aSun
-      % Penumbra
       r1 = aSun; r2 = aEarth; d = gamma;
       x1 = (d^2 + r1^2 - r2^2) / (2*d*r1);
       x2 = (d^2 + r2^2 - r1^2) / (2*d*r2);
@@ -69,7 +56,7 @@ function simulacao_4_1_fluxos_orbitais()
       overlap = r1^2 * acos(max(-1,min(1,x1))) + r2^2 * acos(max(-1,min(1,x2))) - 0.5*sqrt(rad);
       S_frac(k) = max(0, min(1, 1 - overlap / (pi * r1^2)));
     else
-      S_frac(k) = 1.0; % Sol pleno
+      S_frac(k) = 1.0;
     end
   end
 
@@ -108,5 +95,5 @@ function avalia_margem_atitude(qAmb, alpha, G0, Q, A, eta, epsi, sigma, dTc)
   i_trip = find(Tj >= 85.0, 1);
   if isempty(i_throt), a1 = NaN; else, a1 = theta(i_throt); end
   if isempty(i_trip), a2 = NaN; else, a2 = theta(i_trip); end
-  fprintf('  Margem de Atitude Solar: Throttling (80 C) = %.2f deg | Trip (85 C) = %.2f deg\n', a1, a2);
+  fprintf('  Margem de Atitude: Throttling (80 C) = %.2f deg | Trip (85 C) = %.2f deg\n', a1, a2);
 end

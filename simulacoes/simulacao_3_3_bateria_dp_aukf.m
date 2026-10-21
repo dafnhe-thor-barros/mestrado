@@ -1,36 +1,23 @@
 function simulacao_3_3_bateria_dp_aukf()
-  % ============================================================================
-  % SIMULACAO 3.3: BESS, MODELO DUAL-POLARIZATION (2a ORDEM), REDE TERMICA DE
-  % DOIS NOS (BATERIA-CHASSI-RADIADOR, NASA NTRS) E AUKF SAGE-HUSA
-  % ============================================================================
-  % Dissertacao de Mestrado Profissional - ProPECAut / IFES
-  % Autor: Dafnhe Thor Castro de Martins Barros
-  % Referencias Verificaveis:
-  %   [1] NASA NTRS 20205006303: Practical Battery Thermal Modeling Techniques
-  %   [2] NASA NTRS 20090015884: ORS Standard Bus Battery Thermal Balance
-  % ============================================================================
-function simulacao_3_3_bateria_dp_aukf()
+  % SIMULACAO 3.3 - BESS COM BALANCO ELETROTERMICO E AUKF SAGE-HUSA
   close all; clc;
 
-  % =========================================================================
-  % 1. Parametros Eletricos e Termicos da Bateria
-  % =========================================================================
+  % 1. Parametros Eletroquimicos e Termicos da Bateria
   Cn = 22.52;                 % Capacidade nominal equivalente [Ah]
-  Vuv = 324.0; Vov = 442.8;   % Limites de sub e sobretensao [V]
-  Rp1 = 18e-3; Cp1 = 3200;    % R-C de difusao rapida
-  Rp2 = 24e-3; Cp2 = 22000;   % R-C de difusao lenta
-  R0_ref = 85e-3;             % Resistencia ohmica em EOL a 20 C [Ohm]
-  Ea = 0.32 * 1.602176634e-19;% Energia de ativacao de Arrhenius [J]
+  Vuv = 324.0; Vov = 442.8;   % Limites de tensao [V]
+  Rp1 = 18e-3; Cp1 = 3200;    % R-C difusao rapida
+  Rp2 = 24e-3; Cp2 = 22000;   % R-C difusao lenta
+  R0_ref = 85e-3;             % Resistencia EOL a 20 C [Ohm]
+  Ea = 0.32 * 1.602176634e-19;% Energia de ativacao [J]
   kB = 1.380649e-23;
-  Tref_K = 293.15;            % 20 C em Kelvin
+  Tref_K = 293.15;            % 20 C em K
 
-  % Correcao Termica: Acoplamento condutivo via barras/heat pipes ao chassi
+  % Acoplamento condutivo corrigido via barras de aluminio e heat pipes
   Cth = 54360;                % Capacitancia termica [J/K]
-  Rth_cond = 0.14;            % Resistencia termica condutiva real [K/W] (corrigida de 4.8)
-  Tch = 15.0;                 % Temperatura do chassi radiante [degC]
+  Rth_cond = 0.14;            % Resistencia termica condutiva [K/W] (corrigida de 4.8)
+  Tch = 15.0;                 % Temperatura de chassi [degC]
   Pheater = 300.0; Ton = 10.0; Toff = 15.0;
 
-  % Parametros da orbita LEO
   dt = 2.0; Torb = 5926; tecl = 1128; nOrb = 5;
   N = floor(nOrb * Torb / dt) + 1;
 
@@ -39,25 +26,20 @@ function simulacao_3_3_bateria_dp_aukf()
   vp1 = 0; vp2 = 0;
   a1 = exp(-dt / (Rp1 * Cp1)); a2 = exp(-dt / (Rp2 * Cp2));
 
-  % =========================================================================
-  % 2. Simulacao Multiorbital (5 Orbitas)
-  % =========================================================================
+  % 2. Simulacao Multiorbital Fechada
   for k = 1:N-1
     t_now = (k-1) * dt;
     in_eclipse = mod(t_now, Torb) <= tecl;
-
+    
     if in_eclipse
       I = (18000 + 560) / 380; % Descarga no eclipse (~48.8 A)
       etaC = 1.0;
     else
-      I = -25.0;               % Recarga solar em corrente constante
-      etaC = 0.995;            % Eficiencia Coulombica
+      I = -25.0;               % Recarga solar controlada [A]
+      etaC = 0.995;
     end
 
-    % Resistencia de Arrhenius em funcao de Tb
     R0 = R0_ref * exp((Ea/kB) * (1/(Tb(k) + 273.15) - 1/Tref_K));
-
-    % Atualizacao de estados dos ramos R-C
     vp1 = a1 * vp1 + Rp1 * (1 - a1) * I;
     vp2 = a2 * vp2 + Rp2 * (1 - a2) * I;
 
@@ -65,14 +47,12 @@ function simulacao_3_3_bateria_dp_aukf()
     Voc = 108 * (3.0 + 1.1 * soc(k+1));
     Vcand = Voc - I * R0 - vp1 - vp2;
 
-    % Controle CV de fim de carga
     if I < 0 && Vcand > Vov
       I = max(-25.0, min(0.0, -(Vov - Voc + vp1 + vp2) / R0));
       Vcand = Vov;
     end
     vt(k+1) = Vcand;
 
-    % Balanco de perdas e termal fechado
     Pj(k) = I^2 * R0 + vp1^2/Rp1 + vp2^2/Rp2;
     if Tb(k) < Ton
       Ph = Pheater;
@@ -89,19 +69,17 @@ function simulacao_3_3_bateria_dp_aukf()
   fprintf('=== 1. Balanco Eletrotermico Multiorbital (5 Orbitas) ===\n');
   fprintf('SoC Minimo: %.2f %% | Tensao Min/Max: %.1f V / %.1f V\n', ...
           100*min(soc), min(vt), max(vt));
-  fprintf('Temperatura Bateria Inicial/Final: %.1f C -> %.1f C (Pico: %.1f C)\n', ...
+  fprintf('Temperatura Inicial/Final: %.1f C -> %.1f C (Pico: %.1f C)\n', ...
           Tb(1), Tb(end), max(Tb));
   fprintf('Perda Joule Media: %.1f W | Equilibrio Assintotico Teq: %.1f C\n', ...
           mean(Pj), Tch + mean(Pj)*Rth_cond);
-  fprintf('Energia no Eclipse: %.2f kWh (Util a 60%% DoD: %.2f kWh)\n\n', ...
+  fprintf('Energia Eclipse: %.2f kWh (Util a 60%% DoD: %.2f kWh)\n\n', ...
           (18560*tecl/3.6e6)/1e3, 9.0*0.60);
 
-  % =========================================================================
-  % 3. Estimador de Estado AUKF com Sage-Husa (Ruido sigma_v = 150 mV)
-  % =========================================================================
-  sigma_v = 0.150;            % Conforme declarado na tese
+  % 3. Estimador AUKF com Sage-Husa (sigma_v = 150 mV da tese)
+  sigma_v = 0.150;
   res_aukf = executa_aukf(Cn, Rp1, Rp2, R0_ref, sigma_v);
-  fprintf('=== 2. Desempenho do Estimador AUKF (Sage-Husa) ===\n');
+  fprintf('=== 2. Desempenho do Estimador AUKF ===\n');
   fprintf('Tempo de convergencia (erro < 1%%): %d s\n', res_aukf.tconv);
   fprintf('Erro medio de SoC: %.4f %% | Erro maximo: %.4f %%\n', ...
           res_aukf.err_mean, res_aukf.err_max);
@@ -130,7 +108,7 @@ function res = executa_aukf(Cn, Rp1, Rp2, R0, sigmaV)
   Wm = ones(1, 2*L+1) / (2*(L + lambda)); Wc = Wm;
   Wm(1) = lambda / (L + lambda); Wc(1) = Wm(1) + (1 - alpha^2 + beta);
 
-  x = [0.60; 0; 0];           % Chute inicial com erro severo (25%)
+  x = [0.60; 0; 0];
   P = diag([0.05, 0.01, 0.01]); Q = diag([1e-7, 1e-5, 1e-5]); R = sigmaV^2;
   socHat = zeros(1, N); vHat = zeros(1, N); socHat(1) = x(1);
 
@@ -161,7 +139,6 @@ function res = executa_aukf(Cn, Rp1, Rp2, R0, sigmaV)
     end
 
     innov = vMeas(k+1) - yp;
-    % Estimador adaptativo Sage-Husa para R
     dk = (1 - b) / (1 - b^(k+1));
     R = max(1e-8, (1 - dk)*R + dk*(innov^2 - Pyy0));
     Pyy = Pyy0 + R;
