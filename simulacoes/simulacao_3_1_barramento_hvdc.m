@@ -67,7 +67,7 @@ for i = 1:length(orbitas)
 
     for k = 1:N_pts-1
         t_mod = mod(t_vec(k), T_p);
-        ocv = 108 * (3.00 + 1.10 * soc_vec(k)); % OCV linearizada calibrada (324 V em 0%, 442.8 V em 100%)
+        ocv = 108 * (3.00 + 1.15 * soc_vec(k) - 0.25 * (1.0 - soc_vec(k))^2); % Modelo não linear unificado
         if t_mod <= t_e
             % Eclipse: Descarga controlada
             p_demand = P_ecl_load / eta_conv_nom;
@@ -144,7 +144,7 @@ for i = 1:length(orbitas)
 
     for k = 1:N_pts-1
         t_mod = mod(t_vec(k), T_p);
-        ocv = 108 * (3.00 + 1.10 * soc_vec(k));
+        ocv = 108 * (3.00 + 1.15 * soc_vec(k) - 0.25 * (1.0 - soc_vec(k))^2); % Modelo não linear unificado
         if t_mod <= t_e
             p_demand = P_ecl_load / eta_conv_nom;
             p_net = -p_demand;
@@ -342,6 +342,9 @@ if max(T_falha) > T_lim_chassi
 else
     fprintf('Status: OPERAÇÃO ESTÁVEL\n');
 end
+% Salva os resultados para que o script Python apenas desenhe sem recalcular (Abordagem 2)
+save('-v7', 'simulacoes/dados_simulacao_3_1.mat', 'sim_bess', 'sim_sc', 'casos_sc', 't_th', 'T_nom', 'T_falha');
+fprintf('Dados da Simulacao 3.1 salvos com sucesso em simulacoes/dados_simulacao_3_1.mat\n');
 fprintf('==============================================================================\n');
 fprintf('SIMULAÇÃO 3.1 EXECUTADA COM SUCESSO: DIAGNÓSTICO DE FALHAS CONCLUÍDO.\n');
 fprintf('==============================================================================\n');

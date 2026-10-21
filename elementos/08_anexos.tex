@@ -6,38 +6,109 @@
 \section*{ANEXOS}
 \addcontentsline{toc}{section}{ANEXOS}
 
-% ------------------------------------------------------------------------------
-% ANEXO A
-% ------------------------------------------------------------------------------
-\subsection*{ANEXO A -- Especificações Técnicas de Qualificação da Célula Spectrolab XTJ Prime}
-\addcontentsline{toc}{subsection}{ANEXO A -- Especificações Técnicas de Qualificação da Célula Spectrolab XTJ Prime}
+\subsection*{ANEXO A -- Extrato Técnico de Folhas de Dados de Componentes COTS e Materiais}
+\addcontentsline{toc}{subsection}{ANEXO A -- Extrato Técnico de Folhas de Dados de Componentes COTS e Materiais}
 
-Este anexo resume dados publicados pela Spectrolab para a célula solar de tripla junção XTJ Prime sob AM0 ($135{,}3\text{ mW/cm}^2=1353\text{ W/m}^2$, $28^\circ\text{C}$). O fabricante informa múltiplas geometrias; a área de $30{,}18\text{ cm}^2$ adotada no modelo não é apresentada aqui como dimensão universal de catálogo. Valores calculados a partir dessa área são identificados como tais.
+Este anexo consolida os extratos paramétricos das folhas de dados técnicos (\textit{datasheets}) e especificações de qualificação dos principais dispositivos semicondutores, células eletroquímicas e materiais magnéticos empregados na modelagem matemática e simulações dos Capítulos~3 e~4.
+
+\subsubsection*{A.1 Célula Solar Espacial de Tripla Junção (Spectrolab XTJ Prime)}
+Resume os dados de catálogo publicados pela Spectrolab para a célula solar de tripla junção GaInP/GaAs/Ge sob AM0 ($1353\,\mathrm{W/m^2}$, $28^\circ\text{C}$). Para a área ativa adotada de $30{,}18\,\mathrm{cm^2}$, os parâmetros elétricos e coeficientes térmicos são apresentados na Tabela~\ref{tab:anexo_xtj_prime}.
 
 \begin{table}[!ht]
 \centering
 \small
 \renewcommand{\arraystretch}{0.85}
-\caption{Extrato da folha de dados técnicos de qualificação espacial da célula Spectrolab XTJ Prime.}
-\label{tab:anexo_datasheet_spectrolab}
+\caption{Extrato da folha de dados técnicos da célula Spectrolab XTJ Prime.}
+\label{tab:anexo_xtj_prime}
 \begin{tabular}{lcc}
 \hline
 \textbf{Característica Elétrica / Física (AM0, 28°C)} & \textbf{Valor Típico} & \textbf{Unidade} \\ \hline
-Eficiência MPP BOL declarada & 30,7 & \% \\
-Tensão de Circuito Aberto ($V_{oc}$) & 2,720 & V \\
-Densidade de Corrente de Curto-Circuito ($J_{sc}$) & 18,0 & mA/cm$^2$ \\
-Tensão no Ponto de Máxima Potência ($V_{mp}$) & 2,406 & V \\
-Densidade de Corrente no MPP ($J_{mp}$) & 17,5 & mA/cm$^2$ \\
-Coeficiente Térmico de Tensão de Circuito Aberto ($dV_{oc}/dT$) & $-5,60$ & mV/K \\
-Coeficiente Térmico de Densidade de Corrente ($dJ_{sc}/dT$) & $+10,0$ & $\mu$A/(cm$^2$ K) \\
-Coeficiente Térmico de Tensão MPP ($dV_{mp}/dT$) & $-6,30$ & mV/K \\
-Coeficiente Térmico de Densidade de Corrente MPP ($dJ_{mp}/dT$) & $+5,0$ & $\mu$A/(cm$^2$ K) \\
-Espessura Típica do Substrato de Germânio & 140 & $\mu$m \\
-Densidade Mássica Superficial da Célula com \textit{Coverglass} & 84 & mg/cm$^2$ \\
-Tensão de Ruptura Reversa Típica ($V_{break}$) & $-25\text{ a }-30$ & V \\
-\hline
+Eficiência de Conversão no MPP BOL declarada & $30{,}7$ & \% \\
+Tensão de Circuito Aberto ($V_{oc}$) & $2{,}720$ & V \\
+Densidade de Corrente de Curto-Circuito ($J_{sc}$) & $18{,}0$ & mA/cm$^2$ \\
+Tensão no Ponto de Máxima Potência ($V_{mp}$) & $2{,}406$ & V \\
+Densidade de Corrente no MPP ($J_{mp}$) & $17{,}5$ & mA/cm$^2$ \\
+Coeficiente Térmico de Tensão de Circuito Aberto ($dV_{oc}/dT$) & $-5{,}60$ & mV/K \\
+Coeficiente Térmico de Densidade de Corrente ($dJ_{sc}/dT$) & $+10{,}0$ & $\mu$A/(cm$^2\cdot$K) \\
+Coeficiente Térmico de Tensão MPP ($dV_{mp}/dT$) & $-6{,}30$ & mV/K \\
+Coeficiente Térmico de Densidade de Corrente MPP ($dJ_{mp}/dT$) & $+5{,}0$ & $\mu$A/(cm$^2\cdot$K) \\
+Espessura Típica do Substrato de Germânio & $140$ & $\mu$m \\
+Massa Específica Superficial com \textit{Coverglass} CMG $150\,\mu\text{m}$ & $84$ & mg/cm$^2$ \\
+Tensão de Ruptura Reversa Típica ($V_{break}$) & $-25\text{ a }-30$ & V \\ \hline
 \end{tabular}
-\par\smallskip\noindent\textit{Nota:} Para a área adotada de $30{,}18\text{ cm}^2$, os dados $V_{mp}$ e $J_{mp}$ implicam $I_{mp}=0{,}52815\text{ A}$ e $P_{mp}=1{,}27073\text{ W}$ (dimensionado analiticamente). Esses valores arredondados não reproduzem exatamente os $30{,}7\%$ de eficiência declarados no \textit{datasheet}; a discrepância não foi recalibrada.
+\end{table}
+
+\subsubsection*{A.2 Transístor de Potência GaN HEMT (Infineon / GaN Systems GS66516T)}
+Apresenta as grandezas nominais do transistor GaN HEMT modo intensificação ($650\,\mathrm{V}$, $60\,\mathrm{A}$, encapsulamento \textit{top-side cooled} GaNPX), empregado no estágio primário dos conversores isolados de rack e Buck MPPT.
+
+\begin{table}[!ht]
+\centering
+\small
+\renewcommand{\arraystretch}{0.85}
+\caption{Parâmetros nominais do transistor GaN HEMT GS66516T a $25^\circ\text{C}$ (Infineon Technologies, 2024).}
+\label{tab:anexo_gan_gs66516t}
+\begin{tabular}{lccc}
+\hline
+\textbf{Parâmetro Elétrico / Térmico} & \textbf{Símbolo} & \textbf{Valor Nominal} & \textbf{Unidade} \\ \hline
+Tensão Máxima de Bloqueio Dreno-Fonte & $V_{DSS}$ & $650$ & V \\
+Corrente Contínua de Dreno ($T_c = 25^\circ\text{C}$) & $I_D$ & $60$ & A \\
+Resistência de Condução Nominal ($25^\circ\text{C}$) & $R_{on,25}$ & $25{,}0$ & m$\Omega$ \\
+Resistência de Condução Máxima ($150^\circ\text{C}$) & $R_{on,150}$ & $65{,}0$ & m$\Omega$ \\
+Coeficiente Térmico de Canal & $\alpha_{sc}$ & $0{,}0128$ & K$^{-1}$ \\
+Carga de Recuperação Reversa (sem junção $p\text{-}n$) & $Q_{rr}$ & $0$ & nC \\
+Capacitância de Saída ($V_{DS} = 400\,\mathrm{V}$) & $C_{oss}$ & $207$ & pF \\
+Carga Total de Porta ($V_{gate} = 6{,}0\,\mathrm{V}$) & $Q_g$ & $14{,}2$ & nC \\
+Resistência Térmica Junção-Caixa & $R_{th,jc}$ & $0{,}27$ & K/W \\
+Temperatura Máxima Admissível de Junção & $T_{j,max}$ & $150{,}0$ & $^\circ\text{C}$ \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection*{A.3 Célula Eletroquímica Espacial de Íons de Lítio (Li-ion NMC 22,5 Ah)}
+Sintetiza os parâmetros eletroquímicos e cinéticos representativos de células espaciais Li-ion NMC-811 ($22{,}52\,\mathrm{Ah}$ nominais), balizadas pelas normas NASA-TM-20210023692 e ECSS-E-HB-20-02A.
+
+\begin{table}[!ht]
+\centering
+\small
+\renewcommand{\arraystretch}{0.85}
+\caption{Parâmetros nominais de célula espacial Li-ion NMC de 22,5 Ah.}
+\label{tab:anexo_bateria_nmc}
+\begin{tabular}{lccc}
+\hline
+\textbf{Parâmetro Eletroquímico / Operacional} & \textbf{Símbolo} & \textbf{Valor Típico} & \textbf{Unidade} \\ \hline
+Capacidade Nominal da Célula & $C_n$ & $22{,}52$ & Ah \\
+Tensão Nominal de Operação & $V_{cell,nom}$ & $3{,}70$ & V \\
+Limite de Subtensão de Corte (UVLO) & $V_{UV,cell}$ & $3{,}00$ & V \\
+Teto de Tensão de Recarga (CV) & $V_{OV,cell}$ & $4{,}10$ & V \\
+Resistência Ôhmica Interna BOL ($20^\circ\text{C}$) & $R_{0,ref}$ & $45{,}0$ & m$\Omega$ \\
+Resistência Ôhmica Degradada EOL ($20^\circ\text{C}$) & $R_{0,eol}$ & $85{,}0$ & m$\Omega$ \\
+Energia de Ativação Cinética (Arrhenius) & $E_a$ & $0{,}32$ ($5{,}13 \times 10^{-20}\,\mathrm{J}$) & eV \\
+Constantes de Tempo de Polarização R-C & $\tau_1 / \tau_2$ & $57{,}6\text{ / }528{,}0$ & s \\
+Envelope Térmico Seguro de Recarga & $T_{bat}$ & $+10\text{ a }+25$ & $^\circ\text{C}$ \\ \hline
+\end{tabular}
+\end{table}
+
+\subsubsection*{A.4 Núcleo Magnético em Ferrite MnZn Grau 3C95 (Ferroxcube)}
+Especifica as propriedades geométricas e coeficientes de perda de Steinmetz Modificada (MSE) para o transformador planar de alta frequência ($150\,\mathrm{kHz}$) com núcleo U93/152/30 em ferrite 3C95.
+
+\begin{table}[!ht]
+\centering
+\small
+\renewcommand{\arraystretch}{0.85}
+\caption{Parâmetros eletromagnéticos e volumétricos do núcleo Ferroxcube 3C95 (U93/152/30).}
+\label{tab:anexo_ferroxcube_3c95}
+\begin{tabular}{lccc}
+\hline
+\textbf{Propriedade Magnética / Construtiva} & \textbf{Símbolo} & \textbf{Valor} & \textbf{Unidade} \\ \hline
+Área Efetiva de Seção Transversal & $A_e$ & $840$ & mm$^2$ \\
+Comprimento Efetivo do Circuito Magnético & $l_e$ & $536$ & mm \\
+Volume Efetivo do Núcleo Magnético & $V_e$ & $450\times 10^{-6}$ ($450\,\mathrm{cm^3}$) & m$^3$ \\
+Massa Efetiva de Ferrite por Par & $M_{fe}$ & $\approx 2{,}15$ & kg \\
+Indução de Saturação Magnética a $100^\circ\text{C}$ & $B_{sat}$ & $0{,}41$ & T \\
+Excursão de Indução Nominal Operacional & $\Delta B$ & $0{,}15$ & T \\
+Expoente de Frequência de Steinmetz & $\alpha$ & $1{,}46$ & -- \\
+Expoente de Indução de Steinmetz & $\beta$ & $2{,}52$ & -- \\
+Coeficiente Volumétrico Efetivo de Perda & $k_{fe}$ & $0{,}70$ & W/(m$^3\cdot$Hz$^\alpha\cdot$T$^\beta$) \\ \hline
+\end{tabular}
 \end{table}
 
 \vspace{0.8cm}

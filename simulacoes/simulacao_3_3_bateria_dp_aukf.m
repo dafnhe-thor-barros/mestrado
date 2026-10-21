@@ -9,21 +9,23 @@
 function simulacao_3_3_bateria_dp_aukf()
   close all; clc;
 
-  % 1. Parametros Eletroquimicos e Termicos da Bateria
-  Cn = 22.52;                 % Capacidade nominal equivalente [Ah]
-  Vuv = 324.0; Vov = 442.8;   % Limites de tensao [V]
-  Rp1 = 18e-3; Cp1 = 3200;    % R-C difusao rapida
-  Rp2 = 24e-3; Cp2 = 22000;   % R-C difusao lenta
-  R0_ref = 85e-3;             % Resistencia EOL a 20 C [Ohm]
-  Ea = 0.32 * 1.602176634e-19;% Energia de ativacao [J]
-  kB = 1.380649e-23;
-  Tref_K = 293.15;            % 20 C em K
+% 1. Parametros Eletroquimicos e Termicos da Bateria
+Cn = 22.52; % Capacidade nominal equivalente [Ah]
+Vuv = 324.0; Vov = 442.8; % Limites de tensao [V]
+Rp1 = 18e-3; Cp1 = 3200; % R-C difusao rapida
+Rp2 = 24e-3; Cp2 = 22000; % R-C difusao lenta
+R0_ref = 85e-3; % Resistencia EOL a 20 C [Ohm]
+Ea = 0.32 * 1.602176634e-19; % Energia de ativacao [J]
+kB = 1.380649e-23;
+Tref_K = 293.15; % 20 C em K
 
-  % Acoplamento condutivo corrigido via barras de aluminio e heat pipes
-  Cth = 54360;                % Capacitancia termica [J/K]
-  Rth_cond = 0.14;            % Resistencia termica condutiva [K/W] (corrigida de 4.8)
-  Tch = 15.0;                 % Temperatura de chassi [degC]
-  Pheater = 300.0; Ton = 10.0; Toff = 15.0;
+% Acoplamento termico de dois nos (Bateria + Chassi) e caso MLI isolado (A02)
+Cth_bat = 54360;    % Capacitancia termica do pack [J/K]
+Cth_chassi = 18000; % Capacitancia do chassi estrutural [J/K]
+Rth_cond = 0.14;    % Resistencia condutiva barras/heat-pipes [K/W]
+Rth_mli = 4.8;      % Resistencia equivalente de isolamento MLI [K/W]
+Tch = 15.0;         % Temperatura de referencia da estrutura [degC]
+Pheater = 300.0; Ton = 10.0; Toff = 15.0;
 
   dt = 2.0; Torb = 5926; tecl = 1128; nOrb = 5;
   N = floor(nOrb * Torb / dt) + 1;
@@ -39,10 +41,10 @@ function simulacao_3_3_bateria_dp_aukf()
     in_eclipse = mod(t_now, Torb) <= tecl;
     
     if in_eclipse
-      I = (18000 + 560) / 380; % Descarga no eclipse (~48.8 A)
+      I = 18500 / 400;         % Descarga no eclipse (~46.3 A)
       etaC = 1.0;
     else
-      I = -25.0;               % Recarga solar controlada [A]
+      I = -11.8;               % Recarga solar CC-CV [A]
       etaC = 0.995;
     end
 
@@ -55,7 +57,7 @@ function simulacao_3_3_bateria_dp_aukf()
     Vcand = Voc - I * R0 - vp1 - vp2;
 
     if I < 0 && Vcand > Vov
-      I = max(-25.0, min(0.0, -(Vov - Voc + vp1 + vp2) / R0));
+      I = max(-11.8, min(0.0, -(Vov - Voc + vp1 + vp2) / R0));
       Vcand = Vov;
     end
     vt(k+1) = Vcand;
@@ -81,10 +83,23 @@ function simulacao_3_3_bateria_dp_aukf()
   fprintf('Perda Joule Media: %.1f W | Equilibrio Assintotico Teq: %.1f C\n', ...
           mean(Pj), Tch + mean(Pj)*Rth_cond);
   fprintf('Energia Eclipse: %.2f kWh (Util a 60%% DoD: %.2f kWh)\n\n', ...
-          (18560*tecl/3.6e6)/1e3, 9.0*0.60);
+          (18560*tecl/3.6e6), 9.0*0.60);
 
-  % 3. Estimador AUKF com Sage-Husa (sigma_v = 150 mV da tese)
-  sigma_v = 0.150;
+% 3. Estimador AUKF: Execucao dos dois cenarios de ruido (A01)
+fprintf('=== 2. Desempenho do Estimador AUKF ===\n');
+res_aukf_15mV  = executa_aukf(Cn, Rp1, Rp2, R0_ref, 0.015);
+res_aukf_150mV = executa_aukf(Cn, Rp1, Rp2, R0_ref, 0.150);
+
+fprintf('[Ruido 15 mV]  Tconv: %d s | Erro medio: %.4f %% | RMSE: %.2f mV\n', ...
+    res_aukf_15mV.tconv, res_aukf_15mV.err_mean, res_aukf_15mV.rmse_mV);
+fprintf('[Ruido 150 mV] Tconv: %d s | Erro medio: %.4f %% | RMSE: %.2f mV\n', ...
+    res_aukf_150mV.tconv, res_aukf_150mV.err_mean, res_aukf_150mV.rmse_mV);
+
+% Exportacao dos dados brutos para o diagramador Python (Abordagem 2)
+t_vec_soc = (0:N-1) * dt;
+save('-v7', 'simulacoes/dados_simulacao_3_3.mat', ...
+     't_vec_soc', 'soc', 'vt', 'Tb', 'Pj', 'res_aukf_150mV', 'res_aukf_15mV');
+fprintf('Dados salvos em simulacoes/dados_simulacao_3_3.mat (Abordagem 2)\n');
   res_aukf = executa_aukf(Cn, Rp1, Rp2, R0_ref, sigma_v);
   fprintf('=== 2. Desempenho do Estimador AUKF ===\n');
   fprintf('Tempo de convergencia (erro < 1%%): %d s\n', res_aukf.tconv);

@@ -190,7 +190,7 @@ fprintf('\n');
 % ----------------------------------------------------------------------------
 fprintf('--- 3.1 DEGRADACAO DDD (EL. 1 MeV SOB COVERGLASS CMG 150 um EM SSO 700 km) ---\n');
 years = 0:0.1:10;
-Cd = 0.085;                % Eq. 34 da tese
+Cd = 0.12851;              % Eq. 34 da tese (updated)
 PhiX = 1.0e14;             % [e-/cm^2]
 PhiAnnual = 2.5e13;        % [e-/cm^2/ano] Fluencia eq. 1 MeV atras de CMG 150 um
 lossEnv10 = 0.052;         % Escurecimento UV + micrometeoroides (5.2% em 10 anos)

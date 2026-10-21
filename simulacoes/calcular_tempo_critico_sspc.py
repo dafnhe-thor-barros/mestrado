@@ -1,8 +1,8 @@
 """
-Simulação Numérica de Transiente de Curto-Circuito em Barramento HVDC (400 V)
-Determinação exata dos limites críticos de abertura da chave SSPC (SiC MOSFET):
-1. Tempo crítico de desarme (t_trip) para atingir o Limite Adiabático I^2t = 1500 A^2s
-2. Tempo de desarme e tempo de extinção (soft turn-off) para atingir o Limite de Ruptura Dielétrica V_spike = 1200 V
+Simulacao Numerica de Transiente de Curto-Circuito em Barramento HVDC (400 V)
+Determinacao exata dos limites criticos de abertura da chave SSPC (SiC MOSFET):
+1. Tempo critico de desarme (t_trip) para atingir o Limite Adiabatico I^2t = 1500 A^2s
+2. Tempo de desarme e tempo de extincao (soft turn-off) para atingir o Limite de Ruptura Dieletrica V_spike = 1200 V
 """
 
 import numpy as np
@@ -52,14 +52,14 @@ def simular_curto(t_trip, L_line, C_bus, R_line=14.0e-3, R_sc=1.0e-3, V_bus=400.
     return i_peak, i2t, v_sw_max
 
 print("="*75)
-print("1. VARREDURA PARA O LIMITE ADIABÁTICO (I^2t = 1500 A^2s)")
+print("1. VARREDURA PARA O LIMITE ADIABATICO (I^2t = 1500 A^2s)")
 print("="*75)
 
-# Cenário WCA (L = 4.0 uH, C = 1.5 mF, R_line = 14 mOhm, R_sc = 1 mOhm)
+# Cenario WCA (L = 4.0 uH, C = 1.5 mF, R_line = 14 mOhm, R_sc = 1 mOhm)
 L_wca = 4.0e-6
 C_wca = 1.5e-3
 
-# Cenário Nominal (L = 1.8 uH, C = 4.7 mF)
+# Cenario Nominal (L = 1.8 uH, C = 4.7 mF)
 L_nom = 1.8e-6
 C_nom = 4.7e-3
 
@@ -87,22 +87,26 @@ i2t_nom = np.array(i2t_nom)
 v_spike_unclamp_wca = np.array(v_spike_unclamp_wca)
 v_spike_unclamp_nom = np.array(v_spike_unclamp_nom)
 
-# Encontrar cruze de 1500 A^2s no WCA
+# Encontrar cruze de 1500 A^2s no WCA com interpolação linear refinada (A09)
 idx_crit_wca = np.where(i2t_wca >= 1500.0)[0][0]
-t_crit_wca = t_trips[idx_crit_wca]
-i_pk_crit_wca, i2t_crit_wca, _ = simular_curto(t_crit_wca, L_wca, C_wca, clamp_ativo=True)
+t_crit_wca = float(
+    np.interp(
+        1500.0,
+        [i2t_wca[idx_crit_wca - 1], i2t_wca[idx_crit_wca]],
+        [t_trips[idx_crit_wca - 1], t_trips[idx_crit_wca]],
+    )
+)
+i_pk_crit_wca, i2t_crit_wca, _ = simular_curto(
+    t_crit_wca, L_wca, C_wca, clamp_ativo=True
+)
 
-# Encontrar cruze de 1500 A^2s no Nominal
-idx_crit_nom = np.where(i2t_nom >= 1500.0)[0]
-if len(idx_crit_nom) > 0:
-    t_crit_nom = t_trips[idx_crit_nom[0]]
-else:
-    t_crit_nom = None
-
-print(f"CENÁRIO WCA (L = 4.0 µH, C = 1.5 mF):")
-print(f"  -> Tempo crítico para atingir I^2t = 1500 A^2s: t_trip = {t_crit_wca*1e6:.2f} µs")
-print(f"  -> Corrente de pico atingida: {i_pk_crit_wca/1e3:.2f} kA")
-print(f"  -> I^2t exato calculado: {i2t_crit_wca:.1f} A^2s")
+print(f"CENÁRIO WCA (L = 4.0 uH, C = 1.5 mF):")
+print(
+    f" -> Tempo crítico exato para I^2t = 1500 A^2s: t_trip ="
+    f" {t_crit_wca*1e6:.2f} us"
+)  # Unidade corrigida para microsegundos
+print(f" -> Corrente de pico atingida: {i_pk_crit_wca/1e3:.2f} kA")
+print(f" -> I^2t exato interpolado: {i2t_crit_wca:.1f} A^2s")
 
 # Encontrar cruze de V_spike = 1200 V sem clamp (tau_ext = 0.5 us)
 idx_v1200_wca = np.where(v_spike_unclamp_wca >= 1200.0)[0][0]
@@ -114,22 +118,22 @@ t_v1200_nom = t_trips[idx_v1200_nom]
 i_pk_v1200_nom, _, v_sw_1200_nom = simular_curto(t_v1200_nom, L_nom, C_nom, clamp_ativo=False, tau_ext=0.5e-6)
 
 print("\n" + "="*75)
-print("2. TEMPO DE RETARDO QUE ATINGE V_spike = 1200 V (SEM CLAMP, tau_ext = 0.5 µs)")
+print("2. TEMPO DE RETARDO QUE ATINGE V_spike = 1200 V (SEM CLAMP, tau_ext = 0.5 us)")
 print("="*75)
-print(f"CENÁRIO WCA (L = 4.0 µH):")
-print(f"  -> Tempo de retardo t_trip para V_spike = 1200 V: {t_v1200_wca*1e6:.3f} µs ({t_v1200_wca*1e9:.1f} ns)")
+print(f"CENARIO WCA (L = 4.0 uH):")
+print(f"  -> Tempo de retardo t_trip para V_spike = 1200 V: {t_v1200_wca*1e6:.3f} us ({t_v1200_wca*1e9:.1f} ns)")
 print(f"  -> Corrente no momento da abertura: {i_pk_v1200_wca:.1f} A")
-print(f"  -> Tensão de pico induzida V_sw: {v_sw_1200:.1f} V")
+print(f"  -> Tensao de pico induzida V_sw: {v_sw_1200:.1f} V")
 
-print(f"\nCENÁRIO NOMINAL (L = 1.8 µH):")
-print(f"  -> Tempo de retardo t_trip para V_spike = 1200 V: {t_v1200_nom*1e6:.3f} µs ({t_v1200_nom*1e9:.1f} ns)")
+print(f"\nCENARIO NOMINAL (L = 1.8 uH):")
+print(f"  -> Tempo de retardo t_trip para V_spike = 1200 V: {t_v1200_nom*1e6:.3f} us ({t_v1200_nom*1e9:.1f} ns)")
 print(f"  -> Corrente no momento da abertura: {i_pk_v1200_nom:.1f} A")
-print(f"  -> Tensão de pico induzida V_sw: {v_sw_1200_nom:.1f} V")
+print(f"  -> Tensao de pico induzida V_sw: {v_sw_1200_nom:.1f} V")
 
 print("\n" + "="*75)
-print("3. TEMPO DE EXTINÇÃO MÍNIMO (SOFT TURN-OFF) PARA EVITAR V_spike > 1200 V")
+print("3. TEMPO DE EXTINCAO MINIMO (SOFT TURN-OFF) PARA EVITAR V_spike > 1200 V")
 print("="*75)
-# Se t_trip = 15 µs (nominal) ou 100 µs (WCA), qual deve ser o tau_ext mínimo sem TVS?
+# Se t_trip = 15 us (nominal) ou 100 us (WCA), qual deve ser o tau_ext minimo sem TVS?
 # V_spike = V_bus + L * (i_trip / tau_ext) <= 1200 V
 # => L * i_trip / tau_ext <= 1200 - 400 = 800 V
 # => tau_ext >= L * i_trip / 800 V
@@ -143,12 +147,12 @@ tau_min_15us_wca = L_wca * i_pk_15us_wca / (1200.0 - 400.0)
 i_pk_100us_wca, _, _ = simular_curto(100e-6, L_wca, C_wca)
 tau_min_100us_wca = L_wca * i_pk_100us_wca / (1200.0 - 400.0)
 
-print(f"Para desarme em t_trip = 15 µs (Nominal, L = 1.8 µH, i_trip = {i_pk_15us_nom/1e3:.2f} kA):")
-print(f"  -> Tempo de extinção suave mínimo necessário: tau_ext >= {tau_min_15us_nom*1e6:.2f} µs")
+print(f"Para desarme em t_trip = 15 us (Nominal, L = 1.8 uH, i_trip = {i_pk_15us_nom/1e3:.2f} kA):")
+print(f"  -> Tempo de extincao suave minimo necessario: tau_ext >= {tau_min_15us_nom*1e6:.2f} s")
 
-print(f"Para desarme em t_trip = 15 µs (WCA, L = 4.0 µH, i_trip = {i_pk_15us_wca/1e3:.2f} kA):")
-print(f"  -> Tempo de extinção suave mínimo necessário: tau_ext >= {tau_min_15us_wca*1e6:.2f} µs")
+print(f"Para desarme em t_trip = 15 us (WCA, L = 4.0 uH, i_trip = {i_pk_15us_wca/1e3:.2f} kA):")
+print(f"  -> Tempo de extincao suave minimo necessario: tau_ext >= {tau_min_15us_wca*1e6:.2f} s")
 
-print(f"Para desarme em t_trip = 100 µs (WCA, L = 4.0 µH, i_trip = {i_pk_100us_wca/1e3:.2f} kA):")
-print(f"  -> Tempo de extinção suave mínimo necessário: tau_ext >= {tau_min_100us_wca*1e6:.2f} µs")
-print(f"  -> Se forçado a desligar em tau_ext = 0.5 µs: V_spike = 400 + 4e-6 * ({i_pk_100us_wca:.1f} / 0.5e-6) = {400 + L_wca * i_pk_100us_wca / 0.5e-6:.1f} V (11.99 kV!)")
+print(f"Para desarme em t_trip = 100 us (WCA, L = 4.0 uH, i_trip = {i_pk_100us_wca/1e3:.2f} kA):")
+print(f"  -> Tempo de extincao suave minimo necessario: tau_ext >= {tau_min_100us_wca*1e6:.2f} s")
+print(f"  -> Se forcado a desligar em tau_ext = 0.5 us: V_spike = 400 + 4e-6 * ({i_pk_100us_wca:.1f} / 0.5e-6) = {400 + L_wca * i_pk_100us_wca / 0.5e-6:.1f} V (11.99 kV!)")

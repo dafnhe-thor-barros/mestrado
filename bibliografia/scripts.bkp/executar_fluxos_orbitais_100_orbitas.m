@@ -10,7 +10,7 @@ function executar_fluxos_orbitais_100_orbitas()
   close all; clc;
 
   sigma = 5.670374e-8; G0 = 1361.0; qEarth_IR = 237.0; albedo = 0.30;
-  RE = 6371e3; RSun = 696340e3; dES = 1.496e11; mu = 398600.4418e9;
+  RE = 6378e3; RSun = 696340e3; dES = 1.496e11; mu = 398600.4418e9;
   
   alphaEOL = 0.14; epsEOL = 0.88; % OSR EOL
   etaFin = 0.945; Qint = 41983.0; Arad = 88.6; dT_cond = 25.0;
@@ -22,7 +22,7 @@ function executar_fluxos_orbitais_100_orbitas()
   Crad = 358830.0;
 
   regimes = {
-    'SSO 700 km', 700, 5926.0, 0.32, 85.0, 0.0;
+    'SSO 700 km', 700, 5926.0, 0.32, 58.3, 0.0;
     'LEO 500 km', 500, 5677.0, 0.45, 20.0, 2148.0
   };
 
@@ -113,7 +113,7 @@ function executar_fluxos_orbitais_100_orbitas()
 end
 
 function F = calcula_fator_visao(hkm, phiDeg)
-  RE = 6371.0; H = (RE + hkm) / RE; phi = phiDeg * pi / 180;
+  RE = 6378.0; H = (RE + hkm) / RE; phi = phiDeg * pi / 180;
   thetaM = asin(1 / H); r = sqrt(H^2 - 1);
   if phi <= pi/2 - thetaM
     F = cos(phi) / H^2;

@@ -55,6 +55,13 @@ function simulacao_4_6_fadiga_bga_protecao()
 
   fprintf('Corrente Nominal: %.1f A | Limite de Corte Ativo: %.1f A\n', I_nom, I_lim);
   fprintf('Janela de Desarme (Trip-off): %.1f us\n', t_trip_us);
+  % Conciliacao com o Script 3.1: I_lim e o patamar da limitacao ativa (LCL). O curto
+  % franco sem limitacao (R=1 mOhm, C=1,5 mF, L=4 uH, t_trip=15 us) atinge 3,12 kA e
+  % I^2t = 145,5 A^2s (Script 3.1). E = V*I_lim*t_trip vale apenas se a corrente for
+  % grampeada em I_lim por controle de gate (di/dt <= 1 A/us).
+  I_pk_curto_31 = 3120.0; I2t_curto_31 = 145.5;
+  fprintf('Ref. Script 3.1 (curto sem limitacao): Pico %.0f A | I^2t %.1f A^2s | Pico/I_lim = %.1f\n', ...
+          I_pk_curto_31, I2t_curto_31, I_pk_curto_31 / I_lim);
   fprintf('Energia Dissipada no Semicondutor no Trip: %.2f J\n', E_dissipada_chave);
   fprintf('Energia Indutiva no TVS: %.3f J | Tempo de Desmagnetizacao: %.2f us\n', ...
           E_indutiva, t_desmag * 1e6);

@@ -39,10 +39,10 @@ function simulacao_3_3_bateria_dp_aukf()
     in_eclipse = mod(t_now, Torb) <= tecl;
     
     if in_eclipse
-      I = (18000 + 560) / 380; % Descarga no eclipse (~48.8 A)
+      I = 18500 / 400;         % Descarga no eclipse (~46.3 A)
       etaC = 1.0;
     else
-      I = -25.0;               % Recarga solar controlada [A]
+      I = -11.8;               % Recarga solar CC-CV [A]
       etaC = 0.995;
     end
 
@@ -55,7 +55,7 @@ function simulacao_3_3_bateria_dp_aukf()
     Vcand = Voc - I * R0 - vp1 - vp2;
 
     if I < 0 && Vcand > Vov
-      I = max(-25.0, min(0.0, -(Vov - Voc + vp1 + vp2) / R0));
+      I = max(-11.8, min(0.0, -(Vov - Voc + vp1 + vp2) / R0));
       Vcand = Vov;
     end
     vt(k+1) = Vcand;
@@ -81,7 +81,7 @@ function simulacao_3_3_bateria_dp_aukf()
   fprintf('Perda Joule Media: %.1f W | Equilibrio Assintotico Teq: %.1f C\n', ...
           mean(Pj), Tch + mean(Pj)*Rth_cond);
   fprintf('Energia Eclipse: %.2f kWh (Util a 60%% DoD: %.2f kWh)\n\n', ...
-          (18560*tecl/3.6e6)/1e3, 9.0*0.60);
+          (18560*tecl/3.6e6), 9.0*0.60);
 
   % 3. Estimador AUKF com Sage-Husa (sigma_v = 150 mV da tese)
   sigma_v = 0.150;

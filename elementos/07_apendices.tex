@@ -153,7 +153,7 @@ com parâmetros $V_{th0} \approx 0{,}28\text{ V}$, $\kappa_T \approx 1{,}10\text
 
 \subsubsection*{A.8 Linearização da Equação da Aleta de APG e Expansão de Taylor de Lyapunov}
 
-Na aleta sanduíche de APG ($k_{eff} t_{fin} \frac{d^2 T}{dx^2} = 2 \varepsilon_{ir} \sigma (T^4 - T_{space}^4)$, com $T(0)=T_{root}$ e $dT/dx|_{L_{fin}}=0$), fatora-se $T^4 - T_{space}^4 = (T - T_{space})(T + T_{space})(T^2 + T_{space}^2) \approx h_{rad}(T - T_{space})$, onde $h_{rad} = \varepsilon_{ir}\sigma(T_{root} + T_{space})(T_{root}^2 + T_{space}^2) \approx 1{,}512\text{ W/(m}^2\text{K)}$. Integrando a EDO linearizada $d^2\theta/dx^2 - m^2\theta = 0$ ($\theta = T - T_{space}$, $m = \sqrt{2h_{rad}/(k_{eff}t_{fin})} \approx 1{,}089\text{ m}^{-1}$), obtém-se $\theta(x) = \theta_{root}\cosh[m(L_{fin}-x)]/\cosh(mL_{fin})$ e $\eta_{fin,ideal} = \tanh(mL_{fin})/(mL_{fin}) \approx 0{,}9978$.
+Na aleta sanduíche de APG ($k_{eff} t_{fin} \frac{d^2 T}{dx^2} = 2 \varepsilon_{ir} \sigma (T^4 - T_{space}^4)$, com $T(0)=T_{root}$ e $dT/dx|_{L_{fin}}=0$), fatora-se $T^4 - T_{space}^4 = (T - T_{space})(T + T_{space})(T^2 + T_{space}^2) \approx h_{rad}(T - T_{space})$, onde $h_{rad} = \varepsilon_{ir}\sigma(T_{root} + T_{space})(T_{root}^2 + T_{space}^2) \approx 1{,}622\text{ W/(m}^2\text{K)}$. Integrando a EDO linearizada $d^2\theta/dx^2 - m^2\theta = 0$ ($\theta = T - T_{space}$, $m = \sqrt{2h_{rad}/(k_{eff}t_{fin})} \approx 1{,}128\text{ m}^{-1}$), obtém-se $\theta(x) = \theta_{root}\cosh[m(L_{fin}-x)]/\cosh(mL_{fin})$ e $\eta_{fin,ideal} = \tanh(mL_{fin})/(mL_{fin}) \approx 0{,}9976$.
 
 De modo análogo, para o equilíbrio eletrotérmico da junção ($C_{th} d(\Delta T)/dt = [P_{leak}(T_j^*+\Delta T)-P_{leak}(T_j^*)] - [\dot{Q}_{out}(T_j^*+\Delta T)-\dot{Q}_{out}(T_j^*)]$), a candidata de Lyapunov $V(\Delta T) = \frac{1}{2}C_{th}(\Delta T)^2$ possui derivada temporal exata:
 \begin{align}
@@ -208,4 +208,7 @@ As rotinas computacionais desenvolvidas para as simulações multifísicas encon
 \addcontentsline{toc}{subsubsection}{B.5 Confiabilidade Termomecânica BGA e Proteção Ativa SSPC}
 \lstinputlisting[caption={Rotina computacional da vida em fadiga termomecânica por Coffin--Manson--Engelmaier e dimensionamento da proteção de estado sólido SSPC (\texttt{simulacao\_4\_6\_fadiga\_bga\_protecao.m}).}]{simulacoes/simulacao_4_6_fadiga_bga_protecao.m}
 
-
+\vspace{0.6cm}
+\subsubsection*{B.6 Transiente RLC de Curto-Circuito Franco e Tempo Crítico de Desarme do SSPC}
+\addcontentsline{toc}{subsubsection}{B.6 Transiente RLC de Curto-Circuito e Tempo Crítico do SSPC}
+\lstinputlisting[language=Python, caption={Integração numérica explícita (passo de 10~ns) do transiente RLC de curto-circuito, com determinação do tempo crítico de desarme para o limite adiabático $I^2t$ e do tempo de extinção suave (\texttt{calcular\_tempo\_critico\_sspc.py}).}]{simulacoes/calcular_tempo_critico_sspc.py}

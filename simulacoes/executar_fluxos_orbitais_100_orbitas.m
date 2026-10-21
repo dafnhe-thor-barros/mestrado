@@ -22,7 +22,7 @@ function executar_fluxos_orbitais_100_orbitas()
   Crad = 358830.0;
 
   regimes = {
-    'SSO 700 km', 700, 5926.0, 0.32, 85.0, 0.0;
+    'SSO 700 km', 700, 5926.0, 0.32, 58.3, 0.0;
     'LEO 500 km', 500, 5677.0, 0.45, 20.0, 2148.0
   };
 

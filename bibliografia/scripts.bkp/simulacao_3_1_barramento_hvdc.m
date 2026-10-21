@@ -269,7 +269,9 @@ for c = 1:length(casos_sc)
     sim_sc(c).i_kA = i_sc / 1e3;
     sim_sc(c).i2t  = i2t_accum;
 
-    fprintf('Cenário: %-32s | Pico: %5.2f kA | I^2t: %6.1f A^2s | V_max SSPC: %6.1f V | ', ...
+    t_crit = 74.8e-6; % Critical trip time (us) from audit
+    t_block = t_crit + 15e-6; % Blocking time (trip + 15 us)
+    fprintf('Cenário: %-32s | Pico: %5.2f kA | I^2t: %6.1f A^2s | V_max SSPC: %6.1f V | t_crit: %.2f us | t_block: %.2f us | ', ...
         casos_sc(c).nome, max(i_sc)/1e3, i2t_accum, v_switch_max);
 
     if i2t_accum > I2t_lim_sic

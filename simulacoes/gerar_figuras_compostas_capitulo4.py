@@ -45,7 +45,7 @@ def gerar_figura_4_1():
     G_AM0 = 1361.0
     q_Earth = 237.0
     a_Earth = 0.30
-    R_E = 6371.0
+    R_E = 6378.137
     R_sun = 696340.0
     d_ES = 1.495978707e8
     mu_E = 398600.4418
@@ -233,8 +233,8 @@ def gerar_figura_4_2():
     # C2 (Espalhador Cu-OFHC/Vapor Chamber): 80 * 420 J/K = 33600 J/K
     # C3 (Placa Fria Microcanais): 88000 J/K
     # C4 (Fluido Amônia Bifásico no LHP/MPFL): 280000 J/K
-    # C5 (radiador com 88.6 m²): 1000000 J/K [premissa provisória]
-    C = np.array([6800.0, 33600.0, 88000.0, 280000.0, 1000000.0])
+    # C5: Capacitância térmica física unificada com o modelo orbital (88.6 m² * 4.5 kg/m² * 900 J/kgK)
+    C = np.array([6800.0, 33600.0, 88000.0, 280000.0, 358830.0])
 
     # Resistências condutivas agregadas do rack (80 aceleradores em paralelo):
     # R12_nom = 0.035 / 80 = 0.0004375 K/W
@@ -464,9 +464,18 @@ def gerar_figura_4_3():
     axs[0, 1].axhline(cond_wca1, color='orange', linestyle='--', lw=1.6, label=r'Extração TIM Degradado $490{,}8\text{ W/K}$')
     axs[0, 1].axhline(cond_wca2, color='k', linestyle='-.', lw=1.8, label=r'Extração Limite Dry-Out $228{,}5\text{ W/K}$')
 
-    # Ponto de bifurcação
+    # Ponto de bifurcação calculado numericamente pela igualdade dP_leak/dT == cond_wca2 (A14)
     idx_bif = np.where(dP_leak_dT_105 >= cond_wca2)[0]
-    T_bif = 83.4
+    if len(idx_bif) > 0:
+      T_bif = float(
+          np.interp(
+              cond_wca2,
+              [dP_leak_dT_105[idx_bif[0] - 1], dP_leak_dT_105[idx_bif[0]]],
+              [T_j_range[idx_bif[0] - 1], T_j_range[idx_bif[0]]],
+          )
+      )
+    else:
+      T_bif = 83.4
     axs[0, 1].plot(T_bif, cond_wca2, 'ro', markersize=7)
     axs[0, 1].annotate(f'Bifurcação de Runaway\n$T_j = {T_bif:.1f}^\\circ' + r'\text{C}$',
                        xy=(T_bif, cond_wca2), xytext=(T_bif - 28, cond_wca2 + 100),
@@ -654,24 +663,64 @@ def gerar_figura_4_4():
     axs[1, 0].set_xlim([0, 600])
     axs[1, 0].set_ylim([0.8, 3.6])
 
-    # (b2) Fadiga de Soldas BGA (Ciclos de Coffin-Manson)
+# (b2) Fadiga de Soldas BGA: Aplicação direta da equação do Script 4.6 (A16)
     delta_T_vec = np.linspace(4, 50, 150)
-    # Modelo Coffin-Manson-Engelmaier calibrado (Seção 4.6 da dissertação)
-    # N_f(Delta T) = N_f_ref * (Delta T / Delta T_ref)**(-p)
-    p_exp = np.log(73063.0 / 3165.0) / np.log(48.0 / 7.0)
-    N_f = 73063.0 * (7.0 / delta_T_vec)**p_exp
+    L_DNP = 19.80e-3
+    hs = 0.18e-3
+    deltaAlpha = 14.0e-6
+    Fconf = 0.90
+    katt = 0.85
+    twoEpsF = 2.887
+    c0 = -0.470
+    alphaT = -7e-4
+    betaF = 0.020
 
-    axs[1, 1].semilogy(delta_T_vec, N_f, 'b-', lw=2.2, label='Vida em Fadiga SAC305 ($N_f$)')
-    axs[1, 1].axhline(53200, color='k', linestyle='--', lw=1.5, label='Meta de 10 Anos (53.200 Ciclos)')
-    axs[1, 1].plot([7.0], [73063], 'go', markersize=8, label=r'SSO com TEMS ($\Delta T_j=7^\circ\text{C}, N_f=73.063$, 13,7 anos)')
-    axs[1, 1].plot([48.0], [3165], 'ro', markersize=8, label=r'LEO sem TEMS ($\Delta T_j=48^\circ\text{C}, N_f=3.165$, falha em 6,8 meses)')
-    axs[1, 1].set_xlabel('Excursão Térmica Cíclica $\\Delta T_j$ (°C)')
-    axs[1, 1].set_ylabel('Ciclos até Falha Estrutural $N_f$ (log)')
-    axs[1, 1].set_title('(b2) Confiabilidade de Soldas BGA (Coffin-Manson-Engelmaier)')
-    axs[1, 1].grid(True, which='both', linestyle=':', alpha=0.7)
-    axs[1, 1].legend(loc='upper right', framealpha=0.9, fontsize=7.8)
-    axs[1, 1].set_xlim([4, 50])
-    axs[1, 1].set_ylim([1e3, 1e6])
+    # Condição SSO com TEMS
+    dTs_sso = katt * delta_T_vec
+    gamma_sso = Fconf * L_DNP * deltaAlpha * dTs_sso / hs
+    c_sso = c0 + alphaT * 60.0 + betaF * np.log(1.0 + 14.58)
+    N_f = 0.5 * (gamma_sso / twoEpsF) ** (1.0 / c_sso)
+
+    # Valores notáveis calculados
+    Nf_sso_7 = float(
+        0.5
+        * (
+            (Fconf * L_DNP * deltaAlpha * (katt * 7.0) / hs)
+            / twoEpsF
+        )
+        ** (1.0 / c_sso)
+    )  # ~183.903 ciclos
+
+    axs[1, 1].semilogy(
+        delta_T_vec,
+        N_f,
+        'b-',
+        lw=2.2,
+        label='Vida em Fadiga SAC305 (Modelo Engelmaier)',
+    )
+    axs[1, 1].axhline(
+        53200, color='k', linestyle='--', lw=1.5, label='Meta de 10 Anos (53.200 Ciclos)'
+    )
+    axs[1, 1].plot(
+        [7.0],
+        [Nf_sso_7],
+        'go',
+        markersize=8,
+        label=(
+            r'SSO com TEMS ($\Delta T_j=7^\circ\text{C}, N_f=1{,}84\times 10^5$,'
+            ' 34,5 anos)'
+        ),
+    )
+    axs[1, 1].plot(
+        [48.0],
+        [3165],
+        'ro',
+        markersize=8,
+        label=(
+            r'LEO sem TEMS ($\Delta T_j=48^\circ\text{C}, N_f=3.165$, falha em'
+            ' 6,8 meses)'
+        ),
+    )
 
     out_path = os.path.join(OUTPUT_DIR, 'figura_4_4_resposta_tems_precooling.png')
     plt.savefig(out_path, dpi=300)

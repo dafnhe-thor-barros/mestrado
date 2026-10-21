@@ -10,10 +10,20 @@ function simulacao_4_1_fluxos_orbitais()
   close all; clc;
 
   sigma = 5.670374e-8; G0 = 1361.0; qEarth_IR = 237.0; albedo = 0.30;
-  RE = 6371e3; RSun = 696340e3; dES = 1.496e11;
-  
+  RE = 6378.137e3; RSun = 696340e3; dES = 1.496e11;
+
   alphaEOL = 0.14; epsEOL = 0.88; % OSR EOL
   etaFin = 0.945; Qint = 41983.0; Arad = 88.6; dT_cond = 25.0;
+
+
+  % Baseada em 88.6 m^2, 4.5 kg/m^2 e cp = 900 J/(kg*K)
+  C_rad_fisica = 358830.0; % [J/K] Unificada com a rede nodal
+
+  % Salvar dados orbitais e curvas de sensibilidade angular para Python (Abordagem 2)
+  save('-v7', 'simulacoes/dados_simulacao_4_1.mat', ...
+     'hkm', 'labels', 'Trad_lim', 'Arad', 'Qint', 'sigma', 'alphaEOL', 'epsEOL', 'etaFin', ...
+     'Torb_leo', 't_vec', 'S_frac');
+  fprintf('Dados salvos em simulacoes/dados_simulacao_4_1.mat (Abordagem 2)\n');
   phiRad = 90.0;
   Trad_lim = 55.0;
 
@@ -76,7 +86,7 @@ function simulacao_4_1_fluxos_orbitais()
 end
 
 function F = calcula_fator_visao(hkm, phiDeg)
-  RE = 6371.0; H = (RE + hkm) / RE; phi = phiDeg * pi / 180;
+  RE = 6378.137; H = (RE + hkm) / RE; phi = phiDeg * pi / 180;
   thetaM = asin(1 / H); r = sqrt(H^2 - 1);
   if phi <= pi/2 - thetaM
     F = cos(phi) / H^2;

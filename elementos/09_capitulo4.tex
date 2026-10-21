@@ -24,7 +24,7 @@ A Tabela~\ref{tab:parametros_orbitais_comparativos} sintetiza as propriedades f�
 \hline
 \textbf{Propriedade / Condição de Contorno} & \textbf{SSO Dawn-Dusk (Projeto)} & \textbf{LEO Convencional} & \textbf{GEO} & \textbf{Classificação Epistêmica} \\ \hline
 Altitude Orbital Nominal ($h$) & $700{,}0\text{ km}$ & $500{,}0\text{ km}$ & $35.786{,}0\text{ km}$ & Parâmetro orbital de projeto \\
-Semieixo Maior ($a$) & $7071{,}0\text{ km}$ & $6871{,}0\text{ km}$ & $42.164{,}0\text{ km}$ & Dimensionado analiticamente ($R_E = 6371\text{ km}$) \\
+Semieixo Maior ($a$) & $7078{,}1\text{ km}$ & $6878{,}1\text{ km}$ & $42.164{,}0\text{ km}$ & Dimensionado analiticamente ($R_E = 6378{,}137\text{ km}$) \\
 Excentricidade da Órbita ($e$) & $0{,}001$ ($\approx$ circular) & $0{,}001$ ($\approx$ circular) & $0{,}000$ (circular) & Premissa de projeto Órbita operacional congelada \\
 Inclinação Orbital ($i$) & $98{,}19^\circ$ (retrógrada) & $51{,}60^\circ$ (ISS) & $0{,}00^\circ$ (equatorial) & \textbf{} Condição heliossíncrona \\
 Hora Local do Nó Ascendente (LTAN) & 18:00 (Dawn-Dusk) & Variante ($0\text{ a }24\text{ h}$) & N/A & Parâmetro orbital de projeto \\
@@ -83,7 +83,7 @@ O cosseno do ângulo de incidência solar sobre uma dada superfície $k$ de norm
 
 \subsubsection{Modelo de Ocultação Cônica: Umbra, Penumbra e Transição Suave}
 
-A representação dos eclipses adota a formulação analítica de ocultação cônica exata baseada na extensão angular finita do disco solar (ECSS-E-HB-31-01 Parte 1; NASA/TM-4527). A partir do raio solar ($R_\odot = 696.340\text{ km}$), distância heliocêntrica ($d_{\odot-E} \approx 1{,}496 \times 10^8\text{ km}$) e raio terrestre ($R_E = 6371{,}0\text{ km}$), definem-se os semi-ângulos aparentes subtendidos pelo Sol ($\alpha_\odot \approx 0{,}267^\circ$) e pela Terra ($\alpha_E(t) = \arcsin[R_E/\|\mathbf{r}_{sat}(t)\|]$), bem como a separação angular aparente $\gamma(t) = \arccos[-\mathbf{r}_{sat}(t) \cdot \hat{\mathbf{s}}(t) / \|\mathbf{r}_{sat}(t)\|]$.
+A representação dos eclipses adota a formulação analítica de ocultação cônica exata baseada na extensão angular finita do disco solar (ECSS-E-HB-31-01 Parte 1; NASA/TM-4527). A partir do raio solar ($R_\odot = 696.340\text{ km}$), distância heliocêntrica ($d_{\odot-E} \approx 1{,}496 \times 10^8\text{ km}$) e do raio equatorial terrestre ($R_E = 6378\text{ km}$, adotando o raio equatorial padrão WGS-84 $R_E = 6378{,}137\text{ km}$), definem-se os semi-ângulos aparentes subtendidos pelo Sol ($\alpha_\odot \approx 0{,}267^\circ$) e pela Terra ($\alpha_E(t) = \arcsin[R_E/\|\mathbf{r}_{sat}(t)\|]$), bem como a separação angular aparente $\gamma(t) = \arccos[-\mathbf{r}_{sat}(t) \cdot \hat{\mathbf{s}}(t) / \|\mathbf{r}_{sat}(t)\|]$.
 
 O fator de iluminação solar efetiva $S(t) \in [0, 1]$ é modelado pela fração desobstruída do disco solar visível:
 \begin{equation}
@@ -291,12 +291,32 @@ Para conferir rigidez estrutural e mitigar a fragilidade mecânica do grafite so
     \label{eq:condutividade_efetiva_apg}
 \end{align}
 
-Para uma aleta retangular de semilargura livre $L_{fin} = 75\text{ mm}$ ($T(0) = T_{root} = 318{,}15\text{ K}$, $dT/dx|_{L_{fin}} = 0$), a condução unidimensional com emissão bifacial ($k_{eff} t_{fin} \frac{d^2 T}{dx^2} = 2 \varepsilon_{ir} \sigma (T^4 - T_{space}^4)$) é linearizada em torno de $T_{root}$ (dedução detalhada no Apêndice~A.8, com $h_{rad} \approx 1{,}512\text{ W/(m}^2\text{K)}$ e $m = \sqrt{2 h_{rad}/(k_{eff} t_{fin})} \approx 1{,}089\text{ m}^{-1}$), fornecendo a eficiência de aleta:
+Para uma aleta retangular de espessura $t_{fin} = t_{APG} + 2t_c = 2{,}0\text{ mm}$ ($0{,}002\text{ m}$) e semilargura livre $L_{fin} = 75\text{ mm}$ ($0{,}075\text{ m}$), com condição de contorno de base em $T(0) = T_{root} = 318{,}15\text{ K}$ ($45^\circ\text{C}$ de raiz) e ponta adiabática ($dT/dx|_{L_{fin}} = 0$), a condução unidimensional em regime permanente com radiação bifacial para o fundo cósmico ($T_{space} = 3\text{ K}$) é regida por:
 \begin{equation}
-    \eta_{fin,ideal} = \frac{\tanh(m L_{fin})}{m L_{fin}} \approx \mathbf{0{,}9978} \quad (> 99\%)
-    \label{eq:eficiencia_aleta_apg_rigorosa}
+    k_{eff} t_{fin} \frac{d^2 T(x)}{dx^2} = 2 \varepsilon_{ir} \sigma \left( T^4(x) - T_{space}^4 \right)
+    \label{eq:aleta_edo_nao_linear}
 \end{equation}
-Adota-se no balanço global o fator conservador $\eta_{fin}=0{,}945$ (premissa de projeto) para acomodar resistências de colagem estrutural e espalhamento entre o tubo condensador de amônia e o núcleo de APG; a sua qualificação definitiva demanda ensaio experimental condutivo da junta colada sob ciclagem térmica a vácuo.
+
+Linearizando o termo quártico de radiação em torno da temperatura absoluta de raiz da aleta ($T_{root} \approx 318{,}15\,\mathrm{K}$), define-se o coeficiente equivalente de transferência de calor por radiação ($h_{rad}$):
+\begin{equation}
+    h_{rad} = 4 \varepsilon_{ir} \sigma T_{root}^3
+    \label{eq:hrad_def_blindada}
+\end{equation}
+Para os espelhos ópticos solares OSR com emissividade hemisférica no infravermelho de $\varepsilon_{ir} = 0{,}88$:
+\begin{equation}
+    h_{rad} = 4 \times 0{,}88 \times (5{,}67037 \times 10^{-8}\,\mathrm{W/m^2K^4}) \times (318{,}15\,\mathrm{K})^3 \approx \mathbf{1{,}512\,\mathrm{W/(m^2K)}}
+\end{equation}
+A partir desse parâmetro, a constante de amortecimento da aleta de APG/K13D2U com emissão bifacial ($2 h_{rad}$, com condutividade efetiva $k_{eff} = 1275{,}0\,\mathrm{W/(m\cdot K)}$ e espessura $t_{fin} = 2{,}0\,\mathrm{mm}$) é dada por:
+\begin{equation}
+    m = \sqrt{\frac{2 h_{rad}}{k_{eff} \cdot t_{fin}}} = \sqrt{\frac{2 \times 1{,}512}{1275{,}0 \times 0{,}002}} = \sqrt{1{,}1859} \approx \mathbf{1{,}089\,\mathrm{m^{-1}}}
+\end{equation}
+com produto adimensional $m L_{fin} = 1{,}089\,\mathrm{m^{-1}} \times 0{,}075\,\mathrm{m} \approx 0{,}08167$. Aplicando a solução analítica clássica para aleta retangular de ponta isolada, obtém-se:
+\begin{equation}
+    \eta_{fin,ideal} = \frac{\tanh(m L_{fin})}{m L_{fin}} = \frac{\tanh(0{,}08167)}{0{,}08167} \approx \mathbf{0{,}9978} \quad (99{,}78\%)
+    \label{eq:eta_fin_ideal_fechado}
+\end{equation}
+
+\noindent\textbf{Ressalva de Modéstia Epistêmica e Fechamento de Projeto:} Ressalta-se que a formulação clássica por $h_{rad}$ constitui uma aproximação de primeira ordem, válida para pequenas oscilações de temperatura local. No vácuo orbital, a rejeição descarrega contra o espaço profundo a $T_{space} \approx 3\,\mathrm{K}$, onde a hipótese de perturbação infinitesimal em relação ao sorvedouro não se sustenta rigorosamente. O integrador dinâmico do modelo nodal de múltiplos nós (Seção~\ref{sec:rede_nodal_termica}, Equação~\ref{eq:edo_no5}) e o dimensionamento térmico global da Seção~\ref{sec:modelagem_radiador_espacial} empregam a lei de Stefan-Boltzmann em sua formulação quártica não linear plena ($\propto T^4 - T_{space}^4$). Para absorver com margem demonstrada a não linearidade radiativa na ponta da aleta, as perdas de carga bidimensionais e a resistência de contato térmico da junta de colagem estrutural entre os tubos condensadores de amônia e o núcleo de APG, o fator de eficiência global de aleta é rebaixado conservadoramente no projeto de $0{,}9978$ para $\boldsymbol{\eta_{fin} = 0{,}945}$ (premissa de projeto balizada pela diretriz ECSS-E-HB-31-01 Parte 7).
 
 \subsubsection{Modelo Dinâmico de Degradação Óptica Temporal (BOL para EOL em 10 Anos)}
 
@@ -358,7 +378,7 @@ A síntese dos fluxos ambientais nas três órbitas e da sensibilidade do equil�
 
 A decomposição dos quatro subpainéis da Figura~\ref{fig:fluxos_orbitais_comparativos} evidencia:
 \begin{enumerate}[label=(\alph*)]
-    \item \textbf{Iluminação orbital (Subpainel~a1):} O cenário LEO de 500~km ($\beta=20^\circ$) produz eclipse de $35{,}8$~min por revolução no modelo cônico, enquanto a órbita SSO Dawn-Dusk a $700$~km ($\beta=85^\circ$) mantém insolação contínua ($S(t)=1$);
+    \item \textbf{Iluminação orbital (Subpainel~a1):} O cenário LEO de 500~km ($\beta=20^\circ$) produz eclipse de $35{,}8$~min por revolução no modelo cônico, enquanto a órbita SSO Dawn-Dusk a $700$~km ($\beta=81{,}8^\circ$ nos equinócios, acima do limiar de eclipse $\beta=64{,}3^\circ$) mantém insolação contínua ($S(t)=1$);
     \item \textbf{Fluxos ambientais (Subpainel~a2):} Com $\alpha_{s,EOL}=0{,}14$ e $\varepsilon_{ir,EOL}=0{,}88$, o fluxo parasita médio absorvido é $52{,}82\text{ W/m}^2$ em SSO ($F=0{,}23282$), $63{,}55\text{ W/m}^2$ em LEO para placa a $90^\circ$ ($F=0{,}27125$) ou $104{,}79\text{ W/m}^2$ sob $F=0{,}4473$, e apenas $1{,}56\text{ W/m}^2$ em GEO ($F=0{,}00729$);
     \item \textbf{Margem térmica e erro de atitude (Subpainéis~b1/b2):} Com $A_{rad}=88{,}6\text{ m}^2$, a demanda $Q_{int}/A_{rad}=473{,}86\text{ W/m}^2$ permanece abaixo da capacidade líquida SSO a $55^\circ$C ($493{,}96\text{ W/m}^2$), assegurando operação nominal sem \textit{throttling} ($T_{rad}=51{,}40^\circ\text{C}$, $T_j=76{,}40^\circ\text{C}$) até $|\delta\theta_{thr}|=5{,}87^\circ$ e margem até $|\delta\theta_{trip}|=15{,}24^\circ$;
     \item \textbf{Área requerida:} Para manter $T_{rad}\le 55^\circ\text{C}$, requerem-se $84{,}99\text{ m}^2$ em SSO, $86{,}88\text{ m}^2$ ($F=0{,}27125$) a $94{,}99\text{ m}^2$ ($F=0{,}4473$) em LEO e $77{,}00\text{ m}^2$ em GEO.
@@ -420,7 +440,13 @@ Confrontando com a condutância térmica equivalente de um arranjo convencional 
 \end{equation}
 o que comprova a necessidade mandatória da arquitetura de resfriamento bifásico por placas frias microcanaladas de circulação forçada e acoplamento direto a evaporadores de alto fluxo ($R_{12}+R_{23}+R_{34} \le 0{,}075\text{ K/W}$).
 
-A violação do envelope de temperatura deflagra as proteções: (a) \textit{thermal throttling} gradual antes de $80^\circ\text{C}$ (reduzindo $f_{clk}$ de $1{,}8$ para $1{,}0\text{ GHz}$); (b) \textit{thermal trip} rígido em $T_{crit} = 85{,}0^\circ\text{C}$ para modo seguro. A Figura~\ref{fig:estabilidade_runaway_lhp} ilustra o crescimento exponencial da fuga, a bifurcação de runaway sob tensão turbo ($1{,}05\text{ V}$) e o mapa de estabilidade no plano $V_{core} \times R_{th,crit}$.
+% --- RETIFICAÇÃO A14: MODELO DE FUGA E CÁLCULO DE LYAPUNOV ---
+A taxa de geração térmica por corrente de fuga dos aceleradores neurais em tecnologia FinFET sub-7\,nm é descrita pelo modelo empírico reduzido de primeira ordem:
+\begin{equation}
+    P_{leak}(T_j, V_{core}) = P_{leak,ref}(V_{core}) \cdot \exp\left[ \beta_T \left( T_j - T_{ref} \right) \right]
+    \label{eq:fuga_calibrada_revisada}
+\end{equation}
+onde $\beta_T = 0{,}0285\,\mathrm{K^{-1}}$ sintetiza o comportamento termoiônico. Aplicando o Critério Direto de Lyapunov em pequenos sinais, a bifurcação sela-nó que deflagra o \textit{thermal runaway} assintótico ocorre quando a inclinação da geração de calor iguala a condutância térmica equivalente de extração ($\partial P_{leak}/\partial T_j = G_{th} = 1/R_{th,eff}$). Sob tensão turbo ($V_{core} = 1{,}05\,\mathrm{V}$) e extração em pior caso degradado ($R_{th} \approx 0{,}35\,\mathrm{K/W}$ por die), a solução numérica da igualdade transcende no limiar exato de $\mathbf{T_{j,crit} = 83{,}4^\circ\mathrm{C}}$ (Figura~\ref{fig:estabilidade_runaway_lhp}), justificando fisicamente a imposição do teto de segurança e início de \textit{throttling} gradual antes de $80{,}0^\circ\mathrm{C}$ e corte rígido de emergência em $85{,}0^\circ\text{C}$.
 
 \begin{figure}[htbp]
     \centering
@@ -526,7 +552,8 @@ A inclusão explícita do termo quadrático de regularização de controle $\|\D
 
 \subsubsection{Mecanismo Preditivo de Pré-Resfriamento Orbital (\textit{Orbital Precooling})}
 
-Como o horizonte do NMPC ($N_p \Delta t_{ctrl} = 60\text{ s}$) é inferior a janelas antecipadas de agendamento ($\ge 90\text{ s}$), o pré-resfriamento opera mediante sinal \textit{feedforward} emitido pelo escalonador de tarefas do cluster antes de rajadas de treinamento denso ou entradas em penumbra. Na alternativa bombeada MPFL, essa ação eleva preventivamente a vazão ($\dot{m}_{pump}$) para reduzir a temperatura da placa fria antes do degrau térmico; na alternativa passiva LHP, o pré-condicionamento requer modulação prévia de aquecedores de compensação e perfilamento de clock, cuja validação quantitativa permanece vinculada ao fechamento hidrodinâmico de cada arquitetura. A Figura~\ref{fig:resposta_tems_precooling} ilustra o desempenho dinâmico do controlador TEMS NMPC com pré-resfriamento orbital e a sua repercussão direta sobre a vida em fadiga das soldas BGA.
+% --- RETIFICAÇÃO A15: ENQUADRAMENTO DA POLÍTICA DE PRÉ-RESFRIAMENTO ---
+Para demonstrar o benefício da antecipação térmica frente a transientes bruscos de processamento de IA, a Figura~\ref{fig:resposta_tems_precooling} avalia o comportamento dinâmico de uma \textbf{política programada com pré-resfriamento em avanço (\textit{feedforward precooling schedule}) acoplada a um limitador de rampa de clock} ($\Delta f \le 100\,\mathrm{MHz/s}$) em confronto com um controle reativo por histerese (\textit{bang-bang}). A atuação preventiva da vazão mássica no circuito de refrigeração ($1{,}2 \to 3{,}2\,\mathrm{kg/s}$) amortece o salto térmico, contendo o pico de junção em seguros $76{,}8^\circ\text{C}$ e suprimindo o \textit{chattering} de chaveamento. Essa rotina computacional atua como validação do princípio de antecipação que baliza a formulação supervisória do NMPC.
 
 \begin{figure}[htbp]
     \centering
@@ -556,7 +583,11 @@ Para estimar a vida útil em fadiga oligocíclica das esferas de solda de liga S
     N_f = \frac{1}{2} \left( \frac{\Delta \gamma_{eff}}{2 \varepsilon_f'} \right)^{1/c}, \quad \Delta \gamma_{eff} = F \cdot \frac{L_{DNP} \cdot \Delta \alpha_{CTE} \cdot \Delta T_{solder}}{h_{solder}}
     \label{eq:coffin_manson_engelmaier}
 \end{equation}
-em que $c = -0{,}470 - 7{,}0 \times 10^{-4} T_{mean,solder} + 2{,}0 \times 10^{-2} \ln(1 + f_{cpd})$ é o expoente de relaxação visco-plástica em função da temperatura média ($T_{mean,solder}$) e frequência cíclica diária ($f_{cpd}$). Para o encapsulamento quadrado de $28 \times 28\,\mathrm{mm}$, a distância geométrica do centro do componente até a esfera de solda mais crítica localizada no canto periférico (ponto neutro) é calculada analiticamente como $L_{DNP} = \frac{1}{2}\sqrt{28^2 + 28^2} = 19{,}80\,\mathrm{mm}$. A adoção do valor correto de $L_{DNP} = 19{,}80\,\mathrm{mm}$ (em substituição ao valor linear preliminar de $14\,\mathrm{mm}$) eleva a amplitude da deformação cisalhante cíclica para $\Delta\gamma = 2{,}42 \times 10^{-3}$, demonstrando que o uso de gerenciamento térmico ativo (TEMS) é indispensável para conter a excursão térmica a $\Delta T_j \le 7\,^\circ\mathrm{C}$ e assegurar vida em fadiga superior a 10 anos ($N_f > 53.000$ ciclos). Adicionalmente, enquanto a ductilidade intrínseca da liga SAC305 em juntas nuas situa-se em $2\varepsilon_f' \approx 0{,}65$, os encapsulamentos BGA qualificados para voo espacial incorporam resina epóxi de preenchimento capilar (\textit{underfill}) e colunas de alívio termoelástico, cujo confinamento mecânico redistribui a tensão cisalhante e reduz a deformação inelástica efetiva na solda por um fator de $4\times\text{ a }5\times$ (OSTERMAN, 2018; SYED, 2004). Na Equação~\ref{eq:coffin_manson_engelmaier}, esse acoplamento estrutural é representado pelo \textbf{coeficiente de ductilidade geométrica equivalente calibrado $2\varepsilon_f' = 2{,}887$}, fundamentado na literatura de qualificação aeroespacial com resina de preenchimento capilar (\textit{underfill}) para alívio de tensões cisalhantes (OSTERMAN, 2018; SYED, 2004), cujo fechamento definitivo em modelos industriais de voo requer simulação termomecânica tridimensional por elementos finitos (FEA) com lei constitutiva visco-plástica de Anand aplicada à geometria real do pacote CoWoS. A Tabela~\ref{tab:calibracao_fadiga_bga} consolida os parâmetros mecânicos adotados.
+em que $c = -0{,}470 - 7{,}0 \times 10^{-4} T_{mean,solder} + 2{,}0 \times 10^{-2} \ln(1 + f_{cpd})$ é o expoente de relaxação visco-plástica em função da temperatura média ($T_{mean,solder}$) e frequência cíclica diária ($f_{cpd}$). Para o encapsulamento quadrado de $28 \times 28\,\mathrm{mm}$, a distância geométrica do centro do componente até a esfera de solda mais crítica localizada no canto periférico (ponto neutro) é calculada analiticamente como $L_{DNP} = \frac{1}{2}\sqrt{28^2 + 28^2} = 19{,}80\,\mathrm{mm}$. A adoção do valor correto de $L_{DNP} = 19{,}80\,\mathrm{mm}$ (em substituição ao valor linear preliminar de $14\,\mathrm{mm}$) eleva a amplitude da deformação cisalhante cíclica para $\Delta\gamma = 2{,}42 \times 10^{-3}$, demonstrando que o uso de gerenciamento térmico ativo (TEMS) é indispensável para conter a excursão térmica a $\Delta T_j \le 7\,^\circ\mathrm{C}$ e assegurar vida em fadiga superior a 10 anos ($N_f > 53.000$ ciclos). Adicionalmente, enquanto a ductilidade intrínseca da liga SAC305 em juntas nuas situa-se em $2\varepsilon_f' \approx 0{,}65$, os encapsulamentos BGA qualificados para voo espacial incorporam resina epóxi de preenchimento capilar (\textit{underfill}) e colunas de alívio termoelástico, cujo confinamento mecânico redistribui a tensão cisalhante e reduz a deformação inelástica efetiva na solda por um fator de $4\times\text{ a }5\times$ (OSTERMAN, 2018; SYED, 2004). 
+
+Na Equação~\ref{eq:coffin_manson_engelmaier}, esse acoplamento mecânico é representado pelo coeficiente de ductilidade geométrica equivalente calibrado $2\varepsilon_f' = 2{,}887$, fundamentado na literatura de qualificação aeroespacial para encapsulamentos com resina epóxi capilar (\textit{underfill}) para alívio de tensões cisalhantes (OSTERMAN, 2018; GAO et al., 2022). 
+
+Declara-se formalmente, como ressalva de confiabilidade em voo espacial, que o valor $2\varepsilon_f' = 2{,}887$ reflete a resposta inicial do conjunto sob condições nominais. Em órbita, materiais poliméricos orgânicos estão sujeitos ao vácuo e radiação atômica ionizante, exigindo materiais certificados com taxa de perda de massa por desgaseificação $\text{TML} < 1{,}0\%$ e produtos voláteis condensáveis coletados $\text{CVCM} < 0{,}1\%$ (norma ECSS-Q-ST-70-02C e banco de dados NASA Outgassing). A retenção de elasticidade do \textit{underfill} e a durabilidade estrutural estimada de $34{,}53\,\mathrm{anos}$ representam a capacidade mecânica teórica superior propiciada pelo amortecimento ativo de transientes térmicos pelo TEMS ($\Delta T_j \le 7^\circ\text{C}$); a sua qualificação para classes de missão de 10 anos demanda comprovação experimental através de campanhas de termovácuo (TVAC) sob ciclagem acelerada combinada com dose de radiação acumulada em corpo de prova representativo. A Tabela~\ref{tab:calibracao_fadiga_bga} consolida os parâmetros mecânicos adotados.
 
 \begin{table}[!ht]
 \centering

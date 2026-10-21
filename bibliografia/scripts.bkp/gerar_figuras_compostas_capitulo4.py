@@ -45,7 +45,7 @@ def gerar_figura_4_1():
     G_AM0 = 1361.0
     q_Earth = 237.0
     a_Earth = 0.30
-    R_E = 6371.0
+    R_E = 6378.137
     R_sun = 696340.0
     d_ES = 1.495978707e8
     mu_E = 398600.4418
