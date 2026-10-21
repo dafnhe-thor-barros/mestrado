@@ -1,9 +1,10 @@
 % ==============================================================================
-% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.1 E 3.2 (OCTAVE CLI / MATPLOTLIB)
+% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.1 E 3.2
+% DINÂMICA DO BARRAMENTO HVDC E PROTEÇÃO POR CHAVE SSPC
 % ==============================================================================
 % Dissertação de Mestrado Profissional - ProPECAut / IFES
 % Autor: Dafnhê Thor Castro de Martins Barros
-% Revisão Técnica: Reconciliação Numérica e Gráfica com as Figuras 1 e 2 do Texto
+% Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
 % ==============================================================================
 clear; clc; close all;
 graphics_toolkit('gnuplot');

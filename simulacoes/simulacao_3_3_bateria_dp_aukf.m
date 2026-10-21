@@ -1,5 +1,12 @@
+% ==============================================================================
+% SIMULACAO 3.3: MODELAGEM ELETROTERMICA DO BANCO DE BATERIAS (BESS),
+% CIRCUITO DUAL POLARIZATION (DP 2a ORDEM) E ESTIMACAO DE SOC VIA AUKF
+% ==============================================================================
+% Dissertacao de Mestrado Profissional - ProPECAut / IFES
+% Autor: Dafnhe Thor Castro de Martins Barros
+% Revisao Tecnica: Modelagem Explicita de Condicoes Nominais e Modos de Falha
+% ==============================================================================
 function simulacao_3_3_bateria_dp_aukf()
-  % SIMULACAO 3.3 - BESS COM BALANCO ELETROTERMICO E AUKF SAGE-HUSA
   close all; clc;
 
   % 1. Parametros Eletroquimicos e Termicos da Bateria

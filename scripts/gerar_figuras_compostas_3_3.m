@@ -1,9 +1,10 @@
 % ==============================================================================
-% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.5 E 3.6 (OCTAVE CLI / MATPLOTLIB)
+% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.5 E 3.6
+% MODELAGEM DP DA BATERIA E CONVERGÊNCIA DO ESTIMADOR AUKF SAGE-HUSA
 % ==============================================================================
 % Dissertação de Mestrado Profissional - ProPECAut / IFES
 % Autor: Dafnhê Thor Castro de Martins Barros
-% Revisão Técnica: Implementação Real do AUKF, Manta MLI e Dinâmica DP Exata
+% Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
 % ==============================================================================
 clear; clc; close all;
 graphics_toolkit('gnuplot');

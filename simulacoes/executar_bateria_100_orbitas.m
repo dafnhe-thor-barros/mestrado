@@ -1,3 +1,11 @@
+% ==============================================================================
+% SIMULAÇÃO 3.3 (EXPANDIDA): DINÂMICA ELETROTÉRMICA E BALANÇO DE ENERGIA
+% DO BANCO DE BATERIAS (BESS) EM 100 ÓRBITAS LEO
+% ==============================================================================
+% Dissertação de Mestrado Profissional - ProPECAut / IFES
+% Autor: Dafnhê Thor Castro de Martins Barros
+% Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
+% ==============================================================================
 function executar_bateria_100_orbitas()
   close all; clc;
 

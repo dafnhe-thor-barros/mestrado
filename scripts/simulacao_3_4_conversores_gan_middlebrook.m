@@ -1,5 +1,12 @@
+% ==============================================================================
+% SIMULACAO 3.4: CONVERSORES ESTATICOS CC-CC GaN DE ALTA FREQUENCIA,
+% BALANCO DE PERDAS TERMICAS E ESTABILIDADE CPL POR CRITERIO DE MIDDLEBROOK
+% ==============================================================================
+% Dissertacao de Mestrado Profissional - ProPECAut / IFES
+% Autor: Dafnhe Thor Castro de Martins Barros
+% Revisao Tecnica: Modelagem Explicita de Condicoes Nominais e Modos de Falha
+% ==============================================================================
 function simulacao_3_4_conversores_gan_middlebrook()
-  % SIMULACAO 3.4 - CONVERSOR GAN, PERDAS E CRITERIO DE MIDDLEBROOK
   close all; clc;
 
   % 1. Parametros do Conversor (400 V -> 48 V, 20 kW)

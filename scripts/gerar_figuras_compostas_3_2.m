@@ -1,9 +1,10 @@
 % ==============================================================================
-% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.3 E 3.4 (OCTAVE CLI / MATPLOTLIB)
+% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.3 E 3.4
+% GERADOR FOTOVOLTAICO AM0, DEGRADAÇÃO DDD E MPPT SOB HOT SPOT
 % ==============================================================================
 % Dissertação de Mestrado Profissional - ProPECAut / IFES
 % Autor: Dafnhê Thor Castro de Martins Barros
-% Revisão Técnica: Eliminação de Dados Sintéticos e Reconciliação Física com o Texto
+% Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
 % ==============================================================================
 clear; clc; close all;
 graphics_toolkit('gnuplot');

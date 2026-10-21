@@ -1,5 +1,12 @@
+% ==============================================================================
+% SIMULACAO 4.1: DINAMICA ORBITAL KEPLERIANA, FLUXOS RADIATIVOS AMBIENTAIS
+% (SOLAR, ALBEDO, IR TERRESTRE) E BALANCO TERMICO DO RADIADOR ESPACIAL
+% ==============================================================================
+% Dissertacao de Mestrado Profissional - ProPECAut / IFES
+% Autor: Dafnhe Thor Castro de Martins Barros
+% Revisao Tecnica: Modelagem Explicita de Condicoes Nominais e Modos de Falha
+% ==============================================================================
 function simulacao_4_1_fluxos_orbitais()
-  % SIMULACAO 4.1 - FLUXOS ORBITAIS E BALANCO TERMICO DOS RADIADORES
   close all; clc;
 
   sigma = 5.670374e-8; G0 = 1361.0; qEarth_IR = 237.0; albedo = 0.30;

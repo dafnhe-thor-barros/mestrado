@@ -1,5 +1,12 @@
-function simulacao_4_6_fadiga_bga_protecao()
-  % SIMULACAO 4.6 - FADIGA BGA (ENGELMAIER) E TAILORING DE PROTECAO LCL
+% ==============================================================================
+% SIMULAÇÃO 4.6: FADIGA TERMOMECÂNICA DE SOLDAS BGA SAC305 (ENGELMAIER),
+% EFICÁCIA ENERGÉTICA ORBITAL (PUE) E PROTEÇÃO DE CARGA LCL
+% ==============================================================================
+% Dissertação de Mestrado Profissional - ProPECAut / IFES
+% Autor: Dafnhê Thor Castro de Martins Barros
+% Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
+% ==============================================================================
+function simulacao_4_6_fadiga_bga_pue()
   close all; clc;
 
   % 1. Fadiga Termomecanica de Solda BGA SAC305

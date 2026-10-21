@@ -172,7 +172,7 @@ exigindo $\partial P_{leak}/\partial T_j|_{T_j^*} < d\dot{Q}_{out}/dT_j|_{T_j^*}
 As rotinas computacionais desenvolvidas para as simulações multifísicas encontram-se estruturadas no diretório \texttt{simulacoes/} do repositório da pesquisa:
 \begin{itemize}[noitemsep,topsep=2pt,leftmargin=*]
     \item \texttt{simulacao\_3\_1\_barramento\_hvdc.m}: Dinâmica do barramento de 400~V, balanço orbital multicíclico do BESS (5 órbitas), amortecimento RLC e estresse $I^2t$ do SSPC.
-    \item \texttt{simulacao\_3\_2\_gerador\_fotovoltaico\_am0.m}: Curvas $I-V/P-V$ multijunção (modelo de 3 diodos em série $\text{GaInP}/\text{GaAs}/\text{Ge}$), degradação temporal DDD (10 anos), avalanche reversa em \textit{hot spot} e dinâmica do MPPT Buck a 150~kHz.
+    \item \texttt{simulacao\_3\_2\_gerador\_fotovoltaico\_am0.m}: Modelo físico de 3 diodos independentes em série (GaInP/GaAs/Ge) resolvido por Newton-Raphson, curvas $I-V/P-V$ multijunção, degradação temporal DDD (10 anos), contingência de \textit{hot spot} com diodo de \textit{bypass} Schottky e dinâmica do conversor Buck MPPT a 150~kHz com algoritmo P\&O-AP a 10~kHz.
     \item \texttt{gerar\_figuras\_compostas\_3\_1.m}: Consolidação de dados e renderização das Figuras 3.1 (balanço BESS) e 3.2 (curto-circuito e acoplamento térmico LHP).
     \item \texttt{gerar\_figuras\_compostas\_3\_2.m}: Renderização das Figuras 3.3 (curvas AM0 térmicas e DDD) e 3.4 (\textit{hot spot} e transiente do MPPT GaN).
     \item \texttt{gerar\_figuras\_compostas\_3\_3.m}: Modelo eletroquímico Dual-Polarization (DP) 2ª ordem, cinética de Arrhenius, estimador AUKF e colapso por subtensão (Figuras 3.5 e 3.6).
@@ -184,9 +184,9 @@ As rotinas computacionais desenvolvidas para as simulações multifísicas encon
 \end{itemize}
 
 \vspace{0.6cm}
-\subsubsection*{B.1 Gerador Fotovoltaico Multijunção AM0, Degradação Temporal e Conversor Buck MPPT}
-\addcontentsline{toc}{subsubsection}{B.1 Gerador Fotovoltaico Multijunção AM0 e Buck MPPT}
-\lstinputlisting[caption={Rotina computacional completa do gerador fotovoltaico AM0, degradação temporal DDD e conversor Buck MPPT em 150\,kHz (\texttt{simulacao\_3\_2\_gerador\_fotovoltaico\_am0.m}).}]{simulacoes/simulacao_3_2_gerador_fotovoltaico_am0.m}
+\subsubsection*{B.1 Gerador Fotovoltaico Multijunção AM0 (Modelo Físico de 3 Diodos em Série), Degradação DDD e Buck MPPT}
+\addcontentsline{toc}{subsubsection}{B.1 Gerador Fotovoltaico Multijunção AM0 (3 Diodos) e Buck MPPT}
+\lstinputlisting[caption={Rotina computacional completa do gerador fotovoltaico multijunção AM0 sob modelo de 3 diodos em série (GaInP/GaAs/Ge), degradação DDD e conversor Buck MPPT em 150\,kHz (\texttt{simulacao\_3\_2\_gerador\_fotovoltaico\_am0.m}).}]{simulacoes/simulacao_3_2_gerador_fotovoltaico_am0.m}
 
 \vspace{0.6cm}
 \subsubsection*{B.2 Modelo Eletroquímico Dual-Polarization com Filtro de Kalman Adaptativo (AUKF) para o BESS}

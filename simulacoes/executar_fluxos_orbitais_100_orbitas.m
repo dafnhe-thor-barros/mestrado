@@ -1,5 +1,12 @@
+% ==============================================================================
+% SIMULAÇÃO 4.1 (EXPANDIDA): PROPAGAÇÃO DE FLUXOS RADIATIVOS AMBIENTAIS
+% E DINÂMICA TÉRMICA MULTI-ÓRBITA EM 100 ÓRBITAS LEO
+% ==============================================================================
+% Dissertação de Mestrado Profissional - ProPECAut / IFES
+% Autor: Dafnhê Thor Castro de Martins Barros
+% Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
+% ==============================================================================
 function executar_fluxos_orbitais_100_orbitas()
-  % SIMULACAO 4.1 EXPANDIDA: FLUXOS ORBITAIS E DINAMICA TERMICA EM 100 ORBITAS
   close all; clc;
 
   sigma = 5.670374e-8; G0 = 1361.0; qEarth_IR = 237.0; albedo = 0.30;

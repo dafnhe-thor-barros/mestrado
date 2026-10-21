@@ -1,9 +1,10 @@
 % ==============================================================================
-% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.7 E 3.8 (OCTAVE CLI / MATPLOTLIB)
+% RENDERIZADOR DE FIGURAS COMPOSTAS: FIGURAS 3.7 E 3.8
+% PERDAS ELETROTÉRMICAS EM GaN E ESTABILIDADE DE IMPEDÂNCIA CPL
 % ==============================================================================
 % Dissertação de Mestrado Profissional - ProPECAut / IFES
 % Autor: Dafnhê Thor Castro de Martins Barros
-% Revisão Técnica: Reconciliação Física com o Texto e Integração Real de EDOs
+% Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
 % ==============================================================================
 clear; clc; close all;
 graphics_toolkit('gnuplot');
