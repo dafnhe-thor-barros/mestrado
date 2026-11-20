@@ -154,7 +154,7 @@ Esta memória resume o balanço de referência do radiador usado no Capítulo~4.
 \renewcommand{\arraystretch}{0.9}
 \caption{Parâmetros e resultados do balanço radiativo nominal em SSO a 700 km.}
 \label{tab:anexo_dimensionamento_radiativo}
-\begin{tabular}{p{6.0cm}ccp{5.2cm}}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.6cm}cc>{\raggedright\arraybackslash}X}
 \hline
 \textbf{Grandeza} & \textbf{Símbolo} & \textbf{Valor} & \textbf{Base de cálculo / ressalva} \\ \hline
 Área emissora total instalada & $A_{rad}$ & $105{,}0\text{ m}^2$ & Área total bifacial; ambas as faces expostas são contabilizadas uma única vez \\
@@ -167,7 +167,7 @@ Capacidade líquida a $55^\circ\text{C}$ & $q_{net,55}$ & $494{,}58\text{ W/m}^2
 Margem de área instalada & $A_{rad}-A_{req,55}$ & $20{,}11\text{ m}^2$ & $23{,}69\%$ sobre a área requerida \\
 Temperatura de equilíbrio nominal & $T_{rad}/T_j$ & $39{,}76/64{,}76^\circ\text{C}$ & $\Delta T_{j-rad}=25\text{ K}$; balanço radiativo reduzido \\
 \hline
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \noindent{\footnotesize\textit{Nota:} o Script~4.1 adota $q_{Earth}=234\text{ W/m}^2$ para reproduzir os resultados desta memória. Esse parâmetro é $3\text{ W/m}^2$ (aproximadamente $1{,}27\%$) inferior à referência de $237\text{ W/m}^2$ do ECSS-E-HB-31-01 Parte~1 citada no Capítulo~4; não é apresentado como valor normativo nem como correção orbital validada.\par}

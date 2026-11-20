@@ -44,7 +44,11 @@ Utilizando os valores médios globais anuais da norma NASA SP-8067 \cite{nasa197
 
 A geração primária emprega células espaciais de tripla junção GaInP/GaAs/Ge \textbf{Spectrolab XTJ} (eficiência nominal BOL de $29{,}5\%$ sob espectro AM0 a $28^\circ\text{C}$, área ativa $A_{cel} = 26{,}62\text{ cm}^2$, $V_{mp} = 2{,}34\text{ V}$, $J_{mp} = 17{,}0\text{ mA/cm}^2$, coeficientes térmicos $\mathrm{d}V_{mp}/\mathrm{d}T = -6{,}4\text{ mV/}^\circ\text{C}$ e $\mathrm{d}J_{mp}/\mathrm{d}T = +11{,}1\,\mu\text{A}/(\text{cm}^2\cdot{}^\circ\text{C})$) \cite{spectrolab_xtj_prime}. A potência gerada em fim de vida (EOL) no ponto de máxima potência é modelada em função da irradiância $G_{sol}$, da temperatura de operação do painel $T_{pv}$ e dos fatores de degradação por radiação ($R_{Vmp} = 0{,}94$, $R_{Jmp} = 0{,}97$ para fluência equivalente de $2{,}5 \times 10^{14}\text{ e}^-/\text{cm}^2$, $1\text{ MeV}$, hipótese de projeto) e de empacotamento ($\eta_{pack} = 0{,}90$, fator de perdas de interconexão/vidro $\eta_{inst} = 0{,}92$):
 \begin{equation}
-    P_{FV}(G_{sol}, T_{pv}) = N_{cel} \, A_{cel} \, \eta_{inst} \, \left(\frac{G_{sol}}{S_{AM0}}\right) \left[R_{Jmp} J_{mp} + \frac{\mathrm{d}J_{mp}}{\mathrm{d}T}(T_{pv} - 28)\right] \left[R_{Vmp} V_{mp} + \frac{\mathrm{d}V_{mp}}{\mathrm{d}T}(T_{pv} - 28)\right].
+\begin{split}
+    P_{FV}(G_{sol}, T_{pv}) &= N_{cel} \, A_{cel} \, \eta_{inst} \left(\frac{G_{sol}}{S_{AM0}}\right)
+    \left[R_{Jmp} J_{mp} + \frac{\mathrm{d}J_{mp}}{\mathrm{d}T}(T_{pv} - 28)\right] \\
+    &\quad \times \left[R_{Vmp} V_{mp} + \frac{\mathrm{d}V_{mp}}{\mathrm{d}T}(T_{pv} - 28)\right].
+\end{split}
     \label{eq:potencia_fv}
 \end{equation}
 
@@ -115,10 +119,10 @@ A planta térmica de referência (\texttt{modelo\_termico.py}) acopla três subs
 
 Integrando a condição de contorno radiativa 3D na espessura da aleta fina (número de Biot transversal $\ll 1$), o campo unidimensional de temperatura $T(x,t)$ ($0 < x < L$) e a temperatura de junção $T_j(t)$ satisfazem o sistema EDP-EDO não linear:
 \begin{align}
-    c_a \frac{\partial T}{\partial t} &= \frac{\partial}{\partial x}\!\left(k \delta \frac{\partial T}{\partial x}\right) - 2\,\varepsilon\,\sigma \left(T^4 - T_s^4\right) + q_{abs}(t), && 0 < x < L, \label{eq:edp_aleta} \\
-    \left.\frac{\partial T}{\partial x}\right|_{x=L} &= 0, && \text{(plano de simetria adiabático)} \label{eq:bc_ponta} \\
-    \frac{C_{fluid}}{\ell}\frac{\mathrm{d}T(0,t)}{\mathrm{d}t} &= k\delta \left.\frac{\partial T}{\partial x}\right|_{x=0} + \frac{N_{mod}}{\ell}\left[\frac{T_j - T(0,t)}{R_{int}} + \kappa_{dab} P_{mod}(f, T_j)\right] + \frac{Q_{rest}(t)}{\ell}, && \text{(contorno na raiz)} \label{eq:bc_raiz} \\
-    C_{mod}\frac{\mathrm{d}T_j}{\mathrm{d}t} &= P_{mod}(f, T_j) - \frac{T_j - T(0,t)}{R_{int}}, && \text{(EDO da junção)} \label{eq:edo_modulo}
+    c_a \frac{\partial T}{\partial t} &= \frac{\partial}{\partial x}\!\left(k \delta \frac{\partial T}{\partial x}\right) - 2\,\varepsilon\,\sigma \left(T^4 - T_s^4\right) + q_{abs}(t), \quad 0 < x < L, \label{eq:edp_aleta} \\
+    \left.\frac{\partial T}{\partial x}\right|_{x=L} &= 0, \label{eq:bc_ponta} \\
+    \frac{C_{fluid}}{\ell}\frac{\mathrm{d}T(0,t)}{\mathrm{d}t} &= k\delta \left.\frac{\partial T}{\partial x}\right|_{x=0} + \frac{N_{mod}}{\ell}\!\left[\frac{T_j - T(0,t)}{R_{int}} + \kappa_{dab} P_{mod}(f, T_j)\right] + \frac{Q_{rest}(t)}{\ell}, \label{eq:bc_raiz} \\
+    C_{mod}\frac{\mathrm{d}T_j}{\mathrm{d}t} &= P_{mod}(f, T_j) - \frac{T_j - T(0,t)}{R_{int}}, \label{eq:edo_modulo}
 \end{align}
 onde $\sigma = 5{,}670374419 \times 10^{-8}\text{ W/(m}^2\cdot\text{K}^4)$ é a constante exata de Stefan-Boltzmann \cite{tiesinga2021codata}, $\ell = A_{pl} / L$ é o comprimento total equivalente de tubos coletores para uma área de planta $A_{pl}$ (área emissora total $A_{emit} = 2 A_{pl}$ nas duas faces), $q_{abs}(t)$ é o fluxo ambiental absorvido por unidade de área de planta (soma do infravermelho terrestre e do albedo solar incidente nas duas faces) e $Q_{rest}(t)$ agrupa o calor residual dos conversores Buck/bidirecional e da carga auxiliar.
 
@@ -162,11 +166,10 @@ Como a temperatura na ponta da aleta ($T_{ponta}$) não é instrumentada em voo 
 
 O Sistema de Gerenciamento Térmico-Energético (TEMS) opera em horizonte deslizante sobre a janela $W = 300\text{ s}$, recebendo a cada ciclo de controle as medições de $T_j(t)$, $T_{raiz}(t)$ e $SoC(t)$, estimando $\hat{\Delta}_{ponta}(t)$ e selecionando a frequência de relógio $f(t) \in [300,\; 1.410]\text{ MHz}$ (ou alocação equivalente de módulos ativos) que maximiza o rendimento computacional útil $P_{TI}$ sujeito às restrições rígidas de integridade térmica e energética:
 \begin{equation}
-    \max_{f \in [f_{\min},\, f_{nom}]} \; P_{TI}(f, \hat{T}_j)
-    \quad \text{sujeito a} \quad
-    \max_{\tau \in (0, 1]} \hat{T}_j(\tau; f) \le T_{j,\max} - m_T,
-    \qquad
-    SoC_{min} \le SoC(t + \Delta t) \le SoC_{max},
+\begin{split}
+    &\max_{f \in [f_{\min},\, f_{nom}]} \; P_{TI}(f, \hat{T}_j) \\
+    &\text{sujeito a} \quad \max_{\tau \in (0, 1]} \hat{T}_j(\tau; f) \le T_{j,\max} - m_T, \qquad SoC_{min} \le SoC(t + \Delta t) \le SoC_{max},
+\end{split}
     \label{eq:tems_otimizacao}
 \end{equation}
 em que $T_{j,\max} = 80^\circ\text{C}$, $m_T > 0$ é a margem de segurança térmica (que acomoda o erro residual da PINN e o viés de sensoriamento), $SoC_{min} = 0{,}70$ e $SoC_{max} = 0{,}95$. A verificação comparativa da PINN e o desempenho em malha fechada do controlador TEMS frente aos cenários sem controle e de controle reativo são apresentados no Capítulo~4.
