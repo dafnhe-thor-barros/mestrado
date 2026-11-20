@@ -1,4 +1,5 @@
-\chapter{Metodologia e Modelagem Matemática do Sistema Térmico-Energético Orbital}
+\newpage
+\section{METODOLOGIA E MODELAGEM MATEMÁTICA DO SISTEMA TÉRMICO-ENERGÉTICO ORBITAL}
 \label{cap:modelagem}
 
 Este capítulo apresenta a formulação matemática e computacional completa do sistema térmico-energético do data center orbital modular de $50\text{ kW}$, estruturada em cinco pilares acoplados: (i) ambiente orbital e geração fotovoltaica com armazenamento eletroquímico (BESS); (ii) geração de calor por cargas de inteligência artificial sob DVFS e perdas de conversão estática; (iii) dissipação térmica por condução e radiação no vácuo; (iv) modelo substituto preditivo baseado em física (\textit{Physics-Informed Neural Network} -- PINN) com estimador de gradiente de aleta; e (v) formulação do controlador preditivo térmico-energético (TEMS/DVFS).
@@ -6,7 +7,7 @@ Este capítulo apresenta a formulação matemática e computacional completa do 
 Visando rigor epistêmico e reprodutibilidade, todas as grandezas numéricas adotadas distinguem explicitamente os \textbf{dados verificados em fontes primárias} (normas, resoluções astronômicas e folhas de dados de fabricantes) das \textbf{hipóteses de projeto declaradas}. Todos os modelos descritos neste capítulo encontram-se implementados e verificados por suítes automatizadas de testes unitários e de conservação física (\texttt{pytest}) no repositório de código da dissertação (\texttt{simulacoes/v2\_auditado/}), em escopo estritamente \textit{in silico} (sem validação experimental em câmara termo-vácuo).
 
 % ==============================================================================
-\section{Ambiente Orbital e Fluxos Radiativos Externos}
+\subsection{Ambiente Orbital e Fluxos Radiativos Externos}
 \label{sec:modelo_orbital}
 
 A plataforma opera em órbita circular heliossíncrona (\textit{Sun-Synchronous Orbit} -- SSO) \textit{dawn-dusk} a altitude nominal $h = 700\text{ km}$, com hora local do nó ascendente (LTAN) nominal de $18\text{h}00$ em tempo solar médio local. Adotam-se os parâmetros definidores do elipsoide WGS84 \cite{nga2014wgs84}: semieixo maior equatorial $a_E = 6.378.137{,}0\text{ m}$, achatamento inverso $1/f = 298{,}257223563$, constante gravitacional geocêntrica $\mu_E = 3{,}986004418 \times 10^{14}\text{ m}^3/\text{s}^2$ e fator dinâmico zonal $J_2 = 1{,}082629821313 \times 10^{-3}$.
@@ -37,10 +38,10 @@ Adota-se atitude de radiador orientada perpendicularmente ao plano orbital e ao 
 Utilizando os valores médios globais anuais da norma NASA SP-8067 \cite{nasa1971sp8067} para emissão infravermelha planetária ($q_{IR,E} = 237 \pm 7\text{ W/m}^2$) e albedo terrestre ($a_{alb} = 0{,}30 \pm 0{,}02$), o fluxo infravermelho incidente sobre cada face do radiador é $q_{IR} = F(90^\circ)\, q_{IR,E} = 55{,}19\text{ W/m}^2$ (ou $48{,}57\text{ W/m}^2$ integrado no modelo radiativo de duas faces sob a absorção infravermelha efetiva $\varepsilon$).
 
 % ==============================================================================
-\section{Geração Fotovoltaica, Arquitetura HVDC e Balanço de Potência}
+\subsection{Geração Fotovoltaica, Arquitetura HVDC e Balanço de Potência}
 \label{sec:arquitetura_barramento_balanco}
 
-\subsection{Subsistema Fotovoltaico AM0 (Spectrolab XTJ)}
+\subsubsection{Subsistema Fotovoltaico AM0 (Spectrolab XTJ)}
 
 A geração primária emprega células espaciais de tripla junção GaInP/GaAs/Ge \textbf{Spectrolab XTJ} (eficiência nominal BOL de $29{,}5\%$ sob espectro AM0 a $28^\circ\text{C}$, área ativa $A_{cel} = 26{,}62\text{ cm}^2$, $V_{mp} = 2{,}34\text{ V}$, $J_{mp} = 17{,}0\text{ mA/cm}^2$, coeficientes térmicos $\mathrm{d}V_{mp}/\mathrm{d}T = -6{,}4\text{ mV/}^\circ\text{C}$ e $\mathrm{d}J_{mp}/\mathrm{d}T = +11{,}1\,\mu\text{A}/(\text{cm}^2\cdot{}^\circ\text{C})$) \cite{spectrolab_xtj_prime}. A potência gerada em fim de vida (EOL) no ponto de máxima potência é modelada em função da irradiância $G_{sol}$, da temperatura de operação do painel $T_{pv}$ e dos fatores de degradação por radiação ($R_{Vmp} = 0{,}94$, $R_{Jmp} = 0{,}97$ para fluência equivalente de $2{,}5 \times 10^{14}\text{ e}^-/\text{cm}^2$, $1\text{ MeV}$, hipótese de projeto) e de empacotamento ($\eta_{pack} = 0{,}90$, fator de perdas de interconexão/vidro $\eta_{inst} = 0{,}92$):
 \begin{equation}
@@ -54,7 +55,7 @@ A geração primária emprega células espaciais de tripla junção GaInP/GaAs/G
 
 Dimensionando o arranjo para entregar $P_{FV,EOL} = 50{,}0\text{ kW}$ líquidos na saída do arranjo (antes do conversor Buck) na condição crítica de afélio ($G_{sol} = 1.316{,}63\text{ W/m}^2$) e temperatura de painel $T_{pv} = 65^\circ\text{C}$ (hipótese de projeto), obtém-se $N_{cel} = 27.073$ células, correspondendo a uma área ativa de células $A_{cel,tot} = 161{,}49\text{ m}^2$ e área bruta de painel $A_{painel} = 179{,}43\text{ m}^2$.
 
-\subsection{Barramento HVDC de 400 V e Perdas de Conversão}
+\subsubsection{Barramento HVDC de 400 V e Perdas de Conversão}
 
 O barramento primário opera em $400\text{ VDC}$ regulado, interligando o arranjo fotovoltaico (via estágio Buck MPPT de eficiência $\eta_{buck} = 0{,}97$), o banco de baterias (via conversor bidirecional de eficiência $\eta_{bd} = 0{,}96$), o estágio isolado de rack $400\text{ V} \to 48\text{ V}$ (Dual Active Bridge -- DAB, $\eta_{dab} = 0{,}96$) e a carga auxiliar de plataforma ($P_{aux} = 2.000\text{ W}$, incluindo aviônica, ADCS e terminais OISL), todos adotados como hipóteses de projeto.
 
@@ -71,7 +72,7 @@ onde $P_{bess,bus}(t) > 0$ indica descarga do BESS para o barramento (e $P_{bess
 em que $\kappa_{dab} = (1/\eta_{dab}) - 1 = 0{,}04167$ acopla diretamente a dissipação do DAB à potência computacional $P_{TI}(t)$.
 
 % ==============================================================================
-\section{Sistema de Armazenamento Eletroquímico (BESS)}
+\subsection{Sistema de Armazenamento Eletroquímico (BESS)}
 \label{sec:modelo_bess}
 
 O banco de baterias emprega a célula espacial de íons de lítio \textbf{Saft VES 16} \cite{saft_ves16}, cujos parâmetros primários verificados são: tensão nominal $V_{nom} = 3{,}6\text{ V}$, capacidade nominal $C_{nom} = 4{,}5\text{ Ah}$ ($16{,}2\text{ Wh}$/célula), energia específica mínima de $140\text{ Wh/kg}$, massa máxima $m_{cel} = 0{,}115\text{ kg}$, limite inferior de tensão em descarga contínua de $2{,}7\text{ V}$, tensão máxima de carga de $4{,}1\text{ V}$, corrente contínua recomendada de carga em LEO de $C/2{,}5$ ($1{,}8\text{ A}$), corrente máxima de descarga de $20\text{ A}$ e vida útil qualificada de $60.000$ ciclos em LEO a $40\%$ de DoD.
@@ -88,7 +89,7 @@ Para compatibilização de tensão com o barramento HVDC ($108 \times 3{,}6\text
 onde $E_{EOL} = 0{,}80\, N_p\, N_s\, V_{nom}\, C_{nom}$ é a energia útil instalada em fim de vida. Para sustentar $P_{TI,ecl} = 18{,}0\text{ kW}$ mais $P_{aux} = 2{,}0\text{ kW}$ durante o eclipse crítico de $1.105{,}39\text{ s}$ mantendo $SoC \ge 0{,}70$ e garantindo fechamento periódico de carga na fase iluminada ($t_{sol} = T_{orb} - t_{ecl} = 4.820{,}99\text{ s}$), o dimensionamento fechado com $\eta_{POL,ext} = 1{,}0$ resulta em \textbf{19 ramos em paralelo ($19\text{P}108\text{S}$, $2.052$ células, $236{,}0\text{ kg}$ apenas em células)} e potência computacional sustentável máxima no sol de \textbf{$P_{TI,sol,sust} = 38{,}18\text{ kW}$} (sendo $40{,}0\text{ kW}$ a capacidade de pico térmico/elétrico da carga útil).
 
 % ==============================================================================
-\section{Cargas Computacionais de IA: DVFS e Fuga Térmica}
+\subsection{Cargas Computacionais de IA: DVFS e Fuga Térmica}
 \label{sec:modelo_ia}
 
 A carga útil computacional é composta por $N_{mod} = 100$ módulos aceleradores de referência \textbf{NVIDIA A100 SXM4} ($400\text{ W}$ de TDP nominal por módulo, $624\text{ TOPS}$ INT8 densos por módulo, totalizando $40{,}0\text{ kW}$ de pico) \cite{nvidia_a100_datasheet}. A potência elétrica dissipada integralmente em calor por módulo, em função da frequência de operação $f \in [300,\; 1.410]\text{ MHz}$ e da temperatura de junção $T_j$ (em $^\circ\text{C}$), é decomposta em parcelas estática fixa, dinâmica com escalonamento tensão-frequência (DVFS) e de corrente de fuga dependente da temperatura:
@@ -112,7 +113,7 @@ onde $P_{TDP} = 400\text{ W}$, $f_{nom} = 1.410\text{ MHz}$ (\textit{GPU Boost C
 \end{figure}
 
 % ==============================================================================
-\section{Planta Térmica de Referência no Vácuo (EDP 1D + EDO)}
+\subsection{Planta Térmica de Referência no Vácuo (EDP 1D + EDO)}
 \label{sec:planta_termica}
 
 A planta térmica de referência (\texttt{modelo\_termico.py}) acopla três subsistemas físicos em conservação estrita de energia: (i) o nó concentrado de junção dos módulos aceleradores ($T_j$, capacitância térmica $C_{mod} = 600\text{ J/K}$ e resistência térmica interna junção-coletor $R_{int} = 0{,}08\text{ K/W}$ por módulo — hipóteses de projeto); (ii) o nó do coletor/fluido térmico na raiz do radiador ($T_{raiz} = T(0,t)$, capacitância $C_{fluid} = 60.000\text{ J/K}$); e (iii) uma aleta metálica de radiador de liga de alumínio 6061-T6 ($k = 167\text{ W/(m}\cdot\text{K)}$, espessura $\delta = 2{,}0\text{ mm}$, meia-largura entre tubos $L = 0{,}15\text{ m}$, capacidade térmica superficial $c_a = 4.860\text{ J/(m}^2\cdot\text{K)}$) irradiando pelas duas faces para o espaço profundo ($T_s = 3{,}0\text{ K}$).
@@ -138,7 +139,7 @@ Dimensionando a área do radiador para sustentar $P_{TI,sol,sust} = 38{,}18\text
 \end{figure}
 
 % ==============================================================================
-\section{Modelo Substituto Preditivo Baseado em Física (PINN) e Estimador de Gradiente}
+\subsection{Modelo Substituto Preditivo Baseado em Física (PINN) e Estimador de Gradiente}
 \label{sec:modelo_pinn}
 
 Para viabilizar o controle preditivo em tempo real sem executar o solucionador de volumes finitos a cada passo de otimização, constrói-se um \textbf{Modelo Substituto Preditivo Baseado em Física (\textit{Physics-Informed Neural Network} -- PINN)} que aprende a solução paramétrica do sistema Eqs.~(\ref{eq:edp_aleta})--(\ref{eq:edo_modulo}) sobre uma janela deslizante de predição $W = 300\text{ s}$ (hipótese de projeto). Ressalta-se que o modelo constitui um substituto preditivo \textit{in silico}, e não um gêmeo digital embarcado (ausência de enlace bidirecional com hardware físico).
@@ -161,7 +162,7 @@ com amostragem correlacionada no domínio operacional físico ($T_{j,0} - T_{rai
 Como a temperatura na ponta da aleta ($T_{ponta}$) não é instrumentada em voo — dispondo o sistema apenas das leituras do diodo térmico interno das GPUs ($T_j$) e do sensor RTD Pt100 no coletor ($T_{raiz}$, Classe A segundo a IEC 60751, tolerância $\pm(0{,}15 + 0{,}002|T|)^\circ\text{C}$, ruído de leitura modelado em $\sigma_{RTD} = 0{,}05^\circ\text{C}$ e $\sigma_{Tj} = 0{,}5^\circ\text{C}$ a $T_s = 1{,}0\text{ s}$ como hipóteses de projeto) —, acopla-se um \textbf{estimador de $\Delta_{ponta}$ por mínimos quadrados ponderados} sobre uma janela de observação de $w_{obs} = 60\text{ s}$, utilizando a própria PINN como modelo direto.
 
 % ==============================================================================
-\section{Formulação do Controlador Preditivo TEMS/DVFS}
+\subsection{Formulação do Controlador Preditivo TEMS/DVFS}
 \label{sec:formulacao_tems}
 
 O Sistema de Gerenciamento Térmico-Energético (TEMS) opera em horizonte deslizante sobre a janela $W = 300\text{ s}$, recebendo a cada ciclo de controle as medições de $T_j(t)$, $T_{raiz}(t)$ e $SoC(t)$, estimando $\hat{\Delta}_{ponta}(t)$ e selecionando a frequência de relógio $f(t) \in [300,\; 1.410]\text{ MHz}$ (ou alocação equivalente de módulos ativos) que maximiza o rendimento computacional útil $P_{TI}$ sujeito às restrições rígidas de integridade térmica e energética:
