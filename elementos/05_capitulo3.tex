@@ -57,7 +57,7 @@ Dimensionando o arranjo para entregar $P_{FV,EOL} = 50{,}0\text{ kW}$ líquidos 
 
 \subsubsection{Barramento HVDC de 400 V e Perdas de Conversão}
 
-O barramento primário opera em $400\text{ VDC}$ regulado, interligando o arranjo fotovoltaico (via estágio Buck MPPT de eficiência $\eta_{buck} = 0{,}97$), o banco de baterias (via conversor bidirecional de eficiência $\eta_{bd} = 0{,}96$), o estágio isolado de rack $400\text{ V} \to 48\text{ V}$ (Dual Active Bridge -- DAB, $\eta_{dab} = 0{,}96$) e a carga auxiliar de plataforma ($P_{aux} = 2.000\text{ W}$, incluindo aviônica, ADCS e terminais OISL), todos adotados como hipóteses de projeto.
+O barramento primário opera em $400\text{ VDC}$ regulado, interligando o arranjo fotovoltaico (via estágio Buck MPPT de eficiência $\eta_{buck} = 0{,}91$), o banco de baterias (via conversor bidirecional de eficiência $\eta_{bd} = 0{,}97$), o estágio isolado de rack $400\text{ V} \to 48\text{ V}$ (Dual Active Bridge -- DAB, $\eta_{dab} = 0{,}9655$) e a carga auxiliar de plataforma ($P_{aux} = 1.000\text{ W}$, dos quais $Q_{aux} = 903{,}2\text{ W}$ são dissipados como calor interno e a fração restante corresponde à potência óptica emitida pelos terminais OISL), todos adotados como hipóteses de projeto sincronizadas com o módulo \texttt{modelo\_termico.py}.
 
 Para evitar dupla contagem das perdas de conversão do estágio regulador interno de ponto de carga ($48\text{ V} \to V_{core}$), adota-se a fronteira física especificada na folha de dados do módulo NVIDIA A100 SXM4 \cite{nvidia_a100_datasheet}: o TDP de $400\text{ W}$ refere-se à potência elétrica de entrada do módulo em $48\text{ VDC}$, implicando eficiência externa de POL unitária ($\eta_{POL,ext} = 1{,}0$, hipótese declarada). O balanço instantâneo de potência no barramento HVDC é:
 \begin{equation}
@@ -69,7 +69,7 @@ onde $P_{bess,bus}(t) > 0$ indica descarga do BESS para o barramento (e $P_{bess
     Q_{conv}(t) = (1 - \eta_{buck}) P_{FV}(t) + \left(\frac{1}{\eta_{dab}} - 1\right) P_{TI}(t) + Q_{bd}(t),
     \label{eq:perdas_conv}
 \end{equation}
-em que $\kappa_{dab} = (1/\eta_{dab}) - 1 = 0{,}04167$ acopla diretamente a dissipação do DAB à potência computacional $P_{TI}(t)$.
+em que $\kappa_{dab} = (1/\eta_{dab}) - 1 = 0{,}03573$ acopla diretamente a dissipação do DAB à potência computacional $P_{TI}(t)$.
 
 % ==============================================================================
 \subsection{Sistema de Armazenamento Eletroquímico (BESS)}
@@ -77,7 +77,7 @@ em que $\kappa_{dab} = (1/\eta_{dab}) - 1 = 0{,}04167$ acopla diretamente a diss
 
 O banco de baterias emprega a célula espacial de íons de lítio \textbf{Saft VES 16} \cite{saft_ves16}, cujos parâmetros primários verificados são: tensão nominal $V_{nom} = 3{,}6\text{ V}$, capacidade nominal $C_{nom} = 4{,}5\text{ Ah}$ ($16{,}2\text{ Wh}$/célula), energia específica mínima de $140\text{ Wh/kg}$, massa máxima $m_{cel} = 0{,}115\text{ kg}$, limite inferior de tensão em descarga contínua de $2{,}7\text{ V}$, tensão máxima de carga de $4{,}1\text{ V}$, corrente contínua recomendada de carga em LEO de $C/2{,}5$ ($1{,}8\text{ A}$), corrente máxima de descarga de $20\text{ A}$ e vida útil qualificada de $60.000$ ciclos em LEO a $40\%$ de DoD.
 
-Para compatibilização de tensão com o barramento HVDC ($108 \times 3{,}6\text{ V} = 388{,}8\text{ V}$), adota-se arquitetura em série $N_s = 108$ células por ramo, degradação de capacidade EOL de $20\%$ ($C_{EOL} = 0{,}80\,C_{nom}$), eficiências eletroquímicas $\eta_{ch} = \eta_{dis} = 0{,}97$ e envelope operacional estrito de estado de carga $SoC \in [0{,}70,\; 0{,}95]$ ($\Delta SoC_{\max} = 25\%$, assegurando margem sobre a qualificação de $40\%$ DoD — hipóteses de projeto). A dinâmica macroscópica do $SoC$ obedece ao balanço energético:
+Para compatibilização de tensão com o barramento HVDC ($108 \times 3{,}6\text{ V} = 388{,}8\text{ V}$), adota-se arquitetura em série $N_s = 108$ células por ramo, degradação de capacidade EOL de $20\%$ ($C_{EOL} = 0{,}80\,C_{nom}$), eficiências eletroquímicas $\eta_{ch} = 0{,}995$ e $\eta_{dis} = 0{,}97$ e envelope operacional estrito de estado de carga $SoC \in [0{,}70,\; 0{,}95]$ ($\Delta SoC_{\max} = 25\%$, assegurando margem sobre a qualificação de $40\%$ DoD — hipóteses de projeto). A dinâmica macroscópica do $SoC$ obedece ao balanço energético:
 \begin{equation}
     \frac{\mathrm{d}\,SoC}{\mathrm{d}t} =
     \begin{cases}
@@ -86,7 +86,7 @@ Para compatibilização de tensão com o barramento HVDC ($108 \times 3{,}6\text
     \end{cases}
     \label{eq:dinamica_soc}
 \end{equation}
-onde $E_{EOL} = 0{,}80\, N_p\, N_s\, V_{nom}\, C_{nom}$ é a energia útil instalada em fim de vida. Para sustentar $P_{TI,ecl} = 18{,}0\text{ kW}$ mais $P_{aux} = 2{,}0\text{ kW}$ durante o eclipse crítico de $1.105{,}39\text{ s}$ mantendo $SoC \ge 0{,}70$ e garantindo fechamento periódico de carga na fase iluminada ($t_{sol} = T_{orb} - t_{ecl} = 4.820{,}99\text{ s}$), o dimensionamento fechado com $\eta_{POL,ext} = 1{,}0$ resulta em \textbf{19 ramos em paralelo ($19\text{P}108\text{S}$, $2.052$ células, $236{,}0\text{ kg}$ apenas em células)} e potência computacional sustentável máxima no sol de \textbf{$P_{TI,sol,sust} = 38{,}18\text{ kW}$} (sendo $40{,}0\text{ kW}$ a capacidade de pico térmico/elétrico da carga útil).
+onde $E_{EOL} = 0{,}80\, N_p\, N_s\, V_{nom}\, C_{nom}$ é a energia útil instalada em fim de vida. Para sustentar $P_{TI,ecl} = 18{,}0\text{ kW}$ mais $P_{aux} = 1{,}0\text{ kW}$ durante o eclipse crítico de $1.105{,}39\text{ s}$ mantendo $SoC \ge 0{,}70$ e garantindo fechamento periódico de carga na fase iluminada ($t_{sol} = T_{orb} - t_{ecl} = 4.820{,}99\text{ s}$), o dimensionamento fechado com $\eta_{POL,ext} = 1{,}0$ resulta em \textbf{19 ramos em paralelo ($19\text{P}108\text{S}$, $2.052$ células, $236{,}0\text{ kg}$ apenas em células)} e potência computacional sustentável máxima no sol de \textbf{$P_{TI,sol,sust} = 38{,}18\text{ kW}$} (sendo $40{,}0\text{ kW}$ a capacidade de pico térmico/elétrico da carga útil).
 
 % ==============================================================================
 \subsection{Cargas Computacionais de IA: DVFS e Fuga Térmica}
