@@ -487,7 +487,7 @@ def test_residuo_pde_esta_em_kelvin_equivalente():
     xi, tau = torch.rand(7, 1, dtype=torch.float64), torch.rand(7, 1, dtype=torch.float64)
 
     def field(x, t, p):
-        return torch.zeros_like(x) + 320.0 + 0.0 * t + 0.0 * x
+        return torch.zeros_like(x) + 320.0 + 0.0 * t + 0.0 * x ** 2
     r = res_pde(field, ph, xi, tau, P)
     assert float((r + 2.0).abs().max()) < 1e-6          # radiacao em excesso de 2 K-equivalente -> residuo = -2
 

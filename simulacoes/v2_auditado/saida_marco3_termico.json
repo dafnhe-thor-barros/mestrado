@@ -1,498 +1,498 @@
 {
-  "tests": {
-    "test_regressao_2b_2c_contra_saidas_locais_do_usuario": "PASS",
-    "test_modulo_calibrado_em_400_W": "PASS",
-    "test_lumped_resfriamento_radiativo_analitico_ordem_temporal": "PASS",
-    "test_aleta_linear_analitica_ordem_espacial": "PASS",
-    "test_aleta_radiante_nao_linear_vs_integral_primeira": "PASS",
-    "test_estacionario_igual_ao_limite_do_transitorio": "PASS",
-    "test_orbita_periodica_e_balanco_de_energia": "PASS",
-    "test_monotonia_da_area_de_projeto": "PASS",
-    "test_projeto_respeita_limite_e_limites_fisicos": "PASS",
-    "test_dominio": "PASS",
-    "test_reprodutibilidade": "PASS",
-    "test_conferencia_cruzada": "PASS"
+ "tests": {
+  "test_regressao_2b_2c_contra_saidas_locais_do_usuario": "PASS",
+  "test_modulo_calibrado_em_400_W": "PASS",
+  "test_lumped_resfriamento_radiativo_analitico_ordem_temporal": "PASS",
+  "test_aleta_linear_analitica_ordem_espacial": "PASS",
+  "test_aleta_radiante_nao_linear_vs_integral_primeira": "PASS",
+  "test_estacionario_igual_ao_limite_do_transitorio": "PASS",
+  "test_orbita_periodica_e_balanco_de_energia": "PASS",
+  "test_monotonia_da_area_de_projeto": "PASS",
+  "test_projeto_respeita_limite_e_limites_fisicos": "PASS",
+  "test_dominio": "PASS",
+  "test_reprodutibilidade": "PASS",
+  "test_conferencia_cruzada": "PASS"
+ },
+ "closure": {
+  "eta_pol_0.90_antes": {
+   "L_ecl_bus_18kW_W": 21714.66,
+   "TI_sol_sustentavel_W": 33904.08,
+   "TI_max_sol_sem_carregar_W": 38668.28,
+   "BESS_LTAN18": {
+    "n_par": 21,
+    "n_cells": 2268,
+    "mass_cells_kg": 260.82,
+    "E_inst_BOL_Wh": 36741.6,
+    "E_req_EOL_Wh": 28345.41,
+    "dod_eol": 0.2410875
+   },
+   "BESS_LTAN10.5_18kW": {
+    "n_par": 38,
+    "n_cells": 4104,
+    "mass_cells_kg": 471.96
+   },
+   "q_node_TI40kW_PVon_W": 51483.17,
+   "q_gen_TI34kW_W": 39470.88,
+   "q_gen_TI40kW_W": 46375.77
   },
-  "closure": {
-    "eta_pol_0.90_antes": {
-      "L_ecl_bus_18kW_W": 21714.66,
-      "TI_sol_sustentavel_W": 33904.08,
-      "TI_max_sol_sem_carregar_W": 38668.28,
-      "BESS_LTAN18": {
-        "n_par": 21,
-        "n_cells": 2268,
-        "mass_cells_kg": 260.82,
-        "E_inst_BOL_Wh": 36741.6,
-        "E_req_EOL_Wh": 28345.41,
-        "dod_eol": 0.2410875
-      },
-      "BESS_LTAN10.5_18kW": {
-        "n_par": 38,
-        "n_cells": 4104,
-        "mass_cells_kg": 471.96
-      },
-      "q_node_TI40kW_PVon_W": 51483.17,
-      "q_gen_TI34kW_W": 39470.88,
-      "q_gen_TI40kW_W": 46375.77
-    },
-    "eta_pol_1.00_decisao": {
-      "L_ecl_bus_18kW_W": 19643.19,
-      "TI_sol_sustentavel_W": 38176.18,
-      "TI_max_sol_sem_carregar_W": 42964.75,
-      "BESS_LTAN18": {
-        "n_par": 19,
-        "n_cells": 2052,
-        "mass_cells_kg": 235.98,
-        "E_inst_BOL_Wh": 33242.4,
-        "E_req_EOL_Wh": 25641.41,
-        "dod_eol": 0.2410458
-      },
-      "BESS_LTAN10.5_18kW": {
-        "n_par": 34,
-        "n_cells": 3672,
-        "mass_cells_kg": 422.28
-      },
-      "q_node_TI40kW_PVon_W": 46924.63,
-      "q_gen_TI34kW_W": 35558.11,
-      "q_gen_TI40kW_W": 41772.51
-    }
-  },
-  "loads": {
-    "cargas_termicas_eta_pol1_[P_TI | Q_DAB | Q_Buck_sol | Q_BESS_sol | Q_no_sol | Q_BESS_ecl | Q_no_ecl]_W": [
-      [
-        18000.0,
-        643.1901,
-        4500.0,
-        775.7043,
-        24822.09,
-        607.5213,
-        20153.91
-      ],
-      [
-        25000.0,
-        893.3195,
-        4500.0,
-        558.2004,
-        31854.72,
-        831.7522,
-        27628.27
-      ],
-      [
-        30000.0,
-        1071.983,
-        4500.0,
-        402.8405,
-        36878.02,
-        991.917,
-        32967.1
-      ],
-      [
-        34000.0,
-        1214.915,
-        4500.0,
-        278.5526,
-        40896.67,
-        1120.049,
-        37238.16
-      ],
-      [
-        38000.0,
-        1357.846,
-        4500.0,
-        154.2646,
-        44915.31,
-        1248.181,
-        41509.23
-      ],
-      [
-        40000.0,
-        1429.311,
-        4500.0,
-        92.12066,
-        46924.63,
-        1312.247,
-        43644.76
-      ]
-    ]
-  },
-  "design": {
-    "P_TI_sol_sustentavel_eta_pol1": 38176.18,
-    "projeto_Tj80_[coating Z93_EOL30]": [
-      {
-        "p_ti_W": 18000.0,
-        "f_MHz": 508.0658,
-        "a_pl_m2": 22.27616,
-        "a_emit_2faces_m2": 44.55233,
-        "t_root_C": 65.59969,
-        "t_tip_C": 56.41091,
-        "eta_fin": 0.9218431,
-        "q_rej_W": 24822.06,
-        "q_rej_Wm2_planta": 1114.288,
-        "t_eq_C": -82.35995,
-        "R_mod_eq_K_W": 0.9019993,
-        "R_rad_eq_K_W_por_modulo": 0.5960811,
-        "bi_face": 4.751541e-05,
-        "balanco_resid_W": 0.0
-      },
-      {
-        "p_ti_W": 25000.0,
-        "f_MHz": 872.8665,
-        "a_pl_m2": 30.68443,
-        "a_emit_2faces_m2": 61.36887,
-        "t_root_C": 59.99968,
-        "t_tip_C": 51.43068,
-        "eta_fin": 0.9252008,
-        "q_rej_W": 31854.68,
-        "q_rej_Wm2_planta": 1038.138,
-        "t_eq_C": -82.35995,
-        "R_mod_eq_K_W": 0.6494394,
-        "R_rad_eq_K_W_por_modulo": 0.4469034,
-        "bi_face": 4.519766e-05,
-        "balanco_resid_W": 7.275958e-12
-      },
-      {
-        "p_ti_W": 30000.0,
-        "f_MHz": 1073.921,
-        "a_pl_m2": 37.41025,
-        "a_emit_2faces_m2": 74.82051,
-        "t_root_C": 55.99984,
-        "t_tip_C": 47.85764,
-        "eta_fin": 0.9275546,
-        "q_rej_W": 36878.0,
-        "q_rej_Wm2_planta": 985.7725,
-        "t_eq_C": -82.35995,
-        "R_mod_eq_K_W": 0.5411997,
-        "R_rad_eq_K_W_por_modulo": 0.3751825,
-        "bi_face": 4.358918e-05,
-        "balanco_resid_W": 7.275958e-12
-      },
-      {
-        "p_ti_W": 38176.18,
-        "f_MHz": 1353.752,
-        "a_pl_m2": 49.89754,
-        "a_emit_2faces_m2": 99.79508,
-        "t_root_C": 49.45889,
-        "t_tip_C": 41.98668,
-        "eta_fin": 0.9313225,
-        "q_rej_W": 45092.28,
-        "q_rej_Wm2_planta": 903.6975,
-        "t_eq_C": -82.35995,
-        "R_mod_eq_K_W": 0.4252911,
-        "R_rad_eq_K_W_por_modulo": 0.2923313,
-        "bi_face": 4.104183e-05,
-        "balanco_resid_W": 1.455192e-11
-      },
-      {
-        "p_ti_W": 40000.0,
-        "f_MHz": 1410.0,
-        "a_pl_m2": 52.9634,
-        "a_emit_2faces_m2": 105.9268,
-        "t_root_C": 47.99979,
-        "t_tip_C": 40.67236,
-        "eta_fin": 0.9321492,
-        "q_rej_W": 46924.59,
-        "q_rej_Wm2_planta": 885.9815,
-        "t_eq_C": -82.35995,
-        "R_mod_eq_K_W": 0.4058997,
-        "R_rad_eq_K_W_por_modulo": 0.2778069,
-        "bi_face": 4.048748e-05,
-        "balanco_resid_W": -1.455192e-11
-      }
-    ]
-  },
-  "sens": {
-    "base_a_pl_m2": 49.89754,
-    "sensibilidade_OAT_[caso | a_pl_m2 | dA_%]": [
-      [
-        "Z93_BOL",
-        47.83406,
-        -4.135438
-      ],
-      [
-        "AgFEP_BOL",
-        56.95957,
-        14.15306
-      ],
-      [
-        "LEGADO a0.14/e0.88",
-        49.8442,
-        -0.1068971
-      ],
-      [
-        "r_int 0.04",
-        40.90992,
-        -18.01216
-      ],
-      [
-        "r_int 0.16",
-        78.33943,
-        57.00058
-      ],
-      [
-        "k 100",
-        52.05039,
-        4.314547
-      ],
-      [
-        "k 400",
-        47.9362,
-        -3.930741
-      ],
-      [
-        "delta 1mm",
-        53.07518,
-        6.368336
-      ],
-      [
-        "delta 4mm",
-        48.21963,
-        -3.362709
-      ],
-      [
-        "L 0.05",
-        48.02897,
-        -3.744809
-      ],
-      [
-        "L 0.10",
-        52.38745,
-        4.990046
-      ],
-      [
-        "Q_IR 230",
-        49.74689,
-        -0.3019273
-      ],
-      [
-        "Q_IR 244",
-        50.04933,
-        0.3042017
-      ],
-      [
-        "albedo 0.28",
-        49.77469,
-        -0.2462044
-      ],
-      [
-        "albedo 0.32",
-        50.02124,
-        0.2479102
-      ],
-      [
-        "beta 20 (albedo maior)",
-        51.40664,
-        3.024391
-      ],
-      [
-        "n_nodes 20",
-        49.89555,
-        -0.00398021
-      ],
-      [
-        "kappa_dab (eta_dab 0.95)",
-        50.61137,
-        1.430601
-      ]
-    ]
-  },
-  "orbit": {
-    "a_pl_projeto_m2": 49.89754,
-    "f_sol_MHz": 1353.752,
-    "f_ecl_MHz": 508.0658,
-    "q_rest_sol_W": 5551.99,
-    "q_rest_ecl_W": 1510.721,
-    "S1_energeticamente_viavel_TIsol_sust_TIecl_18kW": {
-      "tj_max_C": 78.51757,
-      "tj_min_C": 12.27718,
-      "t_root_max_C": 48.16111,
-      "t_root_min_C": -0.3615286,
-      "t_tip_max_C": 40.72935,
-      "tj_max_por_orbita_C": [
-        76.59361,
-        78.51581,
-        78.51757,
-        78.51757,
-        78.51757,
-        78.51757
-      ],
-      "rel_resid_energia": 3.127631e-13,
-      "max_step_resid_J": 3.886453e-08,
-      "passos": 1476,
-      "newton_its": 4428
-    },
-    "S0_pico_40kW_continuo_(sem_limite_energetico)_mesma_area": {
-      "tj_max_C": 86.66732,
-      "tj_min_C": 76.031,
-      "t_root_max_C": 53.75835,
-      "t_root_min_C": 44.39788,
-      "t_tip_max_C": 45.79511,
-      "tj_max_por_orbita_C": [
-        85.7837,
-        86.6633,
-        86.66731,
-        86.66732,
-        86.66732,
-        86.66732
-      ],
-      "rel_resid_energia": 1.627605e-12,
-      "max_step_resid_J": 4.283447e-08,
-      "passos": 1476,
-      "newton_its": 4428
-    },
-    "dominio_PINN": {
-      "x_m": [
-        0.0,
-        0.075
-      ],
-      "t_s": [
-        0.0,
-        5926.379
-      ],
-      "T_K_min_max_S1": [
-        312.4907,
-        351.6676
-      ]
-    }
-  },
-  "conv": {
-    "temporal_lumped_nao_linear_[dt | erro_CN_K | erro_BE_K]": [
-      [
-        100.0,
-        0.3176418,
-        4.138581
-      ],
-      [
-        50.0,
-        0.07834584,
-        2.113148
-      ],
-      [
-        25.0,
-        0.01952098,
-        1.069089
-      ],
-      [
-        12.5,
-        0.004876168,
-        0.537926
-      ]
-    ],
-    "ordem_temporal_CN_BE": [
-      [
-        2.019472,
-        2.004832,
-        2.001205
-      ],
-      [
-        0.9697428,
-        0.9830114,
-        0.9909025
-      ]
-    ],
-    "espacial_linear_[N | erro_raiz_K | erro_ponta_K]": [
-      [
-        10,
-        0.002097461,
-        0.001758761
-      ],
-      [
-        20,
-        0.0005245002,
-        0.0004398017
-      ],
-      [
-        40,
-        0.0001311335,
-        0.0001099574
-      ],
-      [
-        80,
-        3.278389e-05,
-        2.748978e-05
-      ],
-      [
-        160,
-        8.196007e-06,
-        6.872473e-06
-      ]
-    ],
-    "espacial_nao_linear_vs_integral_primeira_[N | erro_raiz_K | erro_ponta_K]": [
-      [
-        10,
-        0.09360943,
-        0.04968573
-      ],
-      [
-        20,
-        0.02345423,
-        0.0124461
-      ],
-      [
-        40,
-        0.005866814,
-        0.003113073
-      ],
-      [
-        80,
-        0.001466907,
-        0.0007783652
-      ],
-      [
-        160,
-        0.0003667395,
-        0.0001945974
-      ]
-    ],
-    "ordem_espacial_linear": [
-      [
-        1.999629,
-        1.999907,
-        1.999977,
-        1.999994
-      ],
-      [
-        1.999635,
-        1.999909,
-        1.999977,
-        1.999994
-      ]
-    ],
-    "ordem_espacial_nao_linear": [
-      [
-        1.996806,
-        1.999199,
-        1.9998,
-        1.99995
-      ],
-      [
-        1.997138,
-        1.999282,
-        1.99982,
-        1.999955
-      ]
-    ],
-    "temporal_orbita_acoplada_[dt | max|dT|_vs_dt=3.125_nos_6_pontos_de_quebra_K]": [
-      [
-        50.0,
-        0.02965834
-      ],
-      [
-        25.0,
-        0.007167976
-      ],
-      [
-        12.5,
-        0.00166235
-      ],
-      [
-        6.25,
-        0.0003213314
-      ]
-    ],
-    "ordem_temporal_orbita": [
-      2.0488,
-      2.108341,
-      2.37109
-    ]
+  "eta_pol_1.00_decisao": {
+   "L_ecl_bus_18kW_W": 19643.19,
+   "TI_sol_sustentavel_W": 38176.18,
+   "TI_max_sol_sem_carregar_W": 42964.75,
+   "BESS_LTAN18": {
+    "n_par": 19,
+    "n_cells": 2052,
+    "mass_cells_kg": 235.98,
+    "E_inst_BOL_Wh": 33242.4,
+    "E_req_EOL_Wh": 25641.41,
+    "dod_eol": 0.2410458
+   },
+   "BESS_LTAN10.5_18kW": {
+    "n_par": 34,
+    "n_cells": 3672,
+    "mass_cells_kg": 422.28
+   },
+   "q_node_TI40kW_PVon_W": 46924.63,
+   "q_gen_TI34kW_W": 35558.11,
+   "q_gen_TI40kW_W": 41772.51
   }
+ },
+ "loads": {
+  "cargas_termicas_eta_pol1_[P_TI | Q_DAB | Q_Buck_sol | Q_BESS_sol | Q_no_sol | Q_BESS_ecl | Q_no_ecl]_W": [
+   [
+    18000.0,
+    643.1901,
+    4500.0,
+    775.7043,
+    24822.09,
+    607.5213,
+    20153.91
+   ],
+   [
+    25000.0,
+    893.3195,
+    4500.0,
+    558.2004,
+    31854.72,
+    831.7522,
+    27628.27
+   ],
+   [
+    30000.0,
+    1071.983,
+    4500.0,
+    402.8405,
+    36878.02,
+    991.917,
+    32967.1
+   ],
+   [
+    34000.0,
+    1214.915,
+    4500.0,
+    278.5526,
+    40896.67,
+    1120.049,
+    37238.16
+   ],
+   [
+    38000.0,
+    1357.846,
+    4500.0,
+    154.2646,
+    44915.31,
+    1248.181,
+    41509.23
+   ],
+   [
+    40000.0,
+    1429.311,
+    4500.0,
+    92.12066,
+    46924.63,
+    1312.247,
+    43644.76
+   ]
+  ]
+ },
+ "design": {
+  "P_TI_sol_sustentavel_eta_pol1": 38176.18,
+  "projeto_Tj80_[coating Z93_EOL30]": [
+   {
+    "p_ti_W": 18000.0,
+    "f_MHz": 508.0658,
+    "a_pl_m2": 22.27616,
+    "a_emit_2faces_m2": 44.55233,
+    "t_root_C": 65.59969,
+    "t_tip_C": 56.41091,
+    "eta_fin": 0.9218431,
+    "q_rej_W": 24822.06,
+    "q_rej_Wm2_planta": 1114.288,
+    "t_eq_C": -82.35995,
+    "R_mod_eq_K_W": 0.9019993,
+    "R_rad_eq_K_W_por_modulo": 0.5960811,
+    "bi_face": 4.751541e-05,
+    "balanco_resid_W": 0.0
+   },
+   {
+    "p_ti_W": 25000.0,
+    "f_MHz": 872.8665,
+    "a_pl_m2": 30.68443,
+    "a_emit_2faces_m2": 61.36887,
+    "t_root_C": 59.99968,
+    "t_tip_C": 51.43068,
+    "eta_fin": 0.9252008,
+    "q_rej_W": 31854.68,
+    "q_rej_Wm2_planta": 1038.138,
+    "t_eq_C": -82.35995,
+    "R_mod_eq_K_W": 0.6494394,
+    "R_rad_eq_K_W_por_modulo": 0.4469034,
+    "bi_face": 4.519766e-05,
+    "balanco_resid_W": 7.275958e-12
+   },
+   {
+    "p_ti_W": 30000.0,
+    "f_MHz": 1073.921,
+    "a_pl_m2": 37.41025,
+    "a_emit_2faces_m2": 74.82051,
+    "t_root_C": 55.99984,
+    "t_tip_C": 47.85764,
+    "eta_fin": 0.9275546,
+    "q_rej_W": 36878.0,
+    "q_rej_Wm2_planta": 985.7725,
+    "t_eq_C": -82.35995,
+    "R_mod_eq_K_W": 0.5411997,
+    "R_rad_eq_K_W_por_modulo": 0.3751825,
+    "bi_face": 4.358918e-05,
+    "balanco_resid_W": 7.275958e-12
+   },
+   {
+    "p_ti_W": 38176.18,
+    "f_MHz": 1353.752,
+    "a_pl_m2": 49.89754,
+    "a_emit_2faces_m2": 99.79508,
+    "t_root_C": 49.45889,
+    "t_tip_C": 41.98668,
+    "eta_fin": 0.9313225,
+    "q_rej_W": 45092.28,
+    "q_rej_Wm2_planta": 903.6975,
+    "t_eq_C": -82.35995,
+    "R_mod_eq_K_W": 0.4252911,
+    "R_rad_eq_K_W_por_modulo": 0.2923313,
+    "bi_face": 4.104183e-05,
+    "balanco_resid_W": 1.455192e-11
+   },
+   {
+    "p_ti_W": 40000.0,
+    "f_MHz": 1410.0,
+    "a_pl_m2": 52.9634,
+    "a_emit_2faces_m2": 105.9268,
+    "t_root_C": 47.99979,
+    "t_tip_C": 40.67236,
+    "eta_fin": 0.9321492,
+    "q_rej_W": 46924.59,
+    "q_rej_Wm2_planta": 885.9815,
+    "t_eq_C": -82.35995,
+    "R_mod_eq_K_W": 0.4058997,
+    "R_rad_eq_K_W_por_modulo": 0.2778069,
+    "bi_face": 4.048748e-05,
+    "balanco_resid_W": -1.455192e-11
+   }
+  ]
+ },
+ "sens": {
+  "base_a_pl_m2": 49.89754,
+  "sensibilidade_OAT_[caso | a_pl_m2 | dA_%]": [
+   [
+    "Z93_BOL",
+    47.83406,
+    -4.135438
+   ],
+   [
+    "AgFEP_BOL",
+    56.95957,
+    14.15306
+   ],
+   [
+    "LEGADO a0.14/e0.88",
+    49.8442,
+    -0.1068971
+   ],
+   [
+    "r_int 0.04",
+    40.90992,
+    -18.01216
+   ],
+   [
+    "r_int 0.16",
+    78.33943,
+    57.00058
+   ],
+   [
+    "k 100",
+    52.05039,
+    4.314547
+   ],
+   [
+    "k 400",
+    47.9362,
+    -3.930741
+   ],
+   [
+    "delta 1mm",
+    53.07518,
+    6.368336
+   ],
+   [
+    "delta 4mm",
+    48.21963,
+    -3.362709
+   ],
+   [
+    "L 0.05",
+    48.02897,
+    -3.744809
+   ],
+   [
+    "L 0.10",
+    52.38745,
+    4.990046
+   ],
+   [
+    "Q_IR 230",
+    49.74689,
+    -0.3019273
+   ],
+   [
+    "Q_IR 244",
+    50.04933,
+    0.3042017
+   ],
+   [
+    "albedo 0.28",
+    49.77469,
+    -0.2462044
+   ],
+   [
+    "albedo 0.32",
+    50.02124,
+    0.2479102
+   ],
+   [
+    "beta 20 (albedo maior)",
+    51.40664,
+    3.024391
+   ],
+   [
+    "n_nodes 20",
+    49.89555,
+    -0.00398021
+   ],
+   [
+    "kappa_dab (eta_dab 0.95)",
+    50.61137,
+    1.430601
+   ]
+  ]
+ },
+ "orbit": {
+  "a_pl_projeto_m2": 49.89754,
+  "f_sol_MHz": 1353.752,
+  "f_ecl_MHz": 508.0658,
+  "q_rest_sol_W": 5551.99,
+  "q_rest_ecl_W": 1510.721,
+  "S1_energeticamente_viavel_TIsol_sust_TIecl_18kW": {
+   "tj_max_C": 78.51757,
+   "tj_min_C": 12.27718,
+   "t_root_max_C": 48.16111,
+   "t_root_min_C": -0.3615286,
+   "t_tip_max_C": 40.72935,
+   "tj_max_por_orbita_C": [
+    76.59361,
+    78.51581,
+    78.51757,
+    78.51757,
+    78.51757,
+    78.51757
+   ],
+   "rel_resid_energia": 3.127631e-13,
+   "max_step_resid_J": 3.886453e-08,
+   "passos": 1476,
+   "newton_its": 4428
+  },
+  "S0_pico_40kW_continuo_(sem_limite_energetico)_mesma_area": {
+   "tj_max_C": 86.66732,
+   "tj_min_C": 76.031,
+   "t_root_max_C": 53.75835,
+   "t_root_min_C": 44.39788,
+   "t_tip_max_C": 45.79511,
+   "tj_max_por_orbita_C": [
+    85.7837,
+    86.6633,
+    86.66731,
+    86.66732,
+    86.66732,
+    86.66732
+   ],
+   "rel_resid_energia": 1.627605e-12,
+   "max_step_resid_J": 4.283447e-08,
+   "passos": 1476,
+   "newton_its": 4428
+  },
+  "dominio_PINN": {
+   "x_m": [
+    0.0,
+    0.075
+   ],
+   "t_s": [
+    0.0,
+    5926.379
+   ],
+   "T_K_min_max_S1": [
+    312.4907,
+    351.6676
+   ]
+  }
+ },
+ "conv": {
+  "temporal_lumped_nao_linear_[dt | erro_CN_K | erro_BE_K]": [
+   [
+    100.0,
+    0.3176418,
+    4.138581
+   ],
+   [
+    50.0,
+    0.07834584,
+    2.113148
+   ],
+   [
+    25.0,
+    0.01952098,
+    1.069089
+   ],
+   [
+    12.5,
+    0.004876168,
+    0.537926
+   ]
+  ],
+  "ordem_temporal_CN_BE": [
+   [
+    2.019472,
+    2.004832,
+    2.001205
+   ],
+   [
+    0.9697428,
+    0.9830114,
+    0.9909025
+   ]
+  ],
+  "espacial_linear_[N | erro_raiz_K | erro_ponta_K]": [
+   [
+    10,
+    0.002097461,
+    0.001758761
+   ],
+   [
+    20,
+    0.0005245002,
+    0.0004398017
+   ],
+   [
+    40,
+    0.0001311335,
+    0.0001099574
+   ],
+   [
+    80,
+    3.278389e-05,
+    2.748978e-05
+   ],
+   [
+    160,
+    8.196007e-06,
+    6.872473e-06
+   ]
+  ],
+  "espacial_nao_linear_vs_integral_primeira_[N | erro_raiz_K | erro_ponta_K]": [
+   [
+    10,
+    0.09360943,
+    0.04968573
+   ],
+   [
+    20,
+    0.02345423,
+    0.0124461
+   ],
+   [
+    40,
+    0.005866814,
+    0.003113073
+   ],
+   [
+    80,
+    0.001466907,
+    0.0007783652
+   ],
+   [
+    160,
+    0.0003667395,
+    0.0001945974
+   ]
+  ],
+  "ordem_espacial_linear": [
+   [
+    1.999629,
+    1.999907,
+    1.999977,
+    1.999994
+   ],
+   [
+    1.999635,
+    1.999909,
+    1.999977,
+    1.999994
+   ]
+  ],
+  "ordem_espacial_nao_linear": [
+   [
+    1.996806,
+    1.999199,
+    1.9998,
+    1.99995
+   ],
+   [
+    1.997138,
+    1.999282,
+    1.99982,
+    1.999955
+   ]
+  ],
+  "temporal_orbita_acoplada_[dt | max|dT|_vs_dt=3.125_nos_6_pontos_de_quebra_K]": [
+   [
+    50.0,
+    0.02965834
+   ],
+   [
+    25.0,
+    0.007167976
+   ],
+   [
+    12.5,
+    0.00166235
+   ],
+   [
+    6.25,
+    0.0003213314
+   ]
+  ],
+  "ordem_temporal_orbita": [
+   2.0488,
+   2.108341,
+   2.37109
+  ]
+ }
 }
