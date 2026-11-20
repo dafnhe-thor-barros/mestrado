@@ -1,0 +1,91 @@
+import math, json
+import numpy as np
+# Auditoria A -- reproduz funcoes do legado simulacao_4_1 (copiadas do .txt) e compara com referencia numerica propria
+RE=6378.137; RSUN=696340.0; DES=1.496e8; MU=398600.4418   # constantes do legado [NAO VERIFICADO em fonte]
+def clamp(v,lo,hi): return max(lo,min(hi,v))
+def Torb(alt): return 2*math.pi*math.sqrt((RE+alt)**3/MU)
+alt=700.0; T=Torb(alt)
+rs=math.asin(RSUN/DES); re=math.asin(RE/(RE+alt))
+out={"T_s":T,"alpha_sol_deg":math.degrees(rs),"alpha_terra_deg":math.degrees(re)}
+
+def ovl(s,fix):
+    if s>=rs+re: return 0.0
+    if s<=abs(re-rs): return math.pi*min(rs,re)**2
+    a=clamp((s*s+rs*rs-re*re)/(2*s*rs),-1,1); b=clamp((s*s+re*re-rs*rs)/(2*s*re),-1,1)
+    f3=(s-rs+re) if fix else (s-re+rs)        # legado: (s - re + rs) duplicado do 2o fator
+    rad=max(0.0,(-s+rs+re)*(s+rs-re)*f3*(s+re+rs))
+    return rs*rs*math.acos(a)+re*re*math.acos(b)-0.5*math.sqrt(rad)
+def fraw(s,fix): return 1-ovl(s,fix)/(math.pi*rs*rs)   # sem clamp
+
+def fexact(g,n=401):   # fracao exata do disco solar nao ocultado, geometria ESFERICA
+    xs=np.linspace(-rs,rs,n); X,Y=np.meshgrid(xs,xs); r=np.hypot(X,Y); m=r<=rs
+    ph=np.arctan2(Y,X); vx=np.sin(r)*np.cos(ph); vz=np.cos(r)
+    ang=np.arccos(np.clip(vx*math.sin(g)+vz*math.cos(g),-1,1))
+    return float(((ang>re)&m).sum()/m.sum())
+
+gt=np.linspace(re-rs,re+rs,161)
+tl=np.array([clamp(fraw(g,False),0,1) for g in gt]); tf=np.array([clamp(fraw(g,True),0,1) for g in gt])
+te=np.array([fexact(g) for g in gt])
+out["penumbra_fracao_[k=(g-aT)/aS | legado_sem_clamp | corrigido | exato_esferico]"]=[
+  [k,round(fraw(re+k*rs,False),3),round(fraw(re+k*rs,True),4),round(fexact(re+k*rs),4)] for k in (-0.9,-0.5,0.0,0.5,0.9)]
+out["max|corrigido-exato|"]=float(np.abs(tf-te).max()); out["max|legado_clamp-exato|"]=float(np.abs(tl-te).max())
+
+def ecl(beta,kind,n=400000):
+    th=(np.arange(n)+0.5)*2*math.pi/n
+    g=np.arccos(np.clip(-math.cos(math.radians(beta))*np.cos(th),-1,1))
+    if kind=="cil":  # sombra cilindrica (sem penumbra): eclipse se Terra cobre o Sol, ponto-fonte
+        f=np.where(g<re,0.0,1.0)
+    else:
+        tab={"leg":tl,"fix":tf,"ex":te}[kind]
+        f=np.where(g<=re-rs,0.0,np.where(g>=re+rs,1.0,np.interp(g,gt,tab)))
+    return float((1-f).sum()*T/n)
+# beta que da 1128 s em sombra cilindrica
+lo,hi=0.0,math.degrees(re)
+for _ in range(60):
+    mid=0.5*(lo+hi)
+    if ecl(mid,"cil",200000)>1128.0: lo=mid
+    else: hi=mid
+out["beta_para_1128s_cil_deg"]=0.5*(lo+hi)
+out["eclipse_s_[beta | cil | legado | corrigido | exato]"]=[[b]+[round(ecl(b,k),2) for k in ("cil","leg","fix","ex")] for b in (0,30,58.4,63,64,64.3)]
+
+# ---- (b) beta x LTAN, formula do legado (ano 2026, passo 1 dia, 00:00 UTC)
+def decl(doy): return 23.44*math.sin(math.radians(360*((doy-0.5)-81)/365))
+def beta(doy,L,inc=98.2):
+    d=math.radians(decl(doy)); dw=math.radians(15*(L-12)); i=math.radians(inc)
+    return math.degrees(math.asin(clamp(math.sin(i)*math.cos(d)*math.sin(dw)+math.cos(i)*math.sin(d),-1,1)))
+def tcil(b):
+    x=math.sqrt(1-(RE/(RE+alt))**2)/math.cos(math.radians(b)); return T*math.acos(x)/math.pi if x<1 else 0.0
+rows=[]
+for L in (6.0,10.5,18.0):
+    b=np.array([beta(d,L) for d in range(1,366)]); e=np.array([tcil(x) for x in b])
+    rows.append([L,round(abs(b).min(),3),round(abs(b).max(),3),round(e.min(),1),round(e.mean(),1),round(e.max(),1),int((e==0).sum())])
+out["LTAN_[h | |b|min | |b|max | ecl_min_s | ecl_med_s | ecl_max_s | dias_sem_eclipse]"]=rows
+best=max(((float(L),min(abs(beta(d,L)) for d in range(1,366))) for L in np.arange(0,24,0.25)),key=lambda x:x[1])
+out["LTAN_que_maximiza_|b|min_[h,|b|min]"]=best
+out["decl_extremos_legado_deg"]=[min(decl(d) for d in range(1,366)),max(decl(d) for d in range(1,366))]
+
+# ---- (c) eclipse fixo dos outros scripts
+out["LEO500_cil_b0_s"]=Torb(500)*math.asin(RE/(RE+500))/math.pi; out["LEO500_T_s"]=Torb(500)
+RG=42164.0; out["GEO_T_s"]=2*math.pi*math.sqrt(RG**3/MU); out["GEO_cil_b0_s"]=out["GEO_T_s"]*math.asin(RE/RG)/math.pi
+
+# ---- fator de visao da Terra: legado x integral da definicao
+H=(RE+alt)/RE; thm=math.asin(1/H); root=math.sqrt(H*H-1)
+def Fnum(phi_deg,na=1500,nz=1500):
+    phi=math.radians(phi_deg); al=(np.arange(na)+0.5)*thm/na; ze=(np.arange(nz)+0.5)*2*math.pi/nz
+    A,Z=np.meshgrid(al,ze,indexing="ij")
+    c=np.sin(A)*np.cos(Z)*math.sin(phi)+np.cos(A)*math.cos(phi)
+    return float((np.maximum(c,0)*np.sin(A)).sum()*(thm/na)*(2*math.pi/nz)/math.pi)
+def Fvar(phi_deg,sg):
+    phi=math.radians(phi_deg)
+    if phi<=math.pi/2-thm: return clamp(math.cos(phi)/H**2,0,1)
+    if phi<=math.pi/2+thm:
+        sp=math.sin(phi); a1=clamp(root/(H*sp),-1,1); a2=clamp(sg*root*math.cos(phi)/sp,-1,1)
+        rad=max(0.0,1-H*H*math.cos(phi)**2)
+        return clamp(0.5-math.asin(a1)/math.pi+math.cos(phi)/(math.pi*H*H)*math.acos(a2)-root*math.sqrt(rad)/(math.pi*H*H),0,1)
+    return 0.0
+ph=[10,25,26,30,45,60,90,120,150,154]
+vf=[[p,round(Fvar(p,1),4),round(Fvar(p,-1),4),round(Fnum(p),4)] for p in ph]
+out["zona_interm_phi_deg"]=[math.degrees(math.pi/2-thm),math.degrees(math.pi/2+thm)]
+out["F_[phi | legado | sinal_trocado | integral_numerica]"]=vf
+out["F_max_err_legado"]=max(abs(r[1]-r[3]) for r in vf); out["F_max_err_sinal_trocado"]=max(abs(r[2]-r[3]) for r in vf)
+print(json.dumps(out,indent=1)); result={"json":json.dumps(out)}

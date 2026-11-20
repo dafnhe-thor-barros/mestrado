@@ -220,9 +220,9 @@
 | $\alpha_{s,EOL}, \varepsilon_{ir,EOL}$ | Propriedades termo-ópticas EOL do espelho OSR (10 anos) | $0{,}14, \, 0{,}88$ | -- | *(Especificação de catálogo COTS / Referência validada)* Tabela 10 ($\alpha_{s,BOL}=0{,}08$; ECSS-E-HB-31-01 Parte 6; GILMORE, 2002) |
 | $F_{rad-E}(90^\circ)$ | Fator de visão analítico placa--Terra ($\phi_{rad}=90^\circ$) | $0{,}23282 / 0{,}27125 / 0{,}00729$ | -- | **(dimensionado analiticamente)** SSO ($700\text{ km}$), LEO ($500\text{ km}$; ou $0{,}4473$ inclinado), GEO ($35.786\text{ km}$) |
 | $K_{alb}$ | Fator médio orbital de iluminação de albedo | $0{,}32 / 0{,}45 / 0{,}10$ | -- | **Parâmetro de referência:** Curvas de Lambert NASA TM-4527 para SSO / LEO / GEO |
-| $q_{amb,EOL}$ | Fluxo ambiental absorvido em EOL (SSO / LEO / GEO) | $52{,}82 / 63{,}55\text{ (104,79)} / 1{,}56$ | $\text{W/m}^2$ | **(dimensionado analiticamente)** Em SSO: $4{,}26\text{ W/m}^2$ (albedo) $+ 48{,}56\text{ W/m}^2$ (IR) |
-| $A_{rad}, A_{req,55}$ | Área instalada por nó vs. área requerida a $T_{rad}=55^\circ\text{C}$ | $88{,}60\text{ vs. }84{,}99\text{ (SSO)}$ | $\text{m}^2$ | **(dimensionado analiticamente)** Folga de $+3{,}61\text{ m}^2$ em SSO ($T_{rad}=51{,}40^\circ\text{C}, T_j=76{,}40^\circ\text{C}$) |
-| $|\delta\theta_{thr}|, |\delta\theta_{trip}|$ | Desvios de atitude para início de throttling e trip em SSO | $5{,}87^\circ, \, 15{,}24^\circ$ | graus | **(dimensionado analiticamente)** Throttling a $T_j=80^\circ\text{C}$ ($T_{rad}=55^\circ\text{C}$) e trip a $T_j=85^\circ\text{C}$ ($60^\circ\text{C}$) |
+| $q_{amb,EOL}$ | Fluxo ambiental absorvido em EOL (SSO / LEO / GEO) | $52{,}20 / 62{,}83\text{ (103,61)} / 1{,}54$ | $\text{W/m}^2$ | Calculado com $q_{Earth}=234\text{ W/m}^2$ (parâmetro nominal do Script 4.1; cerca de 1,27% abaixo da referência de 237 W/m² do ECSS-E-HB-31-01 Parte 1), absortividade/emissividade EOL e fatores geométricos indicados; hipótese não validada para missão |
+| $A_{rad}, A_{req,55}$ | Área emissora total instalada por nó vs. área requerida a $T_{rad}=55^\circ\text{C}$ | $105{,}0\text{ vs. }84{,}89\text{ (SSO)}$ | $\text{m}^2$ | **(dimensionado analiticamente)** Margem de $20{,}11\text{ m}^2$ em SSO ($T_{rad}=39{,}76^\circ\text{C}, T_j=64{,}76^\circ\text{C}$) |
+| $|\delta\theta_{thr}|, |\delta\theta_{trip}|$ | Desvios analíticos de atitude para throttling e trip em SSO | $29{,}81^\circ, \, 42{,}54^\circ$ | graus | Balanço reduzido nominal a $T_{rad}=55/60^\circ\text{C}$; valores não qualificados experimentalmente |
 
 ---
 
@@ -265,7 +265,7 @@
 | Símbolo | Descrição do Parâmetro | Valor Nominal | Unidade | Classificação e Referência / Justificativa |
 | :--- | :--- | :---: | :---: | :--- |
 | $C_1 \dots C_5$ | Capacitâncias térmicas dos nós 1 a 5 | $85 / 420 / 1100 / 3500 / 12500$ | $\text{J/K}$ | **(premissa de projeto)** Die, spreader, cold plate, loop LHP/MPFL e painel radiador |
-| $R_{12}, R_{23}, R_{34}, R_{45}$ | Resistências térmicas inter-nodais | $0{,}035 / 0{,}025 / 0{,}015 / 0{,}018$ | $\text{K/W}$ | **(premissa de projeto)** TIM1 (GaInSn), TIM2, evaporador-loop e condensador-radiador |
+| $R_{12}, R_{23}, R_{34}, R_{45}$ | Resistências térmicas inter-nodais | $0{,}035 / 0{,}025 / 0{,}015 / 0{,}018$ | $\text{K/W}$ | **(premissa de projeto)** $R_{34}$ é linearização macroscópica de primeira ordem no ponto nominal; teste $R_{34}\times12$ explora perda de condutância e aproximação a dry-out, sem qualificá-los |
 | $k_{eff}, \eta_{fin}$ | Condutividade planar APG/K13D2U e eficiência efetiva | $1275\text{ W/(mK)}, \, 0{,}945$ | -- | **[VERIFICÁVEL / PROVISÓRIO]** Inclui resistência de colagem tubo-aleta |
 
 ---
@@ -294,8 +294,8 @@
 | :--- | :--- | :---: | :---: | :--- |
 | $L_{DNP}$ | Distância do centro neutro à esfera de canto ($28\times 28\text{ mm}$) | $19{,}80$ | $\text{mm}$ | **(dimensionado analiticamente)** Semidiagonal exata $\frac{1}{2}\sqrt{28^2 + 28^2} = 19{,}799\text{ mm}$ |
 | $h_{solder}, \Delta\alpha_{CTE}$ | Altura da esfera BGA e descasamento de expansão térmica | $0{,}18\text{ mm}, \, 14{,}0\times 10^{-6}\text{ K}^{-1}$ | -- | *(Especificação de catálogo COTS / Referência validada)* IPC-9701A / IPC-SM-785 ($F = 0{,}90$, $k_{att} = 0{,}85$ (premissa de modelagem)) |
-| $2\varepsilon_f'$ | Coeficiente de ductilidade equivalente com *underfill* | $2{,}887$ ($0{,}65$ sem underfill) | -- | **Calibração empírica equivalente:** Redistribuição por *underfill* epóxi (OSTERMAN, 2018; SYED, 2004) |
-| $N_f, \text{Vida}_{SSO+TEMS}$ | Vida em fadiga no cenário nominal (`SSO + TEMS`, $\Delta T_j \le 7^\circ\text{C}$) | $73.063\text{ ciclos} / 13{,}72\text{ anos}$ | -- | **(dimensionado analiticamente)** $L_{DNP}=19{,}80\text{ mm}$; margem $+37{,}2\%$ sobre 10 anos (LEO sem TEMS: $3.165\text{ ciclos} / 6{,}8\text{ meses}$) |
+| $2\varepsilon_f'$ | Coeficiente de ductilidade equivalente com *underfill* | $2{,}887$ ($0{,}65$ sem *underfill*) | -- | **Hipótese otimista de limite teórico superior**, não medida para a montagem real; depende de qualificação por desgaseificação ECSS-Q-ST-70-02C e ensaios TVAC |
+| $N_f, \text{Vida}_{SSO+TEMS}$ | Vida em fadiga calculada no cenário (`SSO + TEMS`, $\Delta T_j \le 7^\circ\text{C}$) | $184.138\text{ ciclos} / 34{,}58\text{ anos}$ | -- | Saída arredondada do Script 4.6; limite teórico superior condicionado à hipótese $2\varepsilon_f'=2{,}887$; não é vida qualificada (LEO sem TEMS: $3.168\text{ ciclos} / 6{,}8\text{ meses}$) |
 | $PUE_{orbital}$ | Eficácia energética orbital (Nominal / Pior Caso WCH) | $1{,}050 / 1{,}144$ | -- | **(dimensionado analiticamente)** $41.983\text{ W}/40.000\text{ W}$ (nom.) e $45.757\text{ W}/40.000\text{ W}$ (WCH); $\eta_{comp}=0{,}476\text{ TOPS/W}$ |
 
 ---

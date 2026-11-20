@@ -1,0 +1,7 @@
+orbit,model,life_with_tems_years,life_without_tems_years,life_ratio_tems_over_no_tems,life_gain_percent,warning
+SSO,"Coffin-Manson, c fixo",11.50814098246229,1.113874386450671,10.331632653061224,933.1632653061224,Ganho condicionado aos ΔT e parâmetros assumidos; nao e validacao experimental.
+SSO,"Engelmaier, coeficientes da dissertacao",34.578022374652946,2.6878279210465204,12.864671173290665,1186.4671173290665,Ganho condicionado aos ΔT e parâmetros assumidos; nao e validacao experimental.
+SSO,"Engelmaier, forma de referencia",76.96972327429329,5.101016941204017,15.089093833929859,1408.9093833929858,Ganho condicionado aos ΔT e parâmetros assumidos; nao e validacao experimental.
+LEO,"Coffin-Manson, c fixo",1.6308564094602276,0.2344639223392386,6.955681680956407,595.5681680956407,Ganho condicionado aos ΔT e parâmetros assumidos; nao e validacao experimental.
+LEO,"Engelmaier, coeficientes da dissertacao",4.934010260101469,0.5698475908373722,8.658473492624763,765.8473492624763,Ganho condicionado aos ΔT e parâmetros assumidos; nao e validacao experimental.
+LEO,"Engelmaier, forma de referencia",9.580977609616436,0.9704185836259694,9.873035998359708,887.3035998359708,Ganho condicionado aos ΔT e parâmetros assumidos; nao e validacao experimental.

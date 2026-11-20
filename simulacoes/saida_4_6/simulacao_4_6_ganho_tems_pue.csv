@@ -1,0 +1,3 @@
+orbit,pue_with_tems,pue_without_tems,pue_change_percent,interpretation
+SSO,1.1100140144871753,1.1094104394471818,0.054405026177173355,Compara os perfis de carga assumidos; nao isola causalidade se as cargas auxiliares ou P_BASE mudarem.
+LEO,1.1278384161464763,1.1159937069073944,1.0613598594480855,Compara os perfis de carga assumidos; nao isola causalidade se as cargas auxiliares ou P_BASE mudarem.

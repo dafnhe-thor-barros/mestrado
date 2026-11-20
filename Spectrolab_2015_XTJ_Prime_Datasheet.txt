@@ -1,0 +1,128 @@
+--- PAGE 1 ---
+© 2012 Spectrolab, Inc All Rights Reserved –Updated 9/28/12  Specifications Subject to Change Without Notice 
+Intellectual Property  
+ 
+This product is protected by Spectrolab’s portfolio of patents 
+including the following: 
+ 7,119,271 
+ 7,126,052 
+ 6,150,603 
+ 6,255,580 
+ 6,380,601 
+Product Description  
+ 
+Substrate Germanium 
+Solar Cell Structure GaInP2/GaAs/Ge 
+Method  Metal Organic Vapor Phase Epitaxy 
+Device Design Monolithic, two terminal triple junction.  
+n/p GaInP2, GaAs, and Ge solar cells  
+interconnected with two tunnel  
+junctions 
+Standard Sizes 26.62cm2  and 59.65cm2  are common 
+standard sizes; other sizes available 
+Assembly Method Welded 
+CIC Assembly Coverglass thickness range from 3 mils 
+to 30 mils with various coatings. 
+Interconnects available with either  
+out-of-plane or in-plane stress relief 
+Heritage 
+ 
+ More than 2.6 million multi-junction cells delivered 
+ 
+ More than 820 kW of multi-junction arrays on orbit 
+ 
+ 
+ 1 MW annual capacity - cells and panels  
+ 
+ On orbit performance for multi-junction solar cells  
+ validated to ± 1.5% of ground test results 
+Spectrolab, Inc. 12500 Gladstone Avenue, Sylmar, California 91342 USA  
+ ● Phone 818.365.4611  ● FAX: 818.361.5102  Website: .www.spectrolab.com 
+ 
+ 
+Key Qualification Results 
+ Qualified in accordance with AIAA-S111-2005 
+ Completed 2,000 GEO qualification cycles, including 
+Combined Effects Test 
+Features 
+ 
+ Small and large cell sizes offered for optimum packing  factor 
+and cost competitiveness 
+ Geostationary Orbit (GEO) mission qualified 
+ 29.5% efficiency (min. average @ max power, 28°C, AM0) 
+ 29.3% efficiency (min. average @ load, 28°C, AM0) 
+ Discrete Si bypass diode protection 
+ Available as CIC assembly (Cell-Interconnect-Coverglass 
+with diode) for ease of integration or delivered on  
+completed solar panels (see Panel Data Sheet) 
+ Also qualified as large area cell/CIC (59.65cm2)  
+29.5% NeXt Triple Junction (XTJ) Solar Cells 
+S P E C T R O L A B A BOEING COMPANY 
+Cells shown with interconnects, coverglass, and bypass diode 
+
+--- PAGE 2 ---
+Typical IV Characteristic 
+AM0 (135.3 mW/cm²) 28°C, Bare Cell 
+The information contained on this sheet is for reference 
+only. Specifications subject to change without notice. 
+Revised 5 /20 /20 10  
+Typical Electrical Parameters 
+(AM0 (135.3 mW/cm²) 28°C, Bare Cell) 
+Jsc= 17.76 mA/cm² 
+Jmp= 17.02 mA/cm² 
+Jload min avg= 17.14 mA/cm² 
+Voc= 2.633 V 
+Vmp= 2.348 V 
+Vload= 2.310 V 
+Cff= 0.85 
+Effload= 29.3% 
+Effmp= 29.5% 
+Radiation Degradation 
+(Fluence 1MeV Electrons/cm2)  
+Parameters 1x1014 5x1014 1x1015 
+Imp/Imp0 1.00 0.99 0.95 
+Vmp/Vmp0 0.94 0.91 0.89 
+Pmp/Pmp0 0.95 0.90 0.85 
+Thermal Properties 
+Solar Absorptance= 0.90 (5 mil CMG/AR, 0.88 for bare cell)  
+Emittance (Normal)=  0.85 (Ceria Doped Microsheet)  
+Weight  
+84 mg/ cm² (Bare) @ 140 µm (5.5 mil) Ge wafer thickness  
+Current (mA/cm²) 
+Contact
+Ge Substrate
+Drawing Not To Scale
+ContactA/R*
+Top Cell: GaInP 2
+Tunnel Junction
+Bottom Cell: Ge
+A/R*
+Tunnel Junction
+Middle Cell: GaAs
+*A/R: Anti-Reflective Coating
+Temperature Coefficients (15°C - 75°C)   
+(Fluence 1MeV Electrons/cm2)  
+Parameters BOL 5x1014 1x1015 
+Jmp (µA/cm²/°C) 6.6 10.0 13.2 
+Jsc (µA/cm²/°C) 11.6 10.9 11.9 
+Vmp (mV/°C) -6.5 -6.8 -6.9 
+Voc (mV/°C) -5.8 -6.5 -6.6 
+0
+2
+4
+6
+8
+10
+12
+14
+16
+18
+20
+0 1 2 3
+29.5% NeXt Triple Junction (XTJ) Solar Cells 
+S P E C T R O L A B A BOEING COMPANY 
+Spectrolab, Inc. 12500 Gladstone Avenue, Sylmar, California 91342 USA  
+ ● Phone 818.365.4611  ● FAX: 818.361.5102  Website: .www.spectrolab.com 
+© 2010 Spectrolab, Inc All Rights Reserved   
+Voltage (V) 
+

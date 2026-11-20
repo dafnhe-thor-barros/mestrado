@@ -1,0 +1,77 @@
+import math, json
+import numpy as np
+# Constantes do LEGADO (continuam [NAO VERIFICADO] salvo as lidas em fonte nesta rodada)
+RE=6378.137; MU=398600.4418; RSUN=696340.0; DES=1.496e8; ALT=700.0
+RSUN_IAU=695700.0; AU_IAU=149597870.7           # [FONTE] IAU 2015 B3 / IAU 2012 B2 (lidos)
+def clamp(v,lo,hi): return max(lo,min(hi,v))
+def geom(rsun,des,alt):
+    R=RE+alt; T=2*math.pi*math.sqrt(R**3/MU)
+    return T, math.asin(rsun/des), math.asin(RE/R)
+def frac_vec(g,rs,re,fix=True):
+    g=np.asarray(g,float); out=np.ones_like(g); out[g<=re-rs]=0.0
+    pen=(g>re-rs)&(g<re+rs); s=g[pen]
+    a=np.clip((s*s+rs*rs-re*re)/(2*s*rs),-1,1); b=np.clip((s*s+re*re-rs*rs)/(2*s*re),-1,1)
+    f3=(s-rs+re) if fix else (s-re+rs)
+    rad=np.maximum(0,(-s+rs+re)*(s+rs-re)*f3*(s+re+rs))
+    ov=rs*rs*np.arccos(a)+re*re*np.arccos(b)-0.5*np.sqrt(rad)
+    out[pen]=np.clip(1-ov/(math.pi*rs*rs),0,1); return out
+def ecl(beta,kind,rsun=RSUN,des=DES,alt=ALT,n=40000):
+    T,rs,re=geom(rsun,des,alt)
+    th=(np.arange(n)+0.5)*2*math.pi/n
+    g=np.arccos(np.clip(-math.cos(math.radians(beta))*np.cos(th),-1,1))
+    f=np.where(g<re,0.0,1.0) if kind=="cil" else frac_vec(g,rs,re,fix=(kind=="fix"))
+    return float((1-f).sum()*T/n)
+out={}
+T,rs,re=geom(RSUN,DES,ALT)
+# --- (1) equivalencia dos limiares do usuario para o eclipse
+def decl(doy): return 23.44*math.sin(math.radians(360*((doy-0.5)-81)/365))
+def beta(doy,L,inc=98.2):
+    d=math.radians(decl(doy)); dw=math.radians(15*(L-12)); i=math.radians(inc)
+    return math.degrees(math.asin(clamp(math.sin(i)*math.cos(d)*math.sin(dw)+math.cos(i)*math.sin(d),-1,1)))
+def tcil(b):
+    x=math.sqrt(1-(RE/(RE+ALT))**2)/math.cos(math.radians(b)); return T*math.acos(x)/math.pi if x<1 else 0.0
+t_des=max(tcil(beta(d,18.0)) for d in range(1,366))
+out["t_ecl_max_LTAN18_2026_s"]=t_des
+out["limiar_1pct_janela_se_BESS_dimensionado_para_t_ecl_max_s"]=0.01*t_des
+out["limiar_1pct_da_janela_2.25kWh_com_20kW_s"]=0.01*2.25e3*3600/20000.0
+# --- (2) penumbra: |cil - cone_corrigido| em funcao de beta, e dias de 2026 afetados
+bs=np.arange(63.0,64.8,0.05)
+dif=[(float(b),ecl(b,"fix")-ecl(b,"cil")) for b in bs]
+out["penumbra_[beta,t_cone_corr - t_cil]_s"]=[[round(b,2),round(d,2)] for b,d in dif[::3]]
+dias={}
+for L in (18.0,10.5):
+    bet=[beta(d,L) for d in range(1,366)]
+    ec_cil=[tcil(b) for b in bet]; ec_fix=[ecl(b,"fix") if abs(b)>62.0 else tcil(b) for b in bet]; ec_leg=[ecl(b,"leg") if abs(b)>62.0 else tcil(b) for b in bet]
+    dd=np.array(ec_fix)-np.array(ec_cil); dl=np.array(ec_leg)-np.array(ec_fix)
+    dias[str(L)]=dict(dias_com_eclipse_cil=int(sum(1 for x in ec_cil if x>0)),dias_com_eclipse_cone=int(sum(1 for x in ec_fix if x>0.5)),
+        dias_dt_cone_vs_cil_gt_11p3s=int((np.abs(dd)>11.27).sum()),dias_dt_cone_vs_cil_gt_15s=int((np.abs(dd)>15).sum()),
+        max_dt_cone_vs_cil_s=float(np.abs(dd).max()),dias_legado_vs_corrigido_gt_15s=int((np.abs(dl)>15).sum()),max_legado_menos_corrigido_s=float(dl.max()))
+out["dias_2026_(formula_beta_do_legado)"]=dias
+# --- (3) raio solar IAU (695700) e UA IAU: efeito no eclipse e no disco solar
+T2,rs2,re2=geom(RSUN_IAU,AU_IAU,ALT)
+out["alpha_sol_deg_legado_vs_IAU"]=[math.degrees(rs),math.degrees(rs2)]
+out["dif_relativa_alpha_sol_pct"]=100*(rs2-rs)/rs
+out["eclipse_cone_corr_beta64_s_legado_vs_IAU"]=[ecl(64.0,"fix"),ecl(64.0,"fix",RSUN_IAU,AU_IAU)]
+out["eclipse_cil_beta0_s_inalterado"]=[ecl(0.0,"cil"),ecl(0.0,"cil",RSUN_IAU,AU_IAU)]
+# --- (4) fator de visao: erro em W/m2 (IR) com eps e q_IR do legado (NAO VERIFICADOS)
+H=(RE+ALT)/RE; thm=math.asin(1/H); root=math.sqrt(H*H-1)
+def Fnum(phi_deg,na=1500,nz=1500):
+    phi=math.radians(phi_deg); al=(np.arange(na)+0.5)*thm/na; ze=(np.arange(nz)+0.5)*2*math.pi/nz
+    A,Z=np.meshgrid(al,ze,indexing="ij"); c=np.sin(A)*np.cos(Z)*math.sin(phi)+np.cos(A)*math.cos(phi)
+    return float((np.maximum(c,0)*np.sin(A)).sum()*(thm/na)*(2*math.pi/nz)/math.pi)
+def Fleg(phi_deg):
+    phi=math.radians(phi_deg)
+    if phi<=math.pi/2-thm: return clamp(math.cos(phi)/H**2,0,1)
+    if phi<=math.pi/2+thm:
+        sp=math.sin(phi); a1=clamp(root/(H*sp),-1,1); a2=clamp(root*math.cos(phi)/sp,-1,1); rad=max(0.0,1-H*H*math.cos(phi)**2)
+        return clamp(0.5-math.asin(a1)/math.pi+math.cos(phi)/(math.pi*H*H)*math.acos(a2)-root*math.sqrt(rad)/(math.pi*H*H),0,1)
+    return 0.0
+EPS,QIR=0.88,234.0
+out["dq_IR_[phi_deg | F_legado | F_integral | dq_W_m2]"]=[[p,round(Fleg(p),4),round(Fnum(p),4),round(EPS*QIR*(Fnum(p)-Fleg(p)),2)] for p in (26,30,45,60,90,120,140,150)]
+# beta -> faixa de phi percorrida pelo legado (radiator_hat = -sun_hat): phi em [beta, 180-beta]
+out["phi_legado_beta58.36_deg"]=[58.36,180-58.36]
+# --- (5) o que 5 W/m2 significa em temperatura de radiador (linearizacao de sigma*T^4, so como ordem de grandeza)
+SIG=5.670374419e-8
+for T_K in (303.48,318.15):
+    h=4*EPS*SIG*T_K**3; out[f"h_rad_W_m2K_T{T_K}"]=h; out[f"dT_K_para_5W_m2_T{T_K}"]=5.0/h
+print(json.dumps(out,indent=1,ensure_ascii=False)); result={"json":json.dumps(out,ensure_ascii=False)}

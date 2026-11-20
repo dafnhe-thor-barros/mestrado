@@ -20,6 +20,7 @@ bibliografia/*.pdf
 # Python cache
 __pycache__/
 *.pyc
+.pytest_cache/
 
 # Octave / MATLAB
 *.asv
@@ -28,3 +29,5 @@ __pycache__/
 .DS_Store
 Thumbs.db
 *.zip
+backups/
+simulacoesbkp/

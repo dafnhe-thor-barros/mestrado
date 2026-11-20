@@ -1,0 +1,71 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage{fontspec}
+\setmainfont{Segoe UI}
+\setmonofont{Consolas}[Scale=0.82]
+\usepackage[brazilian]{babel}
+\usepackage{geometry}
+\geometry{top=1.6cm, bottom=1.6cm, left=1.5cm, right=1.5cm}
+\usepackage{xcolor}
+\usepackage{fvextra}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\definecolor{ifesgreen}{RGB}{24, 138, 63}
+\hypersetup{colorlinks=true, linkcolor=ifesgreen, urlcolor=ifesgreen}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\footnotesize\color{ifesgreen}\textbf{IFES / ProPECAut — Auditoria de Modelos Computacionais (Python)}}
+\rhead{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+\begin{center}
+    {\Large\textbf{\color{ifesgreen}COMPILADO DE MODELOS COMPUTACIONAIS EM PYTHON}}\\[4pt]
+    {\normalsize\textbf{Auditoria Técnica — Dissertação de Mestrado em Engenharia de Controle e Automação (ProPECAut / IFES)}}\\[4pt]
+    {\small Mestrando: Dafnhê Thor Castro de Martins Barros \;|\; Orientador: Prof. Dr. Flávio Barcelos Braz da Silva}\\[4pt]
+    \rule{\textwidth}{1pt}
+\end{center}
+
+\tableofcontents
+\newpage
+\section{Modelo 3.1: Barramento HVDC, BESS e SSPC (Legado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/simulacao\_3\_1\_barramento\_hvdc.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/simulacao_3_1_barramento_hvdc.py}
+\newpage
+\section{Modelo 3.2: Gerador Fotovoltaico Multijunção AM0 (Legado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/simulacao\_3\_2\_gerador\_fotovoltaico\_am0.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/simulacao_3_2_gerador_fotovoltaico_am0.py}
+\newpage
+\section{Modelo 3.3: Bateria Dual-Polarization e AUKF (Legado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/simulacao\_3\_3\_bateria\_dp\_aukf.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/simulacao_3_3_bateria_dp_aukf.py}
+\newpage
+\section{Modelo 3.4: Conversores GaN e Middlebrook (Legado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/simulacao\_3\_4\_conversores\_gan\_middlebrook.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/simulacao_3_4_conversores_gan_middlebrook.py}
+\newpage
+\section{Modelo 4.1: Fluxos Orbitais e Rede Térmica Nodal (Legado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/simulacao\_4\_1\_fluxos\_orbitais.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/simulacao_4_1_fluxos_orbitais.py}
+\newpage
+\section{Modelo 4.5: Controle Ativo TEMS-NMPC (Legado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/simulacao\_4\_5\_tems\_nmpc.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/simulacao_4_5_tems_nmpc.py}
+\newpage
+\section{Modelo 4.6: Fadiga BGA e PUE Orbital (Legado - Descontinuado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/simulacao\_4\_6\_fadiga\_bga\_cme.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/simulacao_4_6_fadiga_bga_cme.py}
+\newpage
+\section{Auxiliar: Cálculo de Tempo Crítico SSPC (Legado - Descontinuado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/calcular\_tempo\_critico\_sspc.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/calcular_tempo_critico_sspc.py}
+\newpage
+\section{Executor: Bateria 100 Órbitas (Legado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/executar\_bateria\_100\_orbitas.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/executar_bateria_100_orbitas.py}
+\newpage
+\section{Executor: Fluxos Orbitais 100 Órbitas (Legado)}
+\noindent\textbf{Arquivo original:} \texttt{simulacoes/executar\_fluxos\_orbitais\_100\_orbitas.py}\\[4pt]
+\VerbatimInput[breaklines=true, breakanywhere=true, numbers=left, numbersep=6pt, fontsize=\scriptsize, frame=single]{simulacoes/executar_fluxos_orbitais_100_orbitas.py}
+\end{document}

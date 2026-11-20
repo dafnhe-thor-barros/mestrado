@@ -1,0 +1,4687 @@
+================================================================================
+COMPILADO DE SCRIPTS PYTHON DOS MODELOS DA DISSERTACAO (PARA AUDITORIA)
+IFES - Campus Serra | ProPECAut | Mestrando: Dafnhe Thor C. M. Barros
+================================================================================
+
+
+################################################################################
+# [1/10] Modelo 3.1: Barramento HVDC, BESS e SSPC (Legado)
+# Arquivo: simulacoes/simulacao_3_1_barramento_hvdc.py
+################################################################################
+
+﻿#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ==============================================================================
+# SIMULAÇÃO 3.1: DINÂMICA DO BARRAMENTO HVDC (400 V), BALANÇO DE ENERGIA
+# MULTI-ÓRBITA DO BESS, CURTO-CIRCUITO E PROTEÇÃO ATIVA POR CHAVE SSPC
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Cargas com OISL Contínuo (440 W), ndab = 0.95 e nbuck = 0.91
+# ==============================================================================
+
+import os
+import csv
+import json
+import math
+import time
+import numpy as np
+import matplotlib.pyplot as plt
+
+N_ORB = 20                       # Número de órbitas completas simuladas
+OUT_DIR = "saida_3_1"
+
+PAR = {
+    # Potências da carga e plataforma
+    "p_node": 50000.0,           # Potência nominal de pico do nó [W] (50 kW)
+    "p_it_nom": 40000.0,         # Potência máxima de TI computacional [W] (40 kW)
+    "p_it_sun_nom": 32000.0,     # Carga de cruzeiro de TI em insolação [W]
+    "p_it_ecl_falha": 20000.0,   # Carga em contingência BAT-F01 (sem modulação) [W]
+    
+    # AJUSTE OISL: 560 W (aviônica/bombas) + 440 W (4x terminais laser OISL) = 1000 W
+    "p_aux": 1000.0,             # Cargas contínuas essenciais de plataforma e OISL [W]
+    "p_oisl_eletrico": 440.0,    # Potência elétrica dedicada aos 4 terminais OISL [W]
+    "q_oisl": 343.2,             # Calor residual interno gerado pelos lasers no chassi [W]
+
+    # Barramento primário estabilizado HVDC
+    "v_nom": 400.0,              # Tensão nominal de barramento [V]
+    "v_uv": 324.0,               # Limiar crítico de subtensão UVLO (3,0 V/célula) [V]
+    "v_ov": 442.8,               # Limiar de sobretensão CC-CV (4,10 V/célula) [V]
+
+    # Banco de Baterias BESS (108S1P Li-ion NMC)
+    "n_cells": 108,              # Número de células em série
+    "ocv0": 3.0, "ocv1": 1.1,    # Relação linear Voc = n*(ocv0 + ocv1*SoC)
+    "e_bat_j": 9.0 * 3.6e6,      # Energia nominal armazenada (9,0 kWh) [J]
+    "cap_ah": 22.52,             # Capacidade nominal [Ah]
+    "c_rate_chg": 1.0,           # Limite de taxa de recarga CC (1,0C = 22,52 A)
+    "eta_chg": 0.995,            # Eficiência coulômbica de recarga
+    "eta_dis": 0.970,            # Eficiência eletroquímica de descarga
+    "r0": 0.085,                 # Resistência interna equivalente EOL a frio [Ohm]
+    "soc_min_req": 0.20,         # Piso mínimo regulamentar de Estado de Carga (20%)
+
+    # Conversores estáticos de potência
+    "eta_conv": 0.950,           # Eficiência do conversor de distribuição DAB (ndab = 0.95)
+    "eta_conv_wca": 0.900,       # Eficiência degradada no pior caso (WCA = 90,0%)
+    "p_pv_eol": 49733.0,         # Potência PV EOL em 65°C após o Buck (nbuck = 0.91) [W]
+
+    # Parâmetros de curto-circuito e proteção SSPC (SiC 1200 V)
+    "r_line": 14.0e-3,           # Resistência dos cabos de distribuição [Ohm]
+    "r_sc": 1.0e-3,              # Resistência de contato do curto-circuito franco [Ohm]
+    "r_ds_on": 0.010,            # Resistência de condução do interruptor SSPC [Ohm]
+    "v_clamp": 550.0,            # Tensão de corte do diodo de grampeamento TVS [V]
+    "i2t_lim": 1500.0,           # Limite adiabático de fusão do SiC MOSFET [A^2 s]
+    "v_ds_max": 1200.0,          # Tensão de ruptura máxima da chave de potência [V]
+    "v_bat_sc": 399.6, "r0_bat_sc": 0.045, "l_bat": 2.5e-6, "tau_ext": 0.5e-6,
+
+    # Modelo térmico concentrado do chassi (1 nó)
+    "c_th_chassi": 18000.0,      # Capacitância térmica da estrutura metálica [J/K]
+    "t_chassi0": 25.0,           # Temperatura inicial do chassi [°C]
+    "t_lim_chassi": 65.0,        # Limite operacional máximo admissível [°C]
+    "t_ref_chassi": 5926.0,      # Período de referência orbital [s]
+}
+
+ORBITS = [
+    {"name": "LEO_500km",   "T": 5677.0,  "t_ecl": 2148.0, "p_it_ecl": 6500.0},
+    {"name": "SSO_700km",   "T": 5926.0,  "t_ecl": 1128.0, "p_it_ecl": 18000.0},
+    {"name": "GEO_35786km", "T": 86164.0, "t_ecl": 4320.0, "p_it_ecl": 4500.0},
+]
+
+PV_SCEN = [
+    ("EOL_85C_nbuck91", 46137.0),
+    ("EOL_65C_nbuck91", 49733.0),
+    ("EOL_28C_nbuck91", 54183.0),
+]
+
+SC_CASES = [
+    ("Nominal 8 us",            8e-6,    1.8e-6, 4.7e-3, True,  False),
+    ("Nominal 15 us",           15e-6,   1.8e-6, 4.7e-3, True,  False),
+    ("WCA 74.54 us",             74.54e-6, 4.0e-6, 1.5e-3, True,  False),
+    ("WCA 100 us",              100e-6,  4.0e-6, 1.5e-3, True,  False),
+    ("WCA 100 us + ramo bateria", 100e-6,  4.0e-6, 1.5e-3, True,  True),
+    ("Falha sem TVS 15 us",     15e-6,   4.0e-6, 1.5e-3, False, False),
+]
+
+SINKS = [45.0, 51.94, 55.0]      # Temperatura do radiador sumidouro [°C]
+
+
+def conv_orbit(series, tol):
+    ref = series[-1]
+    for j in range(len(series)):
+        if all(abs(x - ref) <= tol for x in series[j:]):
+            return j + 1
+    return len(series)
+
+
+def bess_run(par, orb, mode="nominal", n_orb=N_ORB, dt=2.0, p_it_sun=None, p_pv=None):
+    T = orb["T"]
+    te = orb["t_ecl"]
+
+    if mode == "falha":
+        p_it_ecl = par["p_it_ecl_falha"]
+        p_it_sol = par["p_it_nom"]
+    else:
+        p_it_ecl = orb["p_it_ecl"]
+        p_it_sol = par["p_it_sun_nom"]
+
+    if p_it_sun is not None:
+        p_it_sol = p_it_sun
+    if p_pv is None:
+        p_pv = par["p_pv_eol"]
+
+    eta_c = par["eta_conv"]  # ndab = 0.95
+    p_ecl_bus = (p_it_ecl + par["p_aux"]) / eta_c
+    surplus = max(0.0, p_pv - (p_it_sol + par["p_aux"]) / eta_c)
+
+    n = int(round(n_orb * T / dt))
+    soc = np.empty(n + 1)
+    v = np.empty(n + 1)
+    ib = np.empty(n + 1)
+    soc[0] = 1.0
+
+    E = par["e_bat_j"]
+    r0 = par["r0"]
+    nc = par["n_cells"]
+    o0 = par["ocv0"]
+    o1 = par["ocv1"]
+    v_ov = par["v_ov"]
+    v_uv = par["v_uv"]
+    soc_req = par["soc_min_req"]
+    i_cc_max = par["c_rate_chg"] * par["cap_ah"]
+    eta_chg = par["eta_chg"]
+    eta_dis = par["eta_dis"]
+
+    trip_soc = None
+    trip_uv = None
+    collapse = None
+    e_dis = 0.0
+    e_chg = 0.0
+    clip = 0.0
+
+    for k in range(n):
+        t = k * dt
+        s = soc[k]
+        ocv = nc * (o0 + o1 * s)
+
+        # Descarga a potência constante no eclipse
+        if (t % T) < te:
+            disc = ocv * ocv - 4.0 * r0 * p_ecl_bus
+            if disc <= 0.0:
+                if collapse is None:
+                    collapse = t / 60.0
+                i_k = ocv / (2.0 * r0)
+                v_k = 0.5 * ocv
+            else:
+                i_k = (ocv - math.sqrt(disc)) / (2.0 * r0)
+                v_k = ocv - i_k * r0
+            ds = -p_ecl_bus / (E * eta_dis) * dt
+            e_dis += p_ecl_bus * dt
+            ib_k = i_k
+        # Recarga CC-CV no período de insolação
+        else:
+            if s >= 1.0:
+                i_c = 0.0
+                v_k = ocv
+            else:
+                i_pow = (-ocv + math.sqrt(ocv * ocv + 4.0 * r0 * surplus)) / (2.0 * r0)
+                i_c = min(i_pow, i_cc_max)
+                v_k = ocv + i_c * r0
+                if v_k > v_ov:
+                    i_c = max(0.0, (v_ov - ocv) / r0)
+                    v_k = v_ov
+            ds = i_c * v_k * eta_chg / E * dt
+            e_chg += i_c * v_k * dt
+            ib_k = -i_c
+
+        s_new = s + ds
+        if s_new > 1.0:
+            clip += (s_new - 1.0) * E
+            s_new = 1.0
+        elif s_new < 0.0:
+            clip += s_new * E
+            s_new = 0.0
+
+        soc[k + 1] = s_new
+        v[k] = v_k
+        ib[k] = ib_k
+
+        if trip_soc is None and s_new < soc_req:
+            trip_soc = (k + 1) * dt / 60.0
+        if trip_uv is None and v_k < v_uv:
+            trip_uv = t / 60.0
+
+    v[n] = v[n - 1]
+    ib[n] = ib[n - 1]
+
+    closure = (soc[-1] - 1.0) * E - (e_chg * eta_chg - e_dis / eta_dis - clip)
+    t_arr = np.arange(n + 1) * dt
+    idx = np.minimum((t_arr / T).astype(int), n_orb - 1)
+    bounds = np.searchsorted(idx, np.arange(n_orb + 1))
+    pw = ib * v
+    pw[-1] = 0.0
+
+    orbits = []
+    for j in range(n_orb):
+        a = int(bounds[j])
+        b = int(bounds[j + 1])
+        if b - a < 2:
+            continue
+        sl = slice(a, b)
+        p_j = pw[sl]
+        orbits.append({
+            "j": j + 1,
+            "soc_min": float(soc[sl].min() * 100.0),
+            "soc_end": float(soc[b - 1] * 100.0),
+            "v_min": float(v[sl].min()),
+            "v_max": float(v[sl].max()),
+            "i_dis_max": float(ib[sl].max()),
+            "i_chg_max": float(-ib[sl].min()),
+            "e_dis_kwh": float(p_j[p_j > 0].sum() * dt / 3.6e6),
+            "e_chg_kwh": float(-p_j[p_j < 0].sum() * dt / 3.6e6)
+        })
+
+    st = max(1, int(round(10.0 / dt)))
+    return {
+        "orbit": orb["name"], "T": T, "mode": mode,
+        "p_it_sol": p_it_sol, "p_pv": p_pv, "orbits": orbits,
+        "trip_soc_min": trip_soc, "trip_uv_min": trip_uv,
+        "collapse_min": collapse, "closure_rel": float(closure / E),
+        "t_h": t_arr[::st] / 3600.0, "soc": soc[::st] * 100.0,
+        "v": v[::st], "i": ib[::st]
+    }
+
+
+def bess_recovers(res, tol=99.9):
+    return (
+        res["trip_soc_min"] is None and
+        res["trip_uv_min"] is None and
+        res["collapse_min"] is None and
+        all(o["soc_end"] >= tol for o in res["orbits"])
+    )
+
+
+def p_it_sun_max(par, orb, p_pv, n_orb=N_ORB, dt=2.0):
+    hi = min(par["p_it_nom"], p_pv * par["eta_conv"] - par["p_aux"])
+    r_hi = bess_run(par, orb, "nominal", 8, 20.0, p_it_sun=hi, p_pv=p_pv)
+    if bess_recovers(r_hi):
+        lo = hi
+    else:
+        lo = 0.0
+        for _ in range(16):
+            mid = 0.5 * (lo + hi)
+            r = bess_run(par, orb, "nominal", 8, 20.0, p_it_sun=mid, p_pv=p_pv)
+            if bess_recovers(r):
+                lo = mid
+            else:
+                hi = mid
+    ps = lo
+    r = None
+    for _ in range(60):
+        r = bess_run(par, orb, "nominal", n_orb, dt, p_it_sun=ps, p_pv=p_pv)
+        if bess_recovers(r):
+            return ps, r
+        ps -= 100.0
+        if ps < 0.0:
+            break
+    return 0.0, r
+
+
+def short_circuit(par, t_trip, L, C, clamp=True, battery=False, dt=10e-9):
+    R = par["r_line"] + par["r_sc"]
+    vcl = par["v_clamp"]
+    vb = par["v_bat_sc"]
+    r0b = par["r0_bat_sc"]
+    Lb = par["l_bat"]
+    rds = par["r_ds_on"]
+
+    n_max = int((t_trip + 600e-6) / dt)
+    iL = 0.0
+    ib = 0.0
+    vc = par["v_nom"]
+    i2t = 0.0
+    i2t_pre = None
+    i_trip = 0.0
+    vc_trip = vc
+    e_tvs = 0.0
+    ipk = 0.0
+    vsw_max = 0.0
+    t_end_cond = None
+    extinguished = False
+
+    for k in range(n_max):
+        t = k * dt
+        if t < t_trip:
+            vs = iL * rds
+            iL = iL + (vc - R * iL) / L * dt
+        else:
+            if i2t_pre is None:
+                i2t_pre = i2t
+                i_trip = iL
+                vc_trip = vc
+            if iL <= 1e-3:
+                t_end_cond = t
+                extinguished = True
+                break
+            if clamp:
+                vs = vcl
+                iL = max(0.0, iL + (vc - vcl - R * iL) / L * dt)
+                e_tvs += vcl * iL * dt
+            else:
+                vs = vc + L * iL / par["tau_ext"] - R * iL
+                iL = max(0.0, iL - iL / par["tau_ext"] * dt)
+
+        if battery:
+            ib = ib + (vb - r0b * ib - vc) / Lb * dt
+            vc = vc + (ib - iL) / C * dt
+        else:
+            vc = vc - iL / C * dt
+
+        i2t += iL * iL * dt
+        if iL > ipk:
+            ipk = iL
+        if vs > vsw_max:
+            vsw_max = vs
+
+    if i2t_pre is None:
+        i2t_pre = i2t
+    if t_end_cond is None:
+        t_end_cond = n_max * dt
+
+    return {
+        "t_trip_us": t_trip * 1e6, "ipk_kA": ipk / 1e3, "i_trip_kA": i_trip / 1e3,
+        "vc_trip_V": vc_trip, "i2t_total": i2t, "i2t_pre_trip": i2t_pre,
+        "e_tvs_J": e_tvs, "v_sw_max_V": vsw_max,
+        "t_ext_us": (t_end_cond - t_trip) * 1e6, "extinguished": extinguished
+    }
+
+
+def chassis_run(par, eta, g_th, t_sink, n_orb=N_ORB, dt=2.0):
+    t_ref = par["t_ref_chassi"]
+    p_conv = par["p_node"] * (1.0 - eta)
+    q_o = par["q_oisl"]
+    c = par["c_th_chassi"]
+
+    n = int(round(n_orb * t_ref / dt))
+    T = np.empty(n + 1)
+    T[0] = par["t_chassi0"]
+
+    for k in range(n):
+        tc = (k * dt) % 1800.0
+        duty = 0.4 + (0.6 if tc < 1200.0 else 0.0)
+        q = p_conv * duty + q_o
+        T[k + 1] = T[k] + (q - g_th * (T[k] - t_sink)) / c * dt
+
+    idx = np.minimum((np.arange(n + 1) * dt / t_ref).astype(int), n_orb - 1)
+    bounds = np.searchsorted(idx, np.arange(n_orb + 1))
+    tmax_orb = [float(T[bounds[j]:bounds[j + 1]].max()) for j in range(n_orb)]
+    q_avg = p_conv * 0.8 + q_o
+
+    return {
+        "p_loss_pk": p_conv + q_o,
+        "t_max_last": tmax_orb[-1],
+        "t_eq_medio": t_sink + q_avg / g_th,
+        "margin": par["t_lim_chassi"] - tmax_orb[-1],
+        "status": "OK" if (par["t_lim_chassi"] - tmax_orb[-1]) >= 0 else "VIOLA"
+    }
+
+
+def gerar_graficos(bess_resultados):
+    """Gera e salva os gráficos das simulações na pasta saida_3_1 em formato PNG."""
+    print(f"\n[INFO] Gerando gráficos e salvando em ./{OUT_DIR}/...")
+    
+    # 1. Gráfico de Estado de Carga (SoC) por órbita para os casos nominais
+    plt.figure(figsize=(10, 5))
+    for res in bess_resultados:
+        if "nominal" in res["caso"]:
+            plt.plot(res["t_h"], res["soc"], label=f"{res['orbita']} - {res['caso']}")
+    plt.axhline(20.0, color='r', linestyle='--', label='Piso Mínimo (20%)')
+    plt.title("Simulação 3.1: Dinâmica do SoC do BESS (Multi-Órbita)")
+    plt.xlabel("Tempo de Simulação [h]")
+    plt.ylabel("Estado de Carga - SoC [%]")
+    plt.grid(True)
+    plt.legend(loc='best', fontsize=8)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUT_DIR, "bess_soc_multiorbita.png"), dpi=300)
+    plt.close()
+
+    # 2. Gráfico de Tensão nas Células do BESS
+    plt.figure(figsize=(10, 5))
+    for res in bess_resultados:
+        if "nominal" in res["caso"]:
+            plt.plot(res["t_h"], res["v"], label=f"{res['orbita']} - {res['caso']}")
+    plt.axhline(PAR["v_uv"], color='orange', linestyle='--', label='Limiar Subtensão (UVLO)')
+    plt.axhline(PAR["v_ov"], color='purple', linestyle='--', label='Limiar Sobretensão (CC-CV)')
+    plt.title("Simulação 3.1: Tensão do Banco de Baterias (BESS)")
+    plt.xlabel("Tempo de Simulação [h]")
+    plt.ylabel("Tensão do Banco [V]")
+    plt.grid(True)
+    plt.legend(loc='best', fontsize=8)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUT_DIR, "bess_tensao_banco.png"), dpi=300)
+    plt.close()
+
+    # 3. Gráfico de Corrente do BESS
+    plt.figure(figsize=(10, 5))
+    for res in bess_resultados:
+        if "nominal" in res["caso"]:
+            plt.plot(res["t_h"], res["i"], label=f"{res['orbita']} - {res['caso']}")
+    plt.title("Simulação 3.1: Corrente do Banco de Baterias (Descarga/Recarga)")
+    plt.xlabel("Tempo de Simulação [h]")
+    plt.ylabel("Corrente [A]")
+    plt.grid(True)
+    plt.legend(loc='best', fontsize=8)
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUT_DIR, "bess_corrente_banco.png"), dpi=300)
+    plt.close()
+
+    print("[INFO] Gráficos salvos com sucesso na pasta especificada.")
+
+
+def main():
+    t0 = time.time()
+    os.makedirs(OUT_DIR, exist_ok=True)
+    print("=" * 80)
+    print("SIMULAÇÃO 3.1: DINÂMICA DO BARRAMENTO E BESS (COM OISL CONTÍNUO = 440 W)")
+    print("=" * 80)
+
+    # 1. Simulação BESS
+    bess_resumo = []
+    bess_resultados_completos = []
+    for orb in ORBITS:
+        r_sus = p_it_sun_max(par=PAR, orb=orb, p_pv=PAR["p_pv_eol"])[1]
+        cases = [
+            ("nominal_32kW_script", bess_run(PAR, orb, "nominal", p_it_sun=PAR["p_it_sun_nom"])),
+            ("nominal_40kW_cap4", bess_run(PAR, orb, "nominal", p_it_sun=PAR["p_it_nom"])),
+            ("nominal_Pmax_sustentavel", r_sus),
+            ("falha_BAT_F01", bess_run(PAR, orb, "falha"))
+        ]
+        for cname, r in cases:
+            ob = r["orbits"]
+            ok = (
+                r["trip_soc_min"] is None and
+                r["trip_uv_min"] is None and
+                min(o["soc_min"] for o in ob) >= 20.0
+            )
+            bess_resumo.append({
+                "caso": cname, "orbita": orb["name"],
+                "p_it_sol_kW": r["p_it_sol"] / 1e3,
+                "soc_min_pct": ob[-1]["soc_min"],
+                "v_min_V": ob[-1]["v_min"],
+                "status": "OK" if ok else "VIOLA"
+            })
+            bess_resultados_completos.append(r)
+
+    # 2. Resumo da Carga Máxima de TI Sustentável
+    pmax_resumo = []
+    for orb in ORBITS:
+        for pvn, pvv in PV_SCEN:
+            ps, rr = p_it_sun_max(PAR, orb, pvv)
+            pmax_resumo.append({
+                "orbita": orb["name"], "cenario_pv": pvn,
+                "p_pv_kW": pvv / 1e3, "p_it_sun_max_kW": ps / 1e3,
+                "folga_kW": (ps - PAR["p_it_nom"]) / 1e3
+            })
+
+    print("\n--- RESUMO BESS MULTI-ÓRBITA (20 Órbitas | Cargas Contínuas = 1000 W) ---")
+    for r in bess_resumo:
+        print("%-26s %-12s TI_sol=%4.1f kW | SoCmin=%5.2f%% | Vmin=%5.1f V | %s" % (
+            r["caso"], r["orbita"], r["p_it_sol_kW"], r["soc_min_pct"], r["v_min_V"], r["status"]))
+
+    print("\n--- CARGA MÁXIMA DE TI EM SOL (Pmax Sustentável) ---")
+    for r in pmax_resumo:
+        print("%-12s %-18s PV=%5.2f kW -> TI_sol_max=%5.2f kW (Folga: %5.2f kW)" % (
+            r["orbita"], r["cenario_pv"], r["p_pv_kW"], r["p_it_sun_max_kW"], r["folga_kW"]))
+
+    # Chamada da função para salvar os gráficos em PNG na pasta saida_3_1
+    gerar_graficos(bess_resumo_completo := bess_resultados_completos)
+
+    print(f"\nSimulação 3.1 executada em {time.time() - t0:.2f} s. Saída em ./{OUT_DIR}/")
+
+
+if __name__ == "__main__":
+    main()
+
+################################################################################
+# [2/10] Modelo 3.2: Gerador Fotovoltaico Multijunção AM0 (Legado)
+# Arquivo: simulacoes/simulacao_3_2_gerador_fotovoltaico_am0.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ==============================================================================
+# SIMULAÇÃO 3.2: GERADOR FOTOVOLTAICO MULTIJUNÇÃO AM0 (SPECTROLAB XTJ PRIME),
+# MODELO DE 3 DIODOS EM SÉRIE (GaInP/GaAs/Ge), DEGRADAÇÃO DDD E BUCK MPPT
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Modelo Físico 3 Diodos, Eficiência Buck (nbuck = 0.91) e Hot Spot
+# ==============================================================================
+
+import os
+import csv
+import json
+import math
+import time
+import numpy as np
+
+# Constantes Fundamentais da Física
+K_B = 1.380649e-23        # Constante de Boltzmann [J/K]
+Q_E = 1.602176634e-19     # Carga elementar do elétron [C]
+SIG = 5.670374e-8         # Constante de Stefan-Boltzmann [W/(m^2 K^4)]
+
+OUT_DIR = "saida_3_2"
+
+# Dicionário de Parâmetros de Projeto e Físicos
+PAR = {
+    # Irradiância solar e geometria da célula (Spectrolab XTJ Prime)
+    "g_am0": 1361.0,      # Irradiância solar AM0 na órbita da Terra [W/m^2]
+    "g_ds": 1353.0,       # Irradiância padrão de ensaio em datasheet [W/m^2]
+    "a_cm2": 30.18,       # Área ativa de cada célula [cm^2]
+    "jsc": 18.0e-3,       # Densidade de corrente de curto-circuito nominal [A/cm^2]
+    "jmp": 17.5e-3,       # Densidade de corrente no MPP nominal [A/cm^2]
+    "vmp_cat": 2.406,     # Tensão de célula no MPP em catálogo a 28°C [V]
+
+    # Parâmetros das 3 subcélulas (1: GaInP Top, 2: GaAs Middle, 3: Ge Bottom)
+    "voc_sub": [1.42, 1.01, 0.29],                # Voc individual a 28°C (Soma = 2.720 V)
+    "dvoc_sub": [-2.20e-3, -1.90e-3, -1.50e-3],   # Coeficientes térmicos dVoc/dT [V/K]
+    "n_sub": [1.15, 1.15, 1.75],                  # Fatores de idealidade de cada junção
+    "rsh": [2500.0, 3500.0, 200.0],               # Resistências shunt [Ohm]
+    "djsc": 10.0e-6,                              # Coeficiente térmico dJsc/dT [A/(cm^2 K)]
+    "w_dph": [0.85, 1.0, 1.8],                    # Ponderação da variação de fotocorrente
+    "ratio": [1.0, 18.35 / 18.0, 26.5 / 18.0],   # Razão de fotocorrentes (Top limita corrente)
+
+    # Modo de calibração da resistência série interna
+    "rs_modo": "calibrado", # Calibra Rs para atingir exatamente Vmp_cat a 28°C
+    "rs_texto": 0.20,       # Valor de referência do texto [Ohm]
+
+    # Topologia da matriz solar do nó de 50 kW
+    "ns": 208,              # Células em série por string (garante Vmp > 400V a 65°C)
+    "np": 252,              # Strings em paralelo por satélite
+    "vbus": 400.0,          # Tensão nominal do barramento primário HVDC [V]
+    "v_ov": 442.8,          # Tensão máxima de recarga do pack (4,10 V/célula) [V]
+    "d_max": 0.90,          # Razão cíclica máxima contínua do Buck (limite de projeto)
+
+    # AJUSTE: Eficiência de conversão do estágio Buck solar
+    "eta_buck": 0.910,      # Eficiência nominal de 91,0% (ajustado de 0,975)
+    "p_alvo_bus": 46500.0,  # Potência líquida mínima requerida no barramento [W]
+
+    # Parâmetros dinâmicos do conversor Buck e filtro de entrada
+    "L": 45.0e-6,           # Indutância do conversor Buck [H] (45 uH)
+    "cin": 250.0e-6,        # Capacitância do filtro de entrada [F] (250 uF)
+    "rl": 0.025,            # Resistência série parasita do indutor [Ohm]
+    "fsw": 150.0e3,         # Frequência de chaveamento PWM [Hz] (150 kHz)
+    "fmppt": 10.0e3,        # Frequência de atualização do algoritmo MPPT [Hz] (10 kHz)
+    "m_gain": 1.2e-4,       # Ganho adaptativo do MPPT P&O-AP [V/W]
+    "dd_max": 0.002,        # Passo máximo do ciclo de trabalho no modo adaptativo
+    "dd_fixo": 0.005,       # Passo fixo de comparação convencional
+    "d_lo": 0.20, "d_hi": 0.98,
+
+    # Degradação por Dose de Deslocamento (DDD) e óptica ambiental
+    "cd": [0.085, 0.12851], # Coeficientes de degradação (nominal e conservador)
+    "phi_x": 1.0e14,        # Fluência de escala de referência [e-/cm^2]
+    "dp_env": 0.052,        # Perda acumulada por escurecimento UV em 10 anos (5,2%)
+    "fluencia": [1.4e13, 2.5e13, 5.8e13], # Fluência anual (500 km, 700 km, 1000 km)
+    "alt_km": [500, 700, 1000],
+    "anos": 10.0,
+
+    # Temperaturas de análise da matriz e rampas térmicas
+    "temps": [-100.0, 15.0, 28.0, 45.0, 60.0, 65.0, 85.0],
+    "rampas_Ks": [1100.0, 330.0, 0.25],
+
+    # Parâmetros térmicos para análise de Hot Spot
+    "hs_cth": 3.8,          # Capacitância térmica da célula unitária [J/K]
+    "hs_eps": 0.85,         # Emissividade térmica da célula no infravermelho
+    "hs_v_rev": 28.0,       # Tensão reversa de breakdown em sombra total [V]
+    "hs_v_byp": 0.35,       # Queda direta no diodo de bypass Schottky [V]
+    "hs_q_amb": 0.08,       # Carga ambiental residual absorvida [W]
+    "hs_t0": 60.0,          # Temperatura inicial [°C]
+    "hs_tlim": 180.0,       # Limite de delaminação do coverglass [°C]
+}
+
+
+def sub_params(par):
+    """Calcula as correntes e tensões de saturação para cada uma das 3 subcélulas."""
+    sc = par["g_am0"] / par["g_ds"]
+    isc = par["jsc"] * par["a_cm2"] * sc
+    return {
+        "iph0": np.array(par["ratio"]) * isc,
+        "diph": np.array(par["w_dph"]) * par["djsc"] * par["a_cm2"] * sc,
+        "voc0": np.array(par["voc_sub"]),
+        "dvoc": np.array(par["dvoc_sub"]),
+        "n": np.array(par["n_sub"]),
+        "rsh": np.array(par["rsh"]),
+        "isc_cat": isc,
+        "imp_cat": par["jmp"] * par["a_cm2"] * sc
+    }
+
+
+def v_sub(ic, iph, i0, vth, rsh, voc):
+    """Resolve a tensão interna de uma subcélula pelo método de bissecção/Newton."""
+    lo = np.zeros_like(ic)
+    hi = np.full_like(ic, voc * 1.6)
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        f = iph - i0 * (np.exp(np.minimum(mid / vth, 700.0)) - 1.0) - mid / rsh - ic
+        pos = f > 0
+        lo = np.where(pos, mid, lo)
+        hi = np.where(pos, hi, mid)
+    return 0.5 * (lo + hi)
+
+
+def cell_iv(sp, rs, T, n=3000):
+    """Calcula a curva I-V completa somando as 3 junções em série: Vcel = V1 + V2 + V3 - I*Rs."""
+    dT = T - 28.0
+    TK = T + 273.15
+    iph = sp["iph0"] + sp["diph"] * dT
+    voc = sp["voc0"] + sp["dvoc"] * dT
+    vth = sp["n"] * K_B * TK / Q_E
+    i0 = (iph - voc / sp["rsh"]) / (np.exp(voc / vth) - 1.0)
+
+    ic = np.linspace(0.0, iph.min() * 0.9999, n)
+    vs = np.zeros(n)
+    for j in range(3):
+        vs = vs + v_sub(ic, iph[j], i0[j], vth[j], sp["rsh"][j], voc[j])
+    return ic, np.maximum(0.0, vs - ic * rs), float(voc.sum())
+
+
+def mpp_cell(sp, rs, T):
+    """Encontra o Ponto de Máxima Potência (MPP) unitário da célula a dada temperatura."""
+    ic, v, voc = cell_iv(sp, rs, T)
+    p = v * ic
+    k = int(np.argmax(p))
+    return {"vmp": float(v[k]), "imp": float(ic[k]), "pmp": float(p[k]), "voc": voc}
+
+
+def calib_rs(sp, vmp_cat):
+    """Calibra a resistência série interna para casar com a tensão de catálogo a 28°C."""
+    lo, hi = 0.0, 0.3
+    for _ in range(30):
+        mid = 0.5 * (lo + hi)
+        if mpp_cell(sp, mid, 28.0)["vmp"] > vmp_cat:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+def array_curve(sp, rs, T, ns, npar):
+    """Escala a curva da célula unitária para toda a matriz (Ns células em série, Np strings)."""
+    ic, v, voc = cell_iv(sp, rs, T)
+    return ns * v[::-1], npar * ic[::-1]
+
+
+def bus_power(par, sp, rs, T, vbus_bat, ret):
+    """Calcula a potência EOL entregue ao barramento HVDC pós-Buck com eta_buck = 0.91."""
+    ic, v, voc = cell_iv(sp, rs, T)
+    p = v * ic
+    k = int(np.argmax(p))
+    ns = par["ns"]
+
+    # Restrição de saturação de razão cíclica D <= 0.90
+    vmin_cell = (vbus_bat / par["d_max"]) / ns
+    vref = max(v[k], vmin_cell)
+    order = np.argsort(v)
+    pat = float(np.interp(vref, v[order], p[order]))
+
+    # Aplicação da eficiência do Buck ajustada para 91,0%
+    p_str_bus = ns * pat * ret * par["eta_buck"]
+    return {
+        "vref_str": ns * vref,
+        "p_mpp_str_W": ns * p[k],
+        "p_bus_str_W": p_str_bus,
+        "fracao_mpp": pat / float(p[k]),
+        "np_req": math.ceil(par["p_alvo_bus"] / p_str_bus)
+    }
+
+
+def hotspot(par, pdiss, faces, q_amb=0.0, dt=0.01, tend=240.0):
+    """Calcula a evolução térmica no vácuo de uma célula sombreada via Stefan-Boltzmann."""
+    a = par["a_cm2"] * 1e-4
+    T = par["hs_t0"] + 273.15
+    t_lim = None
+    tl = par["hs_tlim"] + 273.15
+
+    for k in range(int(tend / dt)):
+        q = faces * par["hs_eps"] * SIG * a * (T ** 4 - 3.0 ** 4)
+        T = T + (pdiss + q_amb - q) * dt / par["hs_cth"]
+        if t_lim is None and T >= tl:
+            t_lim = (k + 1) * dt
+    teq = ((pdiss + q_amb) / (faces * par["hs_eps"] * SIG * a) + 3.0 ** 4) ** 0.25 - 273.15
+    return t_lim, teq, T - 273.15
+
+
+def ddd_ret(par, cd, rate, yrs=None):
+    """Calcula a retenção de potência pelo modelo de Dose de Deslocamento (DDD)."""
+    if yrs is None:
+        yrs = par["anos"]
+    return (1.0 - cd * math.log10(1.0 + yrs * rate / par["phi_x"])) * (1.0 - par["dp_env"] * yrs / 10.0)
+
+
+def run_32(par):
+    out = {}
+    sp = sub_params(par)
+    rs_cal = calib_rs(sp, par["vmp_cat"])
+    rs = rs_cal if par["rs_modo"] == "calibrado" else par["rs_texto"]
+    ns, npar = par["ns"], par["np"]
+    out["rs"] = rs
+    out["rs_cal"] = rs_cal
+
+    # 1. Curvas I-V da matriz
+    out["iv"] = []
+    for T in par["temps"]:
+        m = mpp_cell(sp, rs, T)
+        out["iv"].append({
+            "T": T, "vmp_cel": m["vmp"], "vmp_str": ns * m["vmp"],
+            "voc_str": ns * m["voc"], "imp_arr": npar * m["imp"],
+            "pmp_kW": ns * npar * m["pmp"] / 1e3,
+            "d_req_400": par["vbus"] / (ns * m["vmp"])
+        })
+
+    # 2. Degradação DDD
+    out["ddd"] = []
+    for cd in par["cd"]:
+        for rate, alt in zip(par["fluencia"], par["alt_km"]):
+            out["ddd"].append({"cd": cd, "alt_km": alt, "ret_pct": 100.0 * ddd_ret(par, cd, rate)})
+
+    # 3. Potência entregue ao barramento HVDC EOL em SSO 700 km
+    ret700 = ddd_ret(par, par["cd"][-1], par["fluencia"][1])
+    out["bus"] = []
+    for T in (28.0, 65.0, 85.0):
+        for vb in (par["vbus"], par["v_ov"]):
+            b = bus_power(par, sp, rs, T, vb, ret700)
+            out["bus"].append({
+                "T": T, "v_bat": vb, "v_ref_str": b["vref_str"],
+                "p_mpp_BOL_kW": b["p_mpp_str_W"] * npar / 1e3,
+                "p_bus_EOL_kW": b["p_bus_str_W"] * npar / 1e3,
+                "fracao_mpp": b["fracao_mpp"], "np_req_alvo": b["np_req"]
+            })
+
+    # 4. Hot spot com e sem diodo de bypass
+    out["hot"] = []
+    imp = sp["imp_cat"]
+    for nm, pd, f, qa in (
+        ("sem_bypass_2faces", par["hs_v_rev"] * imp, 2, 0.0),
+        ("sem_bypass_1face", par["hs_v_rev"] * imp, 1, 0.0),
+        ("com_bypass_2faces", par["hs_v_byp"] * imp, 2, 0.0),
+        ("com_bypass_2faces_q_amb", par["hs_v_byp"] * imp, 2, par["hs_q_amb"])
+    ):
+        t_l, teq, t_end = hotspot(par, pd, f, qa)
+        out["hot"].append({"caso": nm, "p_diss_W": pd, "t_180_s": t_l, "t_eq_C": teq, "t_240s_C": t_end})
+
+    return out
+
+
+def write_csv(path, rows):
+    if not rows:
+        return
+    keys = list(rows[0].keys())
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=keys, delimiter=";")
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: ("%.6g" % v if isinstance(v, float) else v) for k, v in r.items()})
+
+
+def main():
+    t0 = time.time()
+    os.makedirs(OUT_DIR, exist_ok=True)
+    R = run_32(PAR)
+
+    for nome in ("iv", "ddd", "bus", "hot"):
+        write_csv(os.path.join(OUT_DIR, nome + ".csv"), R[nome])
+
+    print("=== POTENCIA NO BARRAMENTO (EOL SSO 700 km | nbuck = 0.91) ===")
+    for r in R["bus"]:
+        print("T=%4.0f C | Vbat=%5.1f V | Vref=%6.1f V | P_BOL=%5.2f kW | P_EOL_bus=%6.2f kW | Np_req=%d" % (
+            r["T"], r["v_bat"], r["v_ref_str"], r["p_mpp_BOL_kW"], r["p_bus_EOL_kW"], r["np_req_alvo"]))
+    print(f"\nSimulação concluída em {time.time() - t0:.2f} s. Saída em ./{OUT_DIR}/")
+
+
+if __name__ == "__main__":
+    main()
+
+################################################################################
+# [3/10] Modelo 3.3: Bateria Dual-Polarization e AUKF (Legado)
+# Arquivo: simulacoes/simulacao_3_3_bateria_dp_aukf.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ==============================================================================
+# SIMULAÇÃO 3.3 (v2): MODELAGEM ELETROTÉRMICA DO BANCO DE BATERIAS (BESS),
+# CIRCUITO DUAL POLARIZATION (DP 2ª ORDEM) E ESTIMAÇÃO DE SOC VIA AUKF
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Cargas com OISL Contínuo (440 W), Rth = 0.14 K/W e AUKF
+# ==============================================================================
+
+import os
+import math
+import csv
+import numpy as np
+import scipy.io as sio
+import matplotlib.pyplot as plt
+
+# Configuração de estilo para gráficos científicos
+plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['font.size'] = 10
+plt.rcParams['axes.labelsize'] = 11
+plt.rcParams['axes.titlesize'] = 12
+plt.rcParams['xtick.labelsize'] = 10
+plt.rcParams['ytick.labelsize'] = 10
+plt.rcParams['legend.fontsize'] = 10
+plt.rcParams['figure.titlesize'] = 14
+
+# Constantes Físicas Fundamentais
+Q_E, K_B = 1.602176634e-19, 1.380649e-23
+EA_K = 0.32 * Q_E / K_B                 # Energia de ativação de Arrhenius [K] (0,32 eV)
+NS = 108                                # Células em série no pack Li-ion NMC
+V_UV, V_OV = 324.0, 442.8               # Limiares de corte: UVLO (3,0 V) e CV (4,10 V)
+CN_AH = 22.52                           # Capacidade nominal [Ah]
+E_NOM_J = 9.0e3 * 3600.0                # Energia nominal armazenada (9,0 kWh) [J]
+
+# Parâmetros Eletroquímicos do Modelo DP de 2ª Ordem
+RP1, CP1 = 18e-3, 3200.0                # Ramo de difusão rápida: tau1 = 57,6 s
+RP2, CP2 = 24e-3, 22000.0               # Ramo de difusão lenta: tau2 = 528 s
+R0_REF = 85e-3                          # Resistência ôhmica degradada em EOL a 20 °C [Ohm]
+R_DIST = 14e-3                          # Resistência da cablagem de distribuição [Ohm]
+T_REF_K = 293.15                        # 20 °C em Kelvin
+
+# Acoplamento Térmico Condutivo Corrigido
+C_BAT = 54360.0                         # Capacitância térmica do pack (60 kg NMC) [J/K]
+RTH_COND = 0.14                         # Resistência condutiva estrutural [K/W]
+T_CH = 15.0                             # Temperatura média do chassi de ancoragem [°C]
+P_HEATER, T_ON, T_OFF = 300.0, 10.0, 15.0
+
+# Dinâmica Orbital SSO (700 km)
+T_ORB, T_ECL = 5926.0, 1128.0            # Período = 98,77 min; Eclipse sazonal máx = 18,8 min
+ETA_DAB = 0.95                          # Eficiência do conversor de distribuição (ndab = 0.95)
+ETA_DIS = 0.97                          # Eficiência de descarga eletroquímica
+ETA_CH = 0.995                          # Eficiência coulômbica de recarga
+
+# Potências de Consumo Incluindo OISL Contínuo (440 W)
+P_AUX_KW = 0.56                         # Aviônica e bombeamento essencial [kW]
+P_OISL_KW = 0.44                        # 4 terminais ópticos inter-satélite 24/7 [kW]
+P_IT_ECL_KW = 18.0                      # Carga computacional prioritária no eclipse [kW]
+
+# Cenários de Geração Solar Pós-Buck (nbuck = 0.91) e Carga de TI em Sol Sustentável
+CENARIOS_FV = {                         # nome: (P_pv líquido [kW], P_IT sustentável em sol [kW])
+    "EOL_85C": (46.14, 38.10),          # Ajustado para 38.10 kW devido ao OISL contínuo
+    "EOL_65C": (49.73, 40.00),
+    "EOL_28C": (54.18, 40.00),
+}
+
+
+def ocv(soc):
+    """Relação linear unificada de circuito aberto: Voc = Ns * (3.0 + 1.1 * SoC)."""
+    return NS * (3.0 + 1.1 * soc)
+
+
+def r0_arrhenius(t_c):
+    """Variação térmica da resistência interna de condução via lei de Arrhenius."""
+    return R0_REF * math.exp(EA_K * (1.0 / (t_c + 273.15) - 1.0 / T_REF_K))
+
+
+def simula_orbital(p_pv_kw, p_it_sol_kw, rth=RTH_COND, t_ch=T_CH, soc0=1.0,
+                   t0=20.0, n_orb=10, dt=2.0, e_nom=E_NOM_J, cn=CN_AH):
+    """
+    Simula a dinâmica eletrotérmica multiorbital do BESS com carga de potência
+    constante (CPL) no eclipse e recarga CC-CV no período iluminado.
+    """
+    p_aux_tot = P_AUX_KW + P_OISL_KW  # 1.00 kW total (plataforma + OISL)
+    p_chg_w = max(0.0, p_pv_kw - (p_it_sol_kw + p_aux_tot) / ETA_DAB) * 1e3
+    p_ecl_w = (P_IT_ECL_KW + p_aux_tot) * 1e3 / ETA_DAB  # 20.00 kW no barramento
+
+    n = int(math.floor(n_orb * T_ORB / dt)) + 1
+    soc, vt, tb, pj, ib = (np.zeros(n) for _ in range(5))
+    ecl = np.zeros(n, dtype=bool)
+    soc[0], tb[0] = soc0, t0
+    a1 = math.exp(-dt / (RP1 * CP1))
+    a2 = math.exp(-dt / (RP2 * CP2))
+    vp1 = vp2 = 0.0
+
+    for k in range(n - 1):
+        ecl[k] = (k * dt) % T_ORB < T_ECL
+        r0 = r0_arrhenius(tb[k])
+        rs = r0 + R_DIST
+        ve = ocv(soc[k]) - vp1 - vp2
+
+        # Eclipse: Descarga como Carga de Potência Constante (Eq. 3.10)
+        if ecl[k]:
+            i = (ve - math.sqrt(max(ve * ve - 4.0 * rs * p_ecl_w, 0.0))) / (2.0 * rs)
+            v = ve - i * rs
+            dsoc = -(v * i * dt) / (ETA_DIS * e_nom)  # Formulação energética Eq. 3.7
+        # Sol: Recarga controlada em dois estágios (CC -> CV)
+        else:
+            ich = (-ve + math.sqrt(ve * ve + 4.0 * rs * p_chg_w)) / (2.0 * rs)
+            ich = min(ich, cn)  # Teto de 1,0C
+            v = ve + ich * rs
+            if v > V_OV:
+                ich = max(0.0, (V_OV - ve) / rs)
+                v = ve + ich * rs
+            i = -ich
+            dsoc = ETA_CH * (v * ich * dt) / e_nom
+
+        soc[k + 1] = min(1.0, max(0.0, soc[k] + dsoc))
+        vt[k], ib[k] = v, i
+        vp1 = a1 * vp1 + RP1 * (1.0 - a1) * i
+        vp2 = a2 * vp2 + RP2 * (1.0 - a2) * i
+        pj[k] = i * i * r0 + vp1 ** 2 / RP1 + vp2 ** 2 / RP2
+
+        # Controle ativo dos aquecedores de sobrevivência
+        if tb[k] < T_ON:
+            ph = P_HEATER
+        elif tb[k] < T_OFF:
+            ph = P_HEATER * (T_OFF - tb[k]) / (T_OFF - T_ON)
+        else:
+            ph = 0.0
+
+        # Balanço térmico condutivo corrigido com o chassi estrutural
+        tb[k + 1] = tb[k] + (pj[k] + ph - (tb[k] - t_ch) / rth) * dt / C_BAT
+
+    ecl[-1], vt[-1], pj[-1], ib[-1] = ecl[-2], vt[-2], pj[-2], ib[-2]
+    i0 = int((n_orb - 1) * T_ORB / dt)  # Amostragem da última órbita estabilizada
+    sl = slice(i0, n - 1)
+    m = ecl[sl]
+    pj_med = float(np.mean(pj[sl]))
+
+    resumo = dict(
+        p_chg_kw=p_chg_w / 1e3,
+        soc_min=float(soc[i0:].min()),
+        v_min=float(vt[sl].min()),
+        soc_fim=float(soc[-1]),
+        i_ecl_med=float(ib[sl][m].mean()),
+        i_ecl_pico=float(ib[sl][m].max()),
+        pj_ecl=float(pj[sl][m].mean()),
+        pj_sol=float(pj[sl][~m].mean()),
+        pj_med=pj_med,
+        tb_min=float(tb[i0:].min()),
+        tb_pico=float(tb.max()),
+        t_eq=t_ch + pj_med * rth,
+        tau_h=C_BAT * rth / 3600.0
+    )
+    
+    serie = dict(t=np.arange(n) * dt, soc=soc, vt=vt, tb=tb, pj=pj, ib=ib, ecl=ecl)
+    return resumo, serie
+
+
+def _psd(m, piso):
+    """Simetriza a matriz e impõe piso positivo nos autovalores para garantir Cholesky."""
+    s = 0.5 * (m + m.T)
+    w, v = np.linalg.eigh(s)
+    return v @ np.diag(np.maximum(w, piso)) @ v.T
+
+
+def _perfil_i(t):
+    """Perfil dinâmico com rajadas periódicas simulando cargas de tensores de IA."""
+    return 25.0 + 15.0 * math.sin(2.0 * math.pi * t / 180.0) + (10.0 if (t % 120.0) < 30.0 else 0.0)
+
+
+def executa_aukf(sigma_v, soc_real0=0.80, soc_est0=0.60, r0_real=R0_REF, cn_real=CN_AH,
+                 i_bias=0.0, adapta_q=True, lim_r=(0.1, 10.0), piso=1e-8,
+                 alpha=1e-3, beta=2.0, kappa=0.0, dt=1.0, n=1201, seed=42):
+    """
+    Executa o estimador AUKF de Sage-Husa completo (Q e R adaptativos) sob
+    incertezas paramétricas da planta (R0 degradado, Cn reduzido e bias de sensor).
+    """
+    ruido = np.random.RandomState(seed).randn(n - 1)
+    a1, a2 = math.exp(-dt / 57.6), math.exp(-dt / 528.0)
+    s_t, v1, v2, v_cl, v_ms = (np.zeros(n) for _ in range(5))
+    s_t[0] = soc_real0
+
+    for k in range(n - 1):
+        i = _perfil_i(k * dt)
+        s_t[k + 1] = s_t[k] - i * dt / (cn_real * 3600.0)
+        v1[k + 1] = a1 * v1[k] + RP1 * (1 - a1) * i
+        v2[k + 1] = a2 * v2[k] + RP2 * (1 - a2) * i
+        v_cl[k + 1] = ocv(s_t[k + 1]) - i * r0_real - v1[k + 1] - v2[k + 1]
+        v_ms[k + 1] = v_cl[k + 1] + sigma_v * ruido[k]
+    v_cl[0], v_ms[0] = v_cl[1], v_ms[1]
+
+    L = 3
+    lam = alpha ** 2 * (L + kappa) - L
+    wm = np.full(2 * L + 1, 1.0 / (2.0 * (L + lam)))
+    wc = wm.copy()
+    wm[0] = lam / (L + lam)
+    wc[0] = wm[0] + (1.0 - alpha ** 2 + beta)
+
+    x = np.array([soc_est0, 0.0, 0.0])
+    P = np.diag([0.05, 0.01, 0.01])
+    Q = np.diag([1e-7, 1e-5, 1e-5])
+    R, b = sigma_v ** 2, 0.95
+    s_h, v_h = np.zeros(n), np.zeros(n)
+    s_h[0] = x[0]
+
+    for k in range(n - 1):
+        i = _perfil_i(k * dt) + i_bias
+        S = np.linalg.cholesky((L + lam) * _psd(P, piso))
+        X = np.zeros((L, 2 * L + 1))
+        X[:, 0] = x
+        for j in range(L):
+            X[:, 1 + j], X[:, 1 + L + j] = x + S[:, j], x - S[:, j]
+
+        Xp = np.zeros_like(X)
+        Xp[0] = X[0] - i * dt / (CN_AH * 3600.0)
+        Xp[1] = a1 * X[1] + RP1 * (1 - a1) * i
+        Xp[2] = a2 * X[2] + RP2 * (1 - a2) * i
+
+        xp = Xp @ wm
+        p_star = sum(wc[j] * np.outer(Xp[:, j] - xp, Xp[:, j] - xp) for j in range(2 * L + 1))
+        Pp = p_star + Q
+
+        Y = ocv(Xp[0]) - i * R0_REF - Xp[1] - Xp[2]
+        yp = float(Y @ wm)
+        pyy0 = sum(wc[j] * (Y[j] - yp) ** 2 for j in range(2 * L + 1))
+        pxy = sum(wc[j] * (Xp[:, j] - xp) * (Y[j] - yp) for j in range(2 * L + 1))
+
+        inov = v_ms[k + 1] - yp
+        dk = (1.0 - b) / (1.0 - b ** (k + 1))
+        R = min(lim_r[1] * sigma_v ** 2, max(lim_r[0] * sigma_v ** 2,
+                (1.0 - dk) * R + dk * (inov ** 2 - pyy0)))
+
+        pyy = pyy0 + R
+        K = pxy / pyy
+        x = xp + K * inov
+        P = Pp - np.outer(K, K) * pyy
+
+        if adapta_q:
+            Q = _psd((1 - dk) * Q + dk * (inov ** 2 * np.outer(K, K) + P - p_star), 1e-12)
+
+        x[0] = min(1.0, max(0.0, x[0]))
+        s_h[k + 1] = x[0]
+        v_h[k + 1] = ocv(x[0]) - i * R0_REF - x[1] - x[2]
+
+    err = np.abs(s_h - s_t) * 100.0
+    idx = np.where(err > 1.0)[0]
+    
+    resumo = dict(
+        t_conv=(int(idx[-1]) + 1) * dt if len(idx) else 0.0,
+        err_med=float(err[59:].mean()),
+        err_max=float(err[59:].max()),
+        rmse_mV=float(1e3 * np.sqrt(np.mean((v_h[59:] - v_cl[59:]) ** 2)))
+    )
+    serie = dict(t=np.arange(n) * dt, s_t=s_t, s_h=s_h, err=err, v_cl=v_cl, v_h=v_h)
+    return resumo, serie
+
+
+def main():
+    # Criação do diretório de saída
+    out_dir = "saida_3_3"
+    os.makedirs(out_dir, exist_ok=True)
+
+    print("=" * 80)
+    print("SIMULAÇÃO 3.3 (v2): BESS 108S1P - SSO 700 km, 10 ÓRBITAS (COM OISL CONTÍNUO)")
+    print(f"Salvando resultados e gráficos em: ./{out_dir}/")
+    print("=" * 80)
+
+    # 1. Simulação Multiorbital por Cenário Solar (10 Órbitas Consecutivas)
+    resultados_fv_csv = []
+    
+    for nome, (p_pv, p_it) in CENARIOS_FV.items():
+        r, serie = simula_orbital(p_pv, p_it, n_orb=10)
+        print(f"[{nome}] P_chg={r['p_chg_kw']:.3f} kW | SoC_min={100*r['soc_min']:.2f} % | "
+              f"V_min={r['v_min']:.1f} V | SoC_fim={100*r['soc_fim']:.2f} %")
+        print(f"   I_ecl={r['i_ecl_med']:.1f} A (pico {r['i_ecl_pico']:.1f} A) | "
+              f"Pj média={r['pj_med']:.1f} W | Tb pico={r['tb_pico']:.1f} °C | Teq={r['t_eq']:.1f} °C")
+
+        # Salvar série temporal detalhada em CSV
+        csv_path_serie = os.path.join(out_dir, f"serie_temporal_orbital_{nome}.csv")
+        with open(csv_path_serie, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Tempo_s", "SoC", "Tensao_V", "Temp_Bat_C", "Perdas_J_W", "Corrente_A", "Eclipse"])
+            for k in range(len(serie['t'])):
+                writer.writerow([serie['t'][k], serie['soc'][k], serie['vt'][k], serie['tb'][k], serie['pj'][k], serie['ib'][k], int(serie['ecl'][k])])
+
+        # Gerar e salvar gráfico eletrotérmico da órbita
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+        t_horas = serie['t'] / 3600.0
+        
+        ax1.plot(t_horas, serie['soc'] * 100.0, color='#1f77b4', lw=1.5)
+        ax1.set_ylabel("SoC [%]")
+        ax1.set_title(f"Dinâmica Eletrotérmica - Cenário {nome} (10 Órbitas SSO)")
+        ax1.grid(True)
+
+        ax2.plot(t_horas, serie['vt'], color='#ff7f0e', lw=1.5, label="Tensão Terminal (V)")
+        ax2.set_ylabel("Tensão [V]")
+        ax2.legend(loc="upper right")
+        ax2.grid(True)
+
+        ax3.plot(t_horas, serie['tb'], color='#2ca02c', lw=1.5, label="Temp. Pack (°C)")
+        ax3.axhline(T_CH, color='gray', linestyle='--', label=f"Chassi ({T_CH}°C)")
+        ax3.set_xlabel("Tempo [horas]")
+        ax3.set_ylabel("Temperatura [°C]")
+        ax3.legend(loc="upper right")
+        ax3.grid(True)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(out_dir, f"grafico_orbital_{nome}.png"), dpi=300)
+        plt.close()
+
+        # Acumular para CSV de resumo
+        row = {"Cenario": nome}
+        row.update(r)
+        resultados_fv_csv.append(row)
+
+    # Salvar CSV de resumo dos cenários solares
+    if resultados_fv_csv:
+        csv_resumo_fv = os.path.join(out_dir, "resumo_cenarios_fv.csv")
+        with open(csv_resumo_fv, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=resultados_fv_csv[0].keys())
+            writer.writeheader()
+            for row in resultados_fv_csv:
+                writer.writerow(row)
+
+    # 2. Testes de Sensibilidade do Estimador AUKF Sage-Husa
+    print("\n=== AVALIAÇÃO DE ROBUSTEZ DO ESTIMADOR AUKF SAGE-HUSA ===")
+    casos_aukf = {
+        "Modelo exato (Q e R adapt.)": {},
+        "R0 real +30 % (Envelhecimento)": dict(r0_real=1.3 * R0_REF),
+        "Cn real -5 % (Perda de Cap.)": dict(cn_real=0.95 * CN_AH),
+        "Offset de corrente +0,5 A": dict(i_bias=0.5),
+        "Caso Combinado Severo": dict(r0_real=1.3 * R0_REF, cn_real=0.95 * CN_AH, i_bias=0.5),
+    }
+
+    resultados_aukf_csv = []
+
+    for nome, kw in casos_aukf.items():
+        for sig in (0.015, 0.150):
+            a, serie_aukf = executa_aukf(sig, **kw)
+            sig_mV_str = f"{1e3*sig:.0f}mV"
+            print(f"{nome:32s} sigma={sig_mV_str:>5s} | e_med={a['err_med']:.4f} % | "
+                  f"e_max={a['err_max']:.3f} % | RMSE_V={a['rmse_mV']:.2f} mV | t_conv={a['t_conv']:.0f} s")
+
+            # Salvar CSV detalhado do AUKF
+            nome_arq_seg = nome.replace(" ", "_").replace("%", "").replace("+", "").replace("(", "").replace(")", "").replace(".", "")
+            csv_path_aukf = os.path.join(out_dir, f"serie_aukf_{nome_arq_seg}_{sig_mV_str}.csv")
+            with open(csv_path_aukf, mode="w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Tempo_s", "SoC_Real", "SoC_Estimado", "Erro_Percentual", "Tensao_Planta_V", "Tensao_Estimada_V"])
+                for k in range(len(serie_aukf['t'])):
+                    writer.writerow([serie_aukf['t'][k], serie_aukf['s_t'][k], serie_aukf['s_h'][k], serie_aukf['err'][k], serie_aukf['v_cl'][k], serie_aukf['v_h'][k]])
+
+            # Gerar gráfico de estimação do AUKF para o ruído de 150 mV (ou ambos)
+            if sig == 0.150:
+                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+                
+                ax1.plot(serie_aukf['t'], serie_aukf['s_t'] * 100.0, 'k-', lw=1.5, label="SoC Real (Planta)")
+                ax1.plot(serie_aukf['t'], serie_aukf['s_h'] * 100.0, 'r--', lw=1.5, label="SoC Estimado (AUKF)")
+                ax1.set_ylabel("SoC [%]")
+                ax1.set_title(f"AUKF Estimação de SoC - {nome} ($\sigma_v$ = 150 mV)")
+                ax1.legend(loc="upper right")
+                ax1.grid(True)
+
+                ax2.plot(serie_aukf['t'], serie_aukf['err'], color='purple', lw=1.2)
+                ax2.set_xlabel("Tempo [s]")
+                ax2.set_ylabel("Erro Absoluto [%]")
+                ax2.grid(True)
+
+                plt.tight_layout()
+                plt.savefig(os.path.join(out_dir, f"grafico_aukf_{nome_arq_seg}.png"), dpi=300)
+                plt.close()
+
+            # Acumular para resumo
+            row_a = {"Caso": nome, "Sigma_mV": 1e3*sig}
+            row_a.update(a)
+            resultados_aukf_csv.append(row_a)
+
+    # Salvar CSV de resumo do AUKF
+    if resultados_aukf_csv:
+        csv_resumo_aukf = os.path.join(out_dir, "resumo_aukf.csv")
+        with open(csv_resumo_aukf, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=resultados_aukf_csv[0].keys())
+            writer.writeheader()
+            for row in resultados_aukf_csv:
+                writer.writerow(row)
+
+    print("=" * 80)
+    print(f"Arquivos CSV e gráficos salvos com sucesso na pasta ./{out_dir}/")
+    print("=" * 80)
+
+
+if __name__ == "__main__":
+    main()
+
+################################################################################
+# [4/10] Modelo 3.4: Conversores GaN e Middlebrook (Legado)
+# Arquivo: simulacoes/simulacao_3_4_conversores_gan_middlebrook.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ==============================================================================
+# SIMULAÇÃO 3.4: CONVERSORES ESTÁTICOS CC-CC GaN DE ALTA FREQUÊNCIA,
+# BALANÇO DE PERDAS TÉRMICAS E ESTABILIDADE CPL POR CRITÉRIO DE MIDDLEBROOK
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
+# ==============================================================================
+
+import math
+import os
+import csv
+from collections import namedtuple
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ---- primário GS66516T (8 chaves, 2 por braço)
+RON25, ALPHA_PRI = 25e-3, 0.0128                 # [DS] / [VERIFICAR curva Ron x Tj]
+RTH_JC, RTH_TIM = 0.27, 0.85                     # [DS] / [HIP]
+RTH = RTH_JC + RTH_TIM
+I_IN, D_EFF, N_PAR_PRI = 51.2, 0.45, 2
+V_IN, FSW = 400.0, 150e3
+TR, TF, ISW_ON = 12e-9, 15e-9, 25.0              # [HIP]
+COSS, QG, VGATE = 207e-12, 14.2e-9, 6.0          # [VERIFICAR] Qg (12,1 nC máx em listagem comercial)
+IRMS = I_IN * math.sqrt(D_EFF)                   # 34,35 A por chave (arranjo de 4 chaves)
+
+# ---- secundário IG1NT052N10R
+R_SEC25, ALPHA_SEC, I_D_MAX = 6e-3, 0.004, 52.0  # [DS-web] / [EST] / [DS-web]
+N_PAR_SEC, R_INTERLIG, I_OUT = 12, 0.732e-3, 416.7   # derating adotado / [HIP]
+
+# ---- magnéticos
+K_FE, A_F, B_F, V_E, DB = 0.70, 1.46, 2.52, 4.5e-4, 0.15
+RAC_PRI, RAC_SEC = 15e-3, 0.25e-3
+
+# ---- capacitores 48 V
+C_NOM_UNIT, FRAC_BIAS, DF_MAX = 22e-6, 0.50, 0.025   # [DS] / [EST] / [DS]
+C_BANCO_BOL, FATOR_EOL = 15e-3, 0.70
+ESR_BOL, ESR_EOL = 1.2e-3, 2.4e-3                    # [HIP]
+LIM_48 = 11.52                                       # mΩ
+
+Perdas = namedtuple("Perdas", "p_cp p_sw p_cs_disp p_cs_int p_core p_cu total q_primario eta")
+
+
+def ron_pri(tj):
+    return RON25 * (1.0 + ALPHA_PRI * (tj - 25.0))
+
+
+def r_sec(tj=80.0):
+    return R_SEC25 * (1.0 + ALPHA_SEC * (tj - 25.0))
+
+
+def p_sw_dev(n):
+    p_ov = V_IN * ISW_ON / n * FSW * (TR + TF) / 2.0
+    return p_ov + 0.5 * COSS * V_IN ** 2 * FSW + QG * VGATE * FSW
+
+
+def tj_eq(tb, n=N_PAR_PRI):
+    a = (IRMS / n) ** 2 * RON25
+    c0 = a * (1.0 - ALPHA_PRI * 25.0) + p_sw_dev(n)
+    return (tb + RTH * c0) / (1.0 - RTH * a * ALPHA_PRI)
+
+
+def tb_max(tj, n=N_PAR_PRI):
+    a = (IRMS / n) ** 2 * RON25
+    c0 = a * (1.0 - ALPHA_PRI * 25.0) + p_sw_dev(n)
+    return tj * (1.0 - RTH * a * ALPHA_PRI) - RTH * c0
+
+
+def perdas(n_pri=N_PAR_PRI, n_sec=N_PAR_SEC, r_int=R_INTERLIG):
+    nsw = 4 * n_pri
+    r_disp = 2.0 * r_sec() / n_sec
+    p_cp = nsw * (IRMS / n_pri) ** 2 * ron_pri(80.0)
+    p_sw = nsw * p_sw_dev(n_pri)
+    p_cs_disp = I_OUT ** 2 * r_disp
+    p_cs_int = I_OUT ** 2 * r_int
+    p_core = K_FE * FSW ** A_F * DB ** B_F * V_E
+    p_cu = 2.0 * IRMS ** 2 * RAC_PRI + I_OUT ** 2 * RAC_SEC   # enrolamento = sqrt(2) * I_chave
+    tot = p_cp + p_sw + p_cs_disp + p_cs_int + p_core + p_cu
+    eta = 100.0 * 20000.0 / (20000.0 + tot)
+    return Perdas(p_cp, p_sw, p_cs_disp, p_cs_int, p_core, p_cu, tot, p_cp + p_sw, eta)
+
+
+def zout_pico(L, R, C, ESR, n=8001):
+    f = np.logspace(1, 5.3, n)
+    s = 2j * np.pi * f
+    z = np.abs((s * L + R) * (s * C * ESR + 1.0) / (s * s * L * C + s * C * (R + ESR) + 1.0))
+    k = int(np.argmax(z))
+    return z[k] * 1e3, f[k]
+
+
+def zout_curva(L, R, C, ESR, n=8001):
+    f = np.logspace(1, 5.3, n)
+    s = 2j * np.pi * f
+    z = np.abs((s * L + R) * (s * C * ESR + 1.0) / (s * s * L * C + s * C * (R + ESR) + 1.0))
+    return f, z * 1e3
+
+
+def regioes_ok(L, R, esr, limite, c_min=1.0e-3, c_max=15.0e-3, n=141):
+    cs = np.linspace(c_min, c_max, n)
+    ok = [zout_pico(L, R, c, esr)[0] <= limite for c in cs]
+    regs, ini = [], None
+    for i in range(len(ok)):
+        if ok[i] and ini is None:
+            ini = i
+        if (not ok[i]) and ini is not None:
+            regs.append((cs[ini], cs[i - 1]))
+            ini = None
+    if ini is not None:
+        regs.append((cs[ini], cs[-1]))
+    return regs
+
+
+def degrau_cpl(c, esr, vs=400.0, L=1.8e-6, R=14e-3, p1=2000.0, p2=20000.0, dt=5e-7, t_fim=0.01):
+    vb = vs
+    for _ in range(60):
+        vb = vs - R * p1 / vb
+    i, vc, v0, vmin = p1 / vb, vb, vb, 1e9
+    
+    t_arr = []
+    v_arr = []
+    for k in range(int(t_fim / dt)):
+        t = k * dt
+        p = p1 if t < 0.5e-3 else p2
+        vbb = vc
+        for _ in range(8):
+            vbb = vc + esr * (i - p / vbb)
+        il = p / vbb
+        i += (vs - vbb - R * i) / L * dt
+        vc += (i - il) / c * dt
+        vmin = min(vmin, vbb)
+        t_arr.append(t)
+        v_arr.append(vbb)
+    return v0 - vmin, t_arr, v_arr
+
+
+def main():
+    out_dir = "saida_3_4"
+    os.makedirs(out_dir, exist_ok=True)
+
+    linha = "=" * 78
+    print(linha)
+    print("SIMULAÇÃO 3.4 (v4) - Com exportação de CSV e Gráficos")
+    print(linha)
+    assert abs(tj_eq(60.0, 1) - 187.0) < 0.3
+    print("8 chaves: Tj(55/65)=%.1f/%.1f °C | Tc_max(Tj<=105)=%.1f °C"
+          % (tj_eq(55.0), tj_eq(65.0), tb_max(105.0)))
+
+    p = perdas()
+    print("\nPerdas (W): cond_pri=%.1f sw=%.1f sec_disp=%.1f sec_interlig=%.1f nucleo=%.1f cobre=%.1f"
+          % (p.p_cp, p.p_sw, p.p_cs_disp, p.p_cs_int, p.p_core, p.p_cu))
+    print("Total=%.1f W | eta=%.2f %% | Q_primario=%.1f W" % (p.total, p.eta, p.q_primario))
+    
+    # Salvar CSV de perdas por R_interlig
+    csv_perdas_path = os.path.join(out_dir, "perdas_interligacao.csv")
+    with open(csv_perdas_path, mode="w", newline="", encoding="utf-8") as f_csv:
+        writer = csv.writer(f_csv)
+        writer.writerow(["R_interlig_mOhm", "Total_W", "Eficiencia_pct", "Secundario_W"])
+        for r_int in (0.0, 0.3e-3, 0.732e-3, 1.0e-3):
+            q = perdas(r_int=r_int)
+            writer.writerow([f"{r_int*1e3:.3f}", f"{q.total:.2f}", f"{q.eta:.2f}", f"{q.p_cs_disp + q.p_cs_int:.2f}"])
+            print("  R_interlig=%.3f mΩ -> total=%.1f W, eta=%.2f %%, secundário=%.1f W"
+                  % (r_int * 1e3, q.total, q.eta, q.p_cs_disp + q.p_cs_int))
+
+    print("Cold plate (estimativa; exige rede térmica por componente): primário R_th<=%.3f/%.3f K/W (45/55 °C); "
+          "módulo inteiro R_th<=%.3f K/W (45 °C)"
+          % ((tb_max(105.0) - 45.0) / p.q_primario, (tb_max(105.0) - 55.0) / p.q_primario,
+             (tb_max(105.0) - 45.0) / p.total))
+
+    c_ef = C_NOM_UNIT * FRAC_BIAS
+    n_comp = math.ceil(C_BANCO_BOL / c_ef)
+    esr_cap = DF_MAX / (2.0 * math.pi * 1e3 * c_ef) / n_comp
+    c_eol = C_BANCO_BOL * FATOR_EOL
+    print("\nBanco 48 V: C_ef=%.1f uF | N=%d | ESR_cap=%.3f mΩ | C_EOL=%.1f mF"
+          % (c_ef * 1e6, n_comp, esr_cap * 1e3, c_eol * 1e3))
+    
+    casos = [("Saudável", C_BANCO_BOL, ESR_BOL), ("EOL de projeto", c_eol, ESR_EOL),
+             ("Controle só C", c_eol, ESR_BOL), ("ESR só capacitor", c_eol, esr_cap),
+             ("Severo 2,5 mF", 2.5e-3, ESR_BOL), ("Adverso 2,5 mF/9,5 mΩ", 2.5e-3, 9.5e-3)]
+    
+    csv_banco48_path = os.path.join(out_dir, "banco_48v_casos.csv")
+    with open(csv_banco48_path, mode="w", newline="", encoding="utf-8") as f_csv:
+        writer = csv.writer(f_csv)
+        writer.writerow(["Caso", "Capacitancia_F", "ESR_Ohm", "Z_pico_mOhm", "Freq_Hz", "Status"])
+        for nome, cc, ee in casos:
+            z, f = zout_pico(0.15e-6, 1.5e-3, cc, ee)
+            status = "OK" if z <= LIM_48 else "VIOLA"
+            writer.writerow([nome, f"{cc}", f"{ee}", f"{z:.2f}", f"{f:.1f}", status])
+            print("  %-24s %6.2f mΩ @ %6.0f Hz -> %s" % (nome, z, f, status))
+
+    print("Regiões de C que atendem (varredura 1-15 mF):")
+    for esr in (esr_cap, 1.2e-3, 2.4e-3, 4.0e-3, 9.5e-3):
+        regs = regioes_ok(0.15e-6, 1.5e-3, esr, LIM_48)
+        txt = "; ".join(["%.1f-%.1f mF" % (a * 1e3, b * 1e3) for a, b in regs]) if len(regs) > 0 else "nenhuma"
+        print("  ESR=%.3f mΩ: %s" % (esr * 1e3, txt))
+
+    print("\nBarramento 400 V (limite 800 mΩ; razão = limite/pico, não é margem de estabilidade):")
+    csv_barramento_path = os.path.join(out_dir, "barramento_400v.csv")
+    with open(csv_barramento_path, mode="w", newline="", encoding="utf-8") as f_csv:
+        writer = csv.writer(f_csv)
+        writer.writerow(["C_mF", "Z_pico_mOhm", "Freq_Hz", "Razao_Limite", "dV_degrau_V"])
+        for c in (4.7e-3, 2.0e-3, 1.0e-3, 0.5e-3):
+            z_fix, f_fix = zout_pico(1.8e-6, 14e-3, c, 1.5e-3)
+            dv = degrau_cpl(c, 1.5e-3)[0]
+            writer.writerow([f"{c*1e3:.1f}", f"{z_fix:.2f}", f"{f_fix:.1f}", f"{800.0/z_fix:.2f}", f"{dv:.2f}"])
+            print("  C=%.1f mF | ESR fixa 1,5 mΩ: Zpk=%.1f mΩ @%.0f Hz (%.1fx) | dV=%.2f V"
+                  % (c * 1e3, z_fix, f_fix, 800.0 / z_fix, dv))
+
+    # ---- GERAÇÃO DE GRÁFICOS ----
+    print(f"\nGerando gráficos em '{out_dir}/'...")
+
+    # Gráfico 1: Impedância de Saída do Barramento 400V
+    plt.figure(figsize=(9, 5))
+    for c in (4.7e-3, 2.0e-3, 1.0e-3, 0.5e-3):
+        f_vec, z_vec = zout_curva(1.8e-6, 14e-3, c, 1.5e-3)
+        plt.loglog(f_vec, z_vec, label=f"C = {c*1e3:.1f} mF")
+    plt.axhline(800.0, color='r', linestyle='--', label='Limite (800 mΩ)')
+    plt.title("Impedância de Saída - Barramento 400V (CPL Stability)")
+    plt.xlabel("Frequência (Hz)")
+    plt.ylabel("Impedância Zout (mΩ)")
+    plt.grid(True, which="both", ls="--")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "zout_barramento_400v.png"), dpi=300)
+    plt.close()
+
+    # Gráfico 2: Resposta transitória CPL (C = 2.0 mF)
+    _, t_arr, v_arr = degrau_cpl(2.0e-3, 1.5e-3)
+    plt.figure(figsize=(9, 5))
+    plt.plot([t * 1e3 for t in t_arr], v_arr, color='b', lw=1.5)
+    plt.axhline(400.0, color='gray', linestyle=':', label='Tensão nominal (400V)')
+    plt.title("Resposta Transitória a Degrau de Carga CPL (C = 2.0 mF)")
+    plt.xlabel("Tempo (ms)")
+    plt.ylabel("Tensão do Barramento (V)")
+    plt.grid(True, ls="--")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "transit_cpl_2mf.png"), dpi=300)
+    plt.close()
+
+    print("Processo concluído com sucesso! Arquivos salvos em:", out_dir)
+    print(linha)
+
+
+if __name__ == "__main__":
+    main()
+
+################################################################################
+# [5/10] Modelo 4.1: Fluxos Orbitais e Rede Térmica Nodal (Legado)
+# Arquivo: simulacoes/simulacao_4_1_fluxos_orbitais.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ==============================================================================
+# SIMULAÇÃO 4.1: SIMULAÇÃO 4.1 — MODELO ORBITAL, ENERGÉTICO E 
+# TÉRMICO CONCENTRADO
+# Modelo exploratório in silico. Não é um modelo de voo validado.
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Modelo Físico 3 Diodos, Eficiência Buck (nbuck = 0.91) e Hot Spot
+# ==============================================================================
+
+"""
+SIMULAÇÃO 4.1 — MODELO ORBITAL, ENERGÉTICO E TÉRMICO CONCENTRADO
+
+Modelo exploratório in silico. Não é um modelo de voo validado.
+
+Convenções e limitações:
+- A_RAD = 105 m² é a área emissora total adotada e fica fixa.
+- O beta é calculado por aproximação a partir de data, LTAN e inclinação.
+- A varredura de LTAN é feita numa grade; não identifica a distribuição
+  real dos LTANs da constelação.
+- A simulação transitória abrange até 60 órbitas, cerca de quatro dias.
+- pv_input_kw é potência FV já disponível no barramento após Buck.
+  ETA_BUCK não é aplicada novamente.
+- P_BASE = 1000 W é carga elétrica agregada; seus componentes não são
+  adicionados uma segunda vez.
+- O aquecedor da bateria fica fora de P_BASE e é variável.
+- 343,2 W de calor interno OISL entram no balanço térmico agregado.
+- A redução proporcional da carga em caso de déficit não representa
+  controle DVFS, NMPC ou TEMS implementado.
+- As capacitâncias, resistências, propriedades radiativas e hipóteses
+  de partição térmica precisam de rastreabilidade e validação.
+"""
+
+import math
+import os
+
+import csv
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+
+# Importação opcional para geração de gráficos
+try:
+    import matplotlib.pyplot as plt
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
+OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saida_4_1")
+
+# ==============================================================================
+# 1. Parâmetros
+# ==============================================================================
+
+# Constantes físicas e geometria
+SIGMA = 5.670374419e-8       # W/(m² K⁴)
+G_SOL = 1361.0               # W/m²
+Q_EARTH_IR = 234.0           # W/m²; hipótese nominal do modelo (ECSS handbook: ~237)
+ALBEDO = 0.30                # hipótese de albedo médio
+
+RE_KM = 6378.137             # km
+RSUN_KM = 696340.0           # km
+D_ES_KM = 1.496e8            # km
+MU_EARTH_KM3_S2 = 398600.4418 # km³/s²
+
+# Órbita SSO de referência
+ALTITUDE_KM = 700.0
+SSO_INCLINATION_DEG = 98.2   # provisória; confirmar pelo dimensionamento J2
+T_ORB = 2.0 * math.pi * math.sqrt(
+    (RE_KM + ALTITUDE_KM) ** 3 / MU_EARTH_KM3_S2
+)
+
+# Radiador: área emissora total de projeto, fixa
+A_RAD = 105.0                # m²; não variar nesta configuração
+ALPHA_RAD = 0.14             # absortividade solar EOL adotada
+EPS_RAD = 0.88               # emissividade IR adotada
+ETA_FIN = 0.945              # eficiência adotada; requer confirmação geométrica
+
+# Propriedades térmicas agregadas, provisórias
+RHO_AREAL = 4.5              # kg/m²
+CP_RAD = 900.0               # J/(kg K)
+C_BAT = 54360.0              # J/K
+C_CHASSIS = 18000.0          # J/K
+R_BAT_CH = 0.20              # K/W
+R_CH_RAD = 0.0005            # K/W
+
+# Eficiência dos conversores
+ETA_DAB = 0.95
+ETA_DAB_WCA = 0.90           # referência WCA; não usada no caso nominal
+ETA_BUCK = 0.91              # informativa; não reaplicar à PV pós-Buck
+
+# Cargas úteis
+TI_NOM_SUN = 40000.0         # W úteis de TI em insolação
+TI_NOM_ECL = 18000.0         # W úteis de TI no cenário de eclipse
+N_DIES = 80                  # hipótese de arquitetura
+
+# Potências FV já pós-Buck, disponíveis no barramento
+PV_SCENARIOS_KW = {
+    "85C": 46.14,
+    "65C": 49.73,
+    "28C": 54.18,
+}
+PV_CASE = "65C"
+
+# Carga elétrica agregada P_BASE.
+# Composição adotada: 200 W bomba + 350 W aviônica + 440 W OISL
+# + 10 W de margem.
+P_BASE = 1000.0                # W
+P_PUMP_ELECTRICAL = 200.0      # W, incluída em P_BASE
+P_AVIONICS_ELECTRICAL = 350.0  # W, incluída em P_BASE
+P_OISL_ELECTRICAL = 440.0     # W, incluída em P_BASE
+P_BASE_MARGIN = 10.0           # W
+
+# Partição térmica provisória de P_BASE:
+# bomba 200 W + aviônica 350 W + calor OISL 343,2 W + margem 10 W.
+Q_BASE_THERMAL = 903.2         # W, hipótese agregada de calor interno
+Q_OISL_INTERNAL_HEAT = 343.2   # W, parte térmica do OISL
+P_OISL_OPTICAL = 96.8          # W, potência óptica que deixa o veículo
+
+# Aquecedor: variável, separado de P_BASE
+HEATER_SET_C = 15.0            # °C
+HEATER_KP = 120.0              # W/K
+HEATER_MAX_W = 600.0           # W
+
+# BESS agregado
+V_BAT = 400.0                  # V, aproximação agregada
+E_BAT_KWH = 9.008              # kWh
+SOC_MAX = 1.0
+SOC_MIN = 0.20
+R_BAT = 0.085                  # ohm, resistência agregada adotada
+CN_AH = 22.52                  # Ah
+C_RATE_MAX_CHARGE = 1.0        # C
+P_MAX_CHARGE_W = CN_AH * C_RATE_MAX_CHARGE * V_BAT
+
+# Condições iniciais
+T_CHASSIS_INIT_C = 21.0
+T_RAD_INIT_C = 20.0
+T_BAT_INIT_C = 26.0
+
+# Limites de análise adotados; não equivalem automaticamente a limites
+# qualificados de hardware.
+T_BAT_MIN_C = 10.0
+T_BAT_MAX_C = 45.0
+T_RAD_MAX_C = 55.0
+
+# Controles numéricos
+TOL_T_K = 0.01
+TOL_SOC = 1e-5
+TOL_ENVELOPE_K = 0.02
+MAX_ORBITS = 60
+SIM_DT_S = 1.0
+
+# Data inicial usada na aproximação solar
+START_DATE = datetime(2026, 1, 1, 0, 0, 0)
+
+# Configuração da varredura LTAN
+LTAN_STEP_HOURS = 0.5
+ANNUAL_DAY_STEP = 5
+PHASE_SAMPLES_PER_ORBIT = 120
+
+# Erro de atitude nominal:
+# a variação máxima deve ser avaliada separadamente na FMECA.
+ATTITUDE_ERROR_DEG = 0.0
+
+
+# ==============================================================================
+# 2. Estrutura de resultados
+# ==============================================================================
+
+@dataclass
+class Result:
+    converged: bool
+    envelope_converged: bool
+    periodic_state_converged: bool
+    operationally_feasible: bool
+    orbits: int
+    beta_description: str
+
+    t_rad_min_c: float
+    t_rad_max_c: float
+    t_ch_min_c: float
+    t_ch_max_c: float
+    t_bat_min_c: float
+    t_bat_max_c: float
+
+    soc_min_last_orbit: float
+    soc_min_run: float
+    soc_final: float
+    unmet_energy_j_last_orbit: float
+
+    e_pv_available_j_last_orbit: float
+    e_pv_used_j_last_orbit: float
+    e_pv_curtailed_j_last_orbit: float
+    e_load_served_j_last_orbit: float
+
+    e_bat_charge_terminal_j_last_orbit: float
+    e_bat_discharge_terminal_j_last_orbit: float
+    e_bat_chemical_change_j_last_orbit: float
+    e_battery_loss_j_last_orbit: float
+    e_heater_j_last_orbit: float
+
+    e_dab_loss_j_last_orbit: float
+    e_ti_heat_j_last_orbit: float
+    e_base_heat_j_last_orbit: float
+    e_chassis_heat_j_last_orbit: float
+
+    e_radiated_j_last_orbit: float
+    e_ambient_j_last_orbit: float
+
+    electrical_residual_j_last_orbit: float
+    battery_energy_residual_j_last_orbit: float
+    thermal_residual_j_last_orbit: float
+
+    delta_t_state_k: float
+    delta_soc_state: float
+    delta_envelope_k: float
+
+
+# ==============================================================================
+# 3. Utilitários
+# ==============================================================================
+
+def clamp(value, lower, upper):
+    return max(lower, min(upper, value))
+
+
+def solar_declination_approx(date):
+    day = date.timetuple().tm_yday
+    hour = date.hour + date.minute / 60.0 + date.second / 3600.0
+    fractional_day = day + (hour - 12.0) / 24.0
+    gamma = math.radians(
+        360.0 * (fractional_day - 81.0) / 365.0
+    )
+    return 23.44 * math.sin(gamma)
+
+
+def beta_from_ltan(
+    date,
+    ltan_hours,
+    inclination_deg=SSO_INCLINATION_DEG,
+):
+    if not 0.0 <= ltan_hours < 24.0:
+        raise ValueError("LTAN deve estar em [0,24).")
+
+    delta = math.radians(solar_declination_approx(date))
+    inclination = math.radians(inclination_deg)
+    delta_omega = math.radians(15.0 * (ltan_hours - 12.0))
+
+    sin_beta = (
+        math.sin(inclination)
+        * math.cos(delta)
+        * math.sin(delta_omega)
+        + math.cos(inclination)
+        * math.sin(delta)
+    )
+
+    return math.degrees(
+        math.asin(clamp(sin_beta, -1.0, 1.0))
+    )
+
+
+def beta_for_orbit(beta_profile_deg, orbit_index):
+    if isinstance(beta_profile_deg, (int, float)):
+        return float(beta_profile_deg)
+
+    if beta_profile_deg is None or len(beta_profile_deg) == 0:
+        raise ValueError(
+            "beta_profile_deg deve ser escalar ou sequência não vazia."
+        )
+
+    return float(
+        beta_profile_deg[
+            min(orbit_index, len(beta_profile_deg) - 1)
+        ]
+    )
+
+
+# ==============================================================================
+# 4. Geometria de eclipse
+# ==============================================================================
+
+def circle_overlap_area(radius_sun, radius_earth, separation):
+    if separation >= radius_sun + radius_earth:
+        return 0.0
+
+    if separation <= abs(radius_earth - radius_sun):
+        return math.pi * min(radius_sun, radius_earth) ** 2
+
+    arg_sun = clamp(
+        (
+            separation**2
+            + radius_sun**2
+            - radius_earth**2
+        ) / (2.0 * separation * radius_sun),
+        -1.0,
+        1.0,
+    )
+
+    arg_earth = clamp(
+        (
+            separation**2
+            + radius_earth**2
+            - radius_sun**2
+        ) / (2.0 * separation * radius_earth),
+        -1.0,
+        1.0,
+    )
+
+    radicand = max(
+        0.0,
+        (-separation + radius_sun + radius_earth)
+        * (separation + radius_sun - radius_earth)
+        * (separation - radius_earth + radius_sun)
+        * (separation + radius_earth + radius_sun),
+    )
+
+    return (
+        radius_sun**2 * math.acos(arg_sun)
+        + radius_earth**2 * math.acos(arg_earth)
+        - 0.5 * math.sqrt(radicand)
+    )
+
+
+def solar_disk_fraction(theta_rad, beta_deg, altitude_km):
+    radius_orbit_km = RE_KM + altitude_km
+
+    alpha_earth = math.asin(
+        clamp(RE_KM / radius_orbit_km, -1.0, 1.0)
+    )
+    alpha_sun = math.asin(
+        clamp(RSUN_KM / D_ES_KM, -1.0, 1.0)
+    )
+
+    beta = math.radians(beta_deg)
+    cos_gamma = -math.cos(beta) * math.cos(theta_rad)
+    gamma = math.acos(clamp(cos_gamma, -1.0, 1.0))
+
+    overlap = circle_overlap_area(
+        alpha_sun,
+        alpha_earth,
+        gamma,
+    )
+
+    fraction = 1.0 - overlap / (math.pi * alpha_sun**2)
+    return clamp(fraction, 0.0, 1.0)
+
+
+# ==============================================================================
+# 5. Fator de visão e ambiente radiativo
+# ==============================================================================
+
+def earth_view_factor(alt_km, phi_deg):
+    H = (RE_KM + alt_km) / RE_KM
+
+    if H <= 1.0:
+        raise ValueError("A altitude deve ser positiva.")
+
+    phi = math.radians(phi_deg)
+    theta_m = math.asin(1.0 / H)
+    root = math.sqrt(H**2 - 1.0)
+
+    if phi <= math.pi / 2.0 - theta_m:
+        return clamp(math.cos(phi) / H**2, 0.0, 1.0)
+
+    if phi <= math.pi / 2.0 + theta_m:
+        sin_phi = math.sin(phi)
+        if abs(sin_phi) < 1e-12:
+            return 0.0
+
+        arg1 = clamp(root / (H * sin_phi), -1.0, 1.0)
+        arg2 = clamp(
+            root * math.cos(phi) / sin_phi,
+            -1.0,
+            1.0,
+        )
+        radicand = max(
+            0.0,
+            1.0 - H**2 * math.cos(phi)**2,
+        )
+
+        factor = (
+            0.5
+            - math.asin(arg1) / math.pi
+            + math.cos(phi)
+            / (math.pi * H**2)
+            * math.acos(arg2)
+            - root
+            * math.sqrt(radicand)
+            / (math.pi * H**2)
+        )
+        return clamp(factor, 0.0, 1.0)
+
+    return 0.0
+
+
+def orbital_geometry(theta_rad, beta_deg):
+    beta = math.radians(beta_deg)
+
+    radial_hat = (
+        math.cos(theta_rad),
+        math.sin(theta_rad),
+        0.0,
+    )
+
+    sun_hat = (
+        math.cos(beta),
+        0.0,
+        math.sin(beta),
+    )
+
+    nadir_hat = tuple(-value for value in radial_hat)
+    radiator_hat = tuple(-value for value in sun_hat)
+
+    cos_phi = sum(
+        radiator_hat[i] * nadir_hat[i]
+        for i in range(3)
+    )
+    phi_deg = math.degrees(
+        math.acos(clamp(cos_phi, -1.0, 1.0))
+    )
+
+    mu_albedo = max(
+        0.0,
+        sum(radial_hat[i] * sun_hat[i] for i in range(3)),
+    )
+
+    mu_solar_nominal = max(
+        0.0,
+        sum(radiator_hat[i] * sun_hat[i] for i in range(3)),
+    )
+
+    return phi_deg, mu_albedo, mu_solar_nominal
+
+
+def thermal_environment(
+    theta_rad,
+    beta_deg,
+    altitude_km,
+    albedo=ALBEDO,
+    q_earth_ir_wm2=Q_EARTH_IR,
+    solar_fraction=1.0,
+    attitude_error_deg=0.0,
+):
+    phi_deg, mu_albedo, mu_solar_nominal = orbital_geometry(
+        theta_rad,
+        beta_deg,
+    )
+
+    f_earth = earth_view_factor(
+        altitude_km,
+        phi_deg,
+    )
+
+    mu_solar_error = max(
+        0.0,
+        math.sin(math.radians(abs(attitude_error_deg))),
+    )
+    mu_solar = max(mu_solar_nominal, mu_solar_error)
+
+    q_solar_abs = (
+        ALPHA_RAD
+        * G_SOL
+        * mu_solar
+        * solar_fraction
+    )
+
+    q_albedo_abs = (
+        ALPHA_RAD
+        * G_SOL
+        * albedo
+        * f_earth
+        * mu_albedo
+    )
+
+    q_ir_abs = EPS_RAD * q_earth_ir_wm2 * f_earth
+
+    return {
+        "f_earth": f_earth,
+        "phi_deg": phi_deg,
+        "mu_albedo": mu_albedo,
+        "mu_solar": mu_solar,
+        "q_solar_abs": q_solar_abs,
+        "q_albedo_abs": q_albedo_abs,
+        "q_ir_abs": q_ir_abs,
+        "q_ambient_abs": (
+            q_solar_abs
+            + q_albedo_abs
+            + q_ir_abs
+        ),
+    }
+
+
+# ==============================================================================
+# 6. Modelo energético da bateria
+# ==============================================================================
+
+def battery_loss(p_terminal_w):
+    current_a = abs(p_terminal_w) / V_BAT
+    return R_BAT * current_a**2
+
+
+def max_discharge_for_energy(
+    p_requested_w,
+    energy_available_j,
+    dt_s,
+):
+    if (
+        p_requested_w <= 0.0
+        or energy_available_j <= 0.0
+        or dt_s <= 0.0
+    ):
+        return 0.0, 0.0
+
+    def chemical_energy_required(power_w):
+        return (power_w + battery_loss(power_w)) * dt_s
+
+    if chemical_energy_required(p_requested_w) <= energy_available_j:
+        return p_requested_w, battery_loss(p_requested_w)
+
+    low = 0.0
+    high = p_requested_w
+
+    for _ in range(60):
+        middle = 0.5 * (low + high)
+        if chemical_energy_required(middle) <= energy_available_j:
+            low = middle
+        else:
+            high = middle
+
+    return low, battery_loss(low)
+
+
+def max_charge_for_headroom(
+    p_available_w,
+    energy_headroom_j,
+    dt_s,
+):
+    if (
+        p_available_w <= 0.0
+        or energy_headroom_j <= 0.0
+        or dt_s <= 0.0
+    ):
+        return 0.0, 0.0, 0.0
+
+    p_limit = min(p_available_w, P_MAX_CHARGE_W)
+
+    def chemical_energy_stored(power_w):
+        return max(
+            0.0,
+            power_w - battery_loss(power_w),
+        ) * dt_s
+
+    if chemical_energy_stored(p_limit) <= energy_headroom_j:
+        loss_w = battery_loss(p_limit)
+        return (
+            p_limit,
+            loss_w,
+            max(0.0, p_limit - loss_w),
+        )
+
+    low = 0.0
+    high = p_limit
+
+    for _ in range(60):
+        middle = 0.5 * (low + high)
+        if chemical_energy_stored(middle) <= energy_headroom_j:
+            low = middle
+        else:
+            high = middle
+
+    loss_w = battery_loss(low)
+    return (
+        low,
+        loss_w,
+        max(0.0, low - loss_w),
+    )
+
+# ==============================================================================
+# 8. Simulação de três nós (Corrigido para aceitar start_date)
+# ==============================================================================
+
+def simulate(
+    ti_sun_w=TI_NOM_SUN,
+    ti_eclipse_w=TI_NOM_ECL,
+    pv_input_kw=PV_SCENARIOS_KW["65C"],
+    beta_profile_deg=None,
+    dt_s=SIM_DT_S,
+    r_bat_ch=R_BAT_CH,
+    r_ch_rad=R_CH_RAD,
+    albedo=ALBEDO,
+    q_earth_ir_wm2=Q_EARTH_IR,
+    heater_set_c=HEATER_SET_C,
+    heater_kp=HEATER_KP,
+    heater_max_w=HEATER_MAX_W,
+    attitude_error_deg=0.0,
+    eta_dab=ETA_DAB,
+    n_orbits_max=MAX_ORBITS,
+    start_date=START_DATE,  # <--- Adicionado aqui
+    record_history=False,
+):
+    if beta_profile_deg is None:
+        raise ValueError(
+            "Informe beta_profile_deg: escalar ou sequência por órbita."
+        )
+
+    if min(dt_s, A_RAD, r_bat_ch, r_ch_rad, n_orbits_max) <= 0.0:
+        raise ValueError(
+            "dt, área, resistências e número de órbitas devem ser positivos."
+        )
+
+    if min(ti_sun_w, ti_eclipse_w, pv_input_kw, heater_max_w) < 0.0:
+        raise ValueError("Potências não podem ser negativas.")
+
+    if heater_kp < 0.0 or not 0.0 < eta_dab <= 1.0:
+        raise ValueError("heater_kp ou eta_dab inválido.")
+
+    if not (0.0 <= SOC_MIN < SOC_MAX <= 1.0):
+        raise ValueError("Limites de SoC inválidos.")
+
+    cap_j = E_BAT_KWH * 3.6e6
+    c_rad = A_RAD * RHO_AREAL * CP_RAD
+    n_steps = max(1, int(round(T_ORB / dt_s)))
+    dt = T_ORB / n_steps
+
+    tr = 273.15 + T_RAD_INIT_C
+    tc = 273.15 + T_CHASSIS_INIT_C
+    tb = 273.15 + T_BAT_INIT_C
+    soc = SOC_MAX
+
+    previous_start = None
+    previous_envelope = None
+    stable_state_count = 0
+    stable_envelope_count = 0
+
+    global_soc_min = soc
+    final_result = None
+
+    profile_is_constant = isinstance(
+        beta_profile_deg,
+        (int, float),
+    )
+
+    if profile_is_constant:
+        beta_description = (
+            f"beta constante={float(beta_profile_deg):.4f} deg"
+        )
+    else:
+        beta_description = (
+            f"perfil beta com {len(beta_profile_deg)} valores"
+        )
+
+    history_records = []
+    elapsed_total_s = 0.0
+
+    for orbit in range(1, n_orbits_max + 1):
+        beta_now = beta_for_orbit(
+            beta_profile_deg,
+            orbit - 1,
+        )
+
+        start_state = (tr, tc, tb, soc)
+        thermal_energy_start = (
+            c_rad * tr
+            + C_CHASSIS * tc
+            + C_BAT * tb
+        )
+        soc_start = soc
+
+        tr_min = tc_min = tb_min = float("inf")
+        tr_max = tc_max = tb_max = float("-inf")
+        soc_min_orbit = soc
+
+        e_pv_available = 0.0
+        e_pv_used = 0.0
+        e_pv_curtailed = 0.0
+        e_load_served = 0.0
+        e_bat_charge_terminal = 0.0
+        e_bat_discharge_terminal = 0.0
+        e_bat_loss = 0.0
+        e_heater = 0.0
+        e_dab_loss = 0.0
+        e_ti_heat = 0.0
+        e_base_heat = 0.0
+        e_chassis_heat = 0.0
+        e_radiated = 0.0
+        e_ambient = 0.0
+        e_unmet = 0.0
+
+        for k in range(n_steps):
+            theta = 2.0 * math.pi * (k * dt) / T_ORB
+
+            solar_fraction = solar_disk_fraction(
+                theta,
+                beta_now,
+                ALTITUDE_KM,
+            )
+
+            p_ti_requested = (
+                ti_eclipse_w
+                + (ti_sun_w - ti_eclipse_w) * solar_fraction
+            )
+
+            p_pv_available = (
+                pv_input_kw * 1000.0 * solar_fraction
+            )
+
+            env = thermal_environment(
+                theta_rad=theta,
+                beta_deg=beta_now,
+                altitude_km=ALTITUDE_KM,
+                albedo=albedo,
+                q_earth_ir_wm2=q_earth_ir_wm2,
+                solar_fraction=solar_fraction,
+                attitude_error_deg=attitude_error_deg,
+            )
+
+            tb_c = tb - 273.15
+            p_heater_requested = min(
+                heater_max_w,
+                max(
+                    0.0,
+                    heater_kp * (heater_set_c - tb_c),
+                ),
+            )
+
+            p_ti_bus_requested = p_ti_requested / eta_dab
+            p_total_requested = (
+                p_ti_bus_requested
+                + P_BASE
+                + p_heater_requested
+            )
+
+            p_pv_to_load = min(
+                p_pv_available,
+                p_total_requested,
+            )
+
+            p_surplus = max(
+                0.0,
+                p_pv_available - p_pv_to_load,
+            )
+
+            p_deficit = max(
+                0.0,
+                p_total_requested - p_pv_to_load,
+            )
+
+            p_bat_charge_terminal = 0.0
+            p_bat_discharge_terminal = 0.0
+            p_bat_loss_charge = 0.0
+            p_bat_loss_discharge = 0.0
+            p_bat_chemical_charge = 0.0
+
+            if p_deficit > 0.0:
+                energy_available = max(
+                    0.0,
+                    (soc - SOC_MIN) * cap_j,
+                )
+
+                (
+                    p_bat_discharge_terminal,
+                    p_bat_loss_discharge,
+                ) = max_discharge_for_energy(
+                    p_deficit,
+                    energy_available,
+                    dt,
+                )
+
+                chemical_draw = (
+                    p_bat_discharge_terminal
+                    + p_bat_loss_discharge
+                ) * dt
+
+                soc = max(
+                    SOC_MIN,
+                    soc - chemical_draw / cap_j,
+                )
+
+            elif p_surplus > 0.0:
+                energy_headroom = max(
+                    0.0,
+                    (SOC_MAX - soc) * cap_j,
+                )
+
+                (
+                    p_bat_charge_terminal,
+                    p_bat_loss_charge,
+                    p_bat_chemical_charge,
+                ) = max_charge_for_headroom(
+                    p_surplus,
+                    energy_headroom,
+                    dt,
+                )
+
+                soc = min(
+                    SOC_MAX,
+                    soc
+                    + p_bat_chemical_charge * dt / cap_j,
+                )
+
+            p_bat_loss = (
+                p_bat_loss_charge
+                + p_bat_loss_discharge
+            )
+
+            p_load_served = (
+                p_pv_to_load
+                + p_bat_discharge_terminal
+            )
+
+            p_unmet = max(
+                0.0,
+                p_total_requested - p_load_served,
+            )
+
+            e_unmet += p_unmet * dt
+
+            p_pv_used = (
+                p_pv_to_load
+                + p_bat_charge_terminal
+            )
+
+            p_pv_curtailed = max(
+                0.0,
+                p_pv_available - p_pv_used,
+            )
+
+            served_fraction = clamp(
+                p_load_served / max(p_total_requested, 1e-12),
+                0.0,
+                1.0,
+            )
+
+            p_ti_served = p_ti_requested * served_fraction
+            p_heater_served = p_heater_requested * served_fraction
+
+            p_ti_bus_served = p_ti_served / eta_dab
+            p_dab_loss = max(
+                0.0,
+                p_ti_bus_served - p_ti_served,
+            )
+
+            q_ti = p_ti_served
+            q_base = Q_BASE_THERMAL * served_fraction
+            q_dab = p_dab_loss
+
+            q_chassis_source = q_ti + q_base + q_dab
+
+            q_bat_to_chassis = (tb - tc) / r_bat_ch
+            q_chassis_to_rad = (tc - tr) / r_ch_rad
+
+            q_ambient = A_RAD * env["q_ambient_abs"]
+
+            q_radiated = (
+                A_RAD
+                * ETA_FIN
+                * EPS_RAD
+                * SIGMA
+                * (max(tr, 1.0) ** 4 - 3.0**4)
+            )
+
+            d_tb = (
+                p_bat_loss
+                + p_heater_served
+                - q_bat_to_chassis
+            ) / C_BAT
+
+            d_tc = (
+                q_chassis_source
+                + q_bat_to_chassis
+                - q_chassis_to_rad
+            ) / C_CHASSIS
+
+            d_tr = (
+                q_chassis_to_rad
+                + q_ambient
+                - q_radiated
+            ) / c_rad
+
+            tb += d_tb * dt
+            tc += d_tc * dt
+            tr += d_tr * dt
+
+            e_pv_available += p_pv_available * dt
+            e_pv_used += p_pv_used * dt
+            e_pv_curtailed += p_pv_curtailed * dt
+            e_load_served += p_load_served * dt
+
+            e_bat_charge_terminal += (
+                p_bat_charge_terminal * dt
+            )
+            e_bat_discharge_terminal += (
+                p_bat_discharge_terminal * dt
+            )
+            e_bat_loss += p_bat_loss * dt
+            e_heater += p_heater_served * dt
+
+            e_dab_loss += p_dab_loss * dt
+            e_ti_heat += q_ti * dt
+            e_base_heat += q_base * dt
+            e_chassis_heat += q_chassis_source * dt
+
+            e_radiated += q_radiated * dt
+            e_ambient += q_ambient * dt
+
+            tr_c = tr - 273.15
+            tc_c = tc - 273.15
+            tb_c_new = tb - 273.15
+
+            tr_min = min(tr_min, tr_c)
+            tr_max = max(tr_max, tr_c)
+            tc_min = min(tc_min, tc_c)
+            tc_max = max(tc_max, tc_c)
+            tb_min = min(tb_min, tb_c_new)
+            tb_max = max(tb_max, tb_c_new)
+
+            soc_min_orbit = min(soc_min_orbit, soc)
+            global_soc_min = min(
+                global_soc_min if "global_soc_min" in locals() else SOC_MAX,
+                soc,
+            )
+
+            if record_history:
+                history_records.append({
+                    "orbit": orbit,
+                    "time_s": elapsed_total_s,
+                    "t_rad_c": tr_c,
+                    "t_chassis_c": tc_c,
+                    "t_bat_c": tb_c_new,
+                    "soc": soc,
+                    "solar_fraction": solar_fraction,
+                })
+
+            elapsed_total_s += dt
+
+        thermal_energy_end = (
+            c_rad * tr
+            + C_CHASSIS * tc
+            + C_BAT * tb
+        )
+
+        delta_thermal = (
+            thermal_energy_end - thermal_energy_start
+        )
+
+        electrical_residual = (
+            e_pv_used
+            + e_bat_discharge_terminal
+            - e_load_served
+            - e_bat_charge_terminal
+        )
+
+        battery_chemical_change = (
+            (soc - soc_start) * cap_j
+        )
+
+        battery_energy_residual = (
+            battery_chemical_change
+            - (
+                e_bat_charge_terminal
+                - e_bat_discharge_terminal
+                - e_bat_loss
+            )
+        )
+
+        thermal_residual = (
+            e_chassis_heat
+            + e_bat_loss
+            + e_heater
+            + e_ambient
+            - e_radiated
+            - delta_thermal
+        )
+
+        end_state = (tr, tc, tb, soc)
+        envelope = (
+            tr_min,
+            tr_max,
+            tc_min,
+            tc_max,
+            tb_min,
+            tb_max,
+        )
+
+        if previous_start is None:
+            delta_t_state = float("inf")
+            delta_soc_state = float("inf")
+            delta_envelope = float("inf")
+        else:
+            delta_t_state = max(
+                abs(end_state[i] - previous_start[i])
+                for i in range(3)
+            )
+            delta_soc_state = abs(
+                end_state[3] - previous_start[3]
+            )
+            delta_envelope = max(
+                abs(envelope[i] - previous_envelope[i])
+                for i in range(6)
+            )
+
+        periodic_candidate = (
+            isinstance(beta_profile_deg, (int, float))
+            and delta_t_state < TOL_T_K
+            and delta_soc_state < TOL_SOC
+        )
+
+        operationally_feasible = (
+            e_unmet < 1.0
+            and soc > SOC_MIN + TOL_SOC
+        )
+
+        if periodic_candidate and operationally_feasible:
+            stable_state_count += 1
+        else:
+            stable_state_count = 0
+
+        envelope_candidate = (
+            delta_envelope < TOL_ENVELOPE_K
+        )
+
+        if envelope_candidate and operationally_feasible:
+            stable_envelope_count += 1
+        else:
+            stable_envelope_count = 0
+
+        periodic_state_converged = (
+            stable_state_count >= 2
+        )
+        envelope_converged = (
+            stable_envelope_count >= 2
+        )
+        converged = (
+            operationally_feasible
+            and (
+                periodic_state_converged
+                or envelope_converged
+            )
+        )
+
+        final_result = Result(
+            converged=converged,
+            envelope_converged=envelope_converged,
+            periodic_state_converged=periodic_state_converged,
+            operationally_feasible=operationally_feasible,
+            orbits=orbit,
+            beta_description=beta_description,
+
+            t_rad_min_c=tr_min,
+            t_rad_max_c=tr_max,
+            t_ch_min_c=tc_min,
+            t_ch_max_c=tc_max,
+            t_bat_min_c=tb_min,
+            t_bat_max_c=tb_max,
+
+            soc_min_last_orbit=soc_min_orbit,
+            soc_min_run=global_soc_min,
+            soc_final=soc,
+            unmet_energy_j_last_orbit=e_unmet,
+
+            e_pv_available_j_last_orbit=e_pv_available,
+            e_pv_used_j_last_orbit=e_pv_used,
+            e_pv_curtailed_j_last_orbit=e_pv_curtailed,
+            e_load_served_j_last_orbit=e_load_served,
+
+            e_bat_charge_terminal_j_last_orbit=e_bat_charge_terminal,
+            e_bat_discharge_terminal_j_last_orbit=e_bat_discharge_terminal,
+            e_bat_chemical_change_j_last_orbit=battery_chemical_change,
+            e_battery_loss_j_last_orbit=e_bat_loss,
+            e_heater_j_last_orbit=e_heater,
+
+            e_dab_loss_j_last_orbit=e_dab_loss,
+            e_ti_heat_j_last_orbit=e_ti_heat,
+            e_base_heat_j_last_orbit=e_base_heat,
+            e_chassis_heat_j_last_orbit=e_chassis_heat,
+
+            e_radiated_j_last_orbit=e_radiated,
+            e_ambient_j_last_orbit=e_ambient,
+
+            electrical_residual_j_last_orbit=electrical_residual,
+            battery_energy_residual_j_last_orbit=battery_energy_residual,
+            thermal_residual_j_last_orbit=thermal_residual,
+
+            delta_t_state_k=delta_t_state,
+            delta_soc_state=delta_soc_state,
+            delta_envelope_k=delta_envelope,
+        )
+
+        if converged:
+            break
+
+        previous_start = start_state
+        previous_envelope = envelope
+
+    if record_history:
+        return final_result, history_records
+    return final_result
+
+
+# ==============================================================================
+# 9. Diagnósticos de aleta e temperatura quase-estática de junção
+# ==============================================================================
+
+def fin_efficiency_diagnostic():
+    t_ref_k = 318.15
+    h_rad = 4.0 * EPS_RAD * SIGMA * t_ref_k**3
+    k_material = 1275.0  # W/(m K), hipótese
+    thickness = 0.002    # m, hipótese
+    length = 0.075       # m, hipótese
+
+    m = math.sqrt(
+        2.0 * h_rad / (k_material * thickness)
+    )
+    ml = m * length
+    eta_fin_calculated = (
+        math.tanh(ml) / ml if ml > 0.0 else 1.0
+    )
+    return h_rad, m, eta_fin_calculated
+
+
+# ==============================================================================
+# 10. Varredura aproximada de LTAN
+# ==============================================================================
+
+def rank_ltan_by_insolation(
+    start_date,
+    altitude_km=ALTITUDE_KM,
+    inclination_deg=SSO_INCLINATION_DEG,
+    ltan_step_hours=0.5,
+    day_step=5,
+    n_phase_samples=120,
+):
+    if ltan_step_hours <= 0.0:
+        raise ValueError("ltan_step_hours deve ser positivo.")
+    if day_step <= 0 or n_phase_samples <= 0:
+        raise ValueError("day_step e n_phase_samples devem ser positivos.")
+
+    n_ltan = int(round(24.0 / ltan_step_hours))
+    candidates = []
+    worst_beta_dates = {}
+
+    for j in range(n_ltan):
+        ltan = j * ltan_step_hours
+        total_fraction = 0.0
+        count = 0
+
+        for day in range(0, 365, day_step):
+            date = start_date + timedelta(days=day)
+            beta = beta_from_ltan(
+                date,
+                ltan,
+                inclination_deg,
+            )
+
+            for k in range(n_phase_samples):
+                theta = (
+                    2.0 * math.pi * k / n_phase_samples
+                )
+                total_fraction += solar_disk_fraction(
+                    theta,
+                    beta,
+                    altitude_km,
+                )
+                count += 1
+
+        candidates.append(
+            (ltan, total_fraction / count)
+        )
+
+        daily_betas = []
+        for day in range(365):
+            date = start_date + timedelta(days=day)
+            beta = beta_from_ltan(
+                date,
+                ltan,
+                inclination_deg,
+            )
+            daily_betas.append((abs(beta), date))
+
+        worst_beta_dates[ltan] = min(
+            daily_betas,
+            key=lambda item: item[0],
+        )[1]
+
+    worst = min(candidates, key=lambda item: item[1])
+    best = max(candidates, key=lambda item: item[1])
+
+    return {
+        "worst_ltan_h": worst[0],
+        "worst_mean_solar_fraction": worst[1],
+        "best_ltan_h": best[0],
+        "best_mean_solar_fraction": best[1],
+        "worst_beta_dates": worst_beta_dates,
+        "ranking": sorted(candidates, key=lambda item: item[1]),
+    }
+
+
+def build_beta_profile(
+    start_date,
+    ltan_hours,
+    n_orbits,
+    orbit_period_s_value=T_ORB,
+    inclination_deg=SSO_INCLINATION_DEG,
+):
+    return [
+        beta_from_ltan(
+            start_date + timedelta(
+                seconds=i * orbit_period_s_value
+            ),
+            ltan_hours,
+            inclination_deg,
+        )
+        for i in range(n_orbits)
+    ]
+
+
+# ==============================================================================
+# 11. Relatório
+# ==============================================================================
+
+def print_result(label, ltan, beta_profile, result):
+    print(f"\n--- {label} ---")
+    print(f"LTAN = {ltan:05.2f} h")
+    print(
+        "Beta do perfil (min/max) = "
+        f"{min(beta_profile):.3f} / {max(beta_profile):.3f} deg"
+    )
+    print(f"Órbitas simuladas = {result.orbits}")
+    print(
+        "Convergência geral / envelope / estado periódico / "
+        "viabilidade = "
+        f"{result.converged} / "
+        f"{result.envelope_converged} / "
+        f"{result.periodic_state_converged} / "
+        f"{result.operationally_feasible}"
+    )
+
+    print(
+        f"Radiador min/max = "
+        f"{result.t_rad_min_c:.2f} / {result.t_rad_max_c:.2f} °C"
+    )
+    print(
+        f"Chassi min/max = "
+        f"{result.t_ch_min_c:.2f} / {result.t_ch_max_c:.2f} °C"
+    )
+    print(
+        f"Bateria min/max = "
+        f"{result.t_bat_min_c:.2f} / {result.t_bat_max_c:.2f} °C"
+    )
+
+    print(
+        f"SoC mínimo última órbita/global = "
+        f"{100.0 * result.soc_min_last_orbit:.2f} / "
+        f"{100.0 * result.soc_min_run:.2f} %"
+    )
+    print(
+        f"SoC final = {100.0 * result.soc_final:.2f} %"
+    )
+
+    print(
+        "Energia não atendida última órbita = "
+        f"{result.unmet_energy_j_last_orbit / 3.6e6:.6f} kWh"
+    )
+
+
+# ==============================================================================
+# 12. Funções de Salvamento e Plotagem
+# ==============================================================================
+
+def save_outputs(case_label, history_records, result):
+    output_dir = OUT_DIR
+    os.makedirs(output_dir, exist_ok=True)
+    
+    safe_label = case_label.lower().replace(" ", "_")
+    csv_filename = os.path.join(output_dir, f"simulacao_{safe_label}.csv")
+
+    # 1. Salvar CSV com a série temporal
+    if history_records:
+        keys = history_records[0].keys()
+        with open(csv_filename, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=keys)
+            writer.writeheader()
+            for row in history_records:
+                writer.writerow(row)
+        print(f"-> Arquivo CSV salvo com sucesso em: {csv_filename}")
+
+    # 2. Gerar Gráficos PNG (caso matplotlib esteja instalado)
+    if HAS_MATPLOTLIB and history_records:
+        times_h = [r["time_s"] / 3600.0 for r in history_records]
+        t_rad = [r["t_rad_c"] for r in history_records]
+        t_ch = [r["t_chassis_c"] for r in history_records]
+        t_bat = [r["t_bat_c"] for r in history_records]
+        socs = [100.0 * r["soc"] for r in history_records]
+
+        # Gráfico de Temperaturas
+        plt.figure(figsize=(10, 5))
+        plt.plot(times_h, t_rad, label="Radiador (°C)", color="tab:blue")
+        plt.plot(times_h, t_ch, label="Chassi (°C)", color="tab:orange")
+        plt.plot(times_h, t_bat, label="Bateria (°C)", color="tab:green")
+        plt.title(f"Evolução Térmica — {case_label}")
+        plt.xlabel("Tempo de Simulação (horas)")
+        plt.ylabel("Temperatura (°C)")
+        plt.grid(True, linestyle="--", alpha=0.6)
+        plt.legend()
+        plt.tight_layout()
+        plot_temp_path = os.path.join(output_dir, f"temperaturas_{safe_label}.png")
+        plt.savefig(plot_temp_path, dpi=300)
+        plt.close()
+        print(f"-> Gráfico de temperaturas salvo em: {plot_temp_path}")
+
+        # Gráfico de Estado de Carga (SoC)
+        plt.figure(figsize=(10, 4))
+        plt.plot(times_h, socs, label="SoC (%)", color="tab:purple")
+        plt.axhline(y=SOC_MIN * 100, color="r", linestyle=":", label=f"SoC Min ({SOC_MIN*100}%)")
+        plt.title(f"Estado de Carga da Bateria (SoC) — {case_label}")
+        plt.xlabel("Tempo de Simulação (horas)")
+        plt.ylabel("SoC (%)")
+        plt.grid(True, linestyle="--", alpha=0.6)
+        plt.legend()
+        plt.tight_layout()
+        plot_soc_path = os.path.join(output_dir, f"soc_{safe_label}.png")
+        plt.savefig(plot_soc_path, dpi=300)
+        plt.close()
+        print(f"-> Gráfico de SoC salvo em: {plot_soc_path}")
+    elif not HAS_MATPLOTLIB:
+        print("-> Matplotlib não encontrado. Apenas os dados CSV foram salvos.")
+
+
+# ==============================================================================
+# 13. Execução principal
+# ==============================================================================
+
+def main():
+    print("SIMULAÇÃO 4.1 — extremos aproximados de LTAN/insolação")
+    print(
+        f"Altitude={ALTITUDE_KM:.1f} km; "
+        f"período={T_ORB:.2f} s; "
+        f"inclinação provisória={SSO_INCLINATION_DEG:.2f}°"
+    )
+    print(
+        f"Data inicial={START_DATE.isoformat()}; "
+        f"passo={SIM_DT_S:g} s; "
+        f"PV pós-Buck={PV_SCENARIOS_KW[PV_CASE]:.2f} kW"
+    )
+    print(f"Área emissora total fixa: {A_RAD:.1f} m²")
+
+    h_fin, m_fin, eta_fin_calc = fin_efficiency_diagnostic()
+    print(
+        "Diagnóstico separado de aleta: "
+        f"h_rad={h_fin:.3f} W/(m² K); "
+        f"m={m_fin:.3f} 1/m; "
+        f"eta calculada={eta_fin_calc:.5f}; "
+        f"eta adotada={ETA_FIN:.3f}"
+    )
+
+    ranking = rank_ltan_by_insolation(START_DATE)
+
+    print("\nVarredura anual aproximada de LTAN:")
+    print(
+        f"Menor fração solar média: LTAN "
+        f"{ranking['worst_ltan_h']:.2f} h; "
+        f"score={ranking['worst_mean_solar_fraction']:.6f}"
+    )
+    print(
+        f"Maior fração solar média: LTAN "
+        f"{ranking['best_ltan_h']:.2f} h; "
+        f"score={ranking['best_mean_solar_fraction']:.6f}"
+    )
+
+    cases = (
+        ("Pior Insolacao", "worst_ltan_h"),
+        ("Melhor Insolacao", "best_ltan_h"),
+    )
+
+    for label, key in cases:
+        ltan = ranking[key]
+        seasonal_start = ranking["worst_beta_dates"][ltan]
+
+        print(
+            f"\nÉpoca selecionada para {label.lower()}: "
+            f"{seasonal_start.date()}"
+        )
+
+        beta_profile = build_beta_profile(
+            seasonal_start,
+            ltan,
+            MAX_ORBITS,
+        )
+
+        result, history_records = simulate(
+            pv_input_kw=PV_SCENARIOS_KW[PV_CASE],
+            beta_profile_deg=beta_profile,
+            dt_s=SIM_DT_S,
+            n_orbits_max=MAX_ORBITS,
+            start_date=seasonal_start,
+            record_history=True,
+        )
+
+        print_result(
+            label,
+            ltan,
+            beta_profile,
+            result,
+        )
+
+        # Salva os resultados da simulação atual (CSV e Gráficos PNG) na pasta saida_4_1
+        save_outputs(label, history_records, result)
+
+    print("\nProcesso concluído com sucesso. Todos os arquivos foram direcionados para a pasta 'saida_4_1'.")
+
+
+if __name__ == "__main__":
+    main()
+
+################################################################################
+# [6/10] Modelo 4.5: Controle Ativo TEMS-NMPC (Legado)
+# Arquivo: simulacoes/simulacao_4_5_tems_nmpc.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# ==============================================================================
+# SIMULAÇÃO 4.5 — CONTROLE PREDITIVO NÃO LINEAR (TEMS-NMPC) VS CONTROLE REATIVO
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Descrição: Simula o acoplamento eletrotérmico em malha fechada de um nó de 50 kW,
+# comparando o desempenho do controle preditivo não linear (TEMS-NMPC) com
+# pré-resfriamento orbital (feedforward) e limitador de rampa de clock contra
+# um controlador reativo convencional (bang-bang / histerese).
+
+import csv
+import json
+import math
+from pathlib import Path
+
+import numpy as np
+
+OUTPUT_DIR = Path(__file__).resolve().parent / "saida_4_5"
+
+DT_S = 1.0
+T_TOTAL_S = 600.0
+T_TARGET_C = 65.0
+T_THR_C = 80.0
+T_CRIT_C = 85.0
+
+C_NODES = np.array([85.0, 420.0, 1100.0, 3500.0, 12500.0])
+R_12 = 0.035
+R_23 = 0.025
+R_34 = 0.015  # Linearizacao efetiva de primeira ordem no ponto nominal.
+R_45 = 0.018
+
+P_IT_BASE_W = 2000.0
+P_IT_STEP_W = 40000.0
+T_STEP_START_S = 180.0
+T_STEP_END_S = 420.0
+
+T_PRECOOL_START_S = 90.0
+T_PRECOOL_END_S = 180.0
+M_DOT_NOMINAL = 1.2
+M_DOT_BOOST = 3.2
+
+
+def sistema_termico_derivadas(t, T_vec, p_it, m_dot):
+    T1, T2, T3, T4, T5 = T_vec
+    g34 = (1.0 / R_34) * (m_dot / M_DOT_NOMINAL) ** 0.8
+    g12 = 1.0 / R_12
+    g23 = 1.0 / R_23
+    g45 = 1.0 / R_45
+
+    exp_arg = min(15.0, 0.025 * max(0.0, T1 - 65.0))
+    p_leak = 0.05 * p_it * math.exp(exp_arg)
+    p_chip = p_it + p_leak
+
+    sigma = 5.670374e-8
+    eps_ir = 0.88
+    eta_fin = 0.945
+    a_rad = 105.0
+    q_rad = eps_ir * sigma * a_rad * eta_fin * (
+        max(T5 + 273.15, 3.0) ** 4 - 3.0 ** 4
+    )
+
+    dT1 = (p_chip - g12 * (T1 - T2)) / C_NODES[0]
+    dT2 = (g12 * (T1 - T2) - g23 * (T2 - T3)) / C_NODES[1]
+    dT3 = (g23 * (T2 - T3) - g34 * (T3 - T4)) / C_NODES[2]
+    dT4 = (g34 * (T3 - T4) - g45 * (T4 - T5)) / C_NODES[3]
+    dT5 = (g45 * (T4 - T5) - q_rad) / C_NODES[4]
+
+    return np.array([dT1, dT2, dT3, dT4, dT5])
+
+
+def run_simulation(control_mode="TEMS"):
+    n_steps = int(T_TOTAL_S / DT_S) + 1
+    t_arr = np.linspace(0.0, T_TOTAL_S, n_steps)
+
+    T_mat = np.zeros((n_steps, 5))
+    T_mat[0] = [65.0, 52.0, 45.0, 38.0, 30.0]
+
+    f_clk_arr = np.zeros(n_steps)
+    m_dot_arr = np.zeros(n_steps)
+    p_it_arr = np.zeros(n_steps)
+
+    f_clk_current = 1.8
+
+    for k in range(n_steps - 1):
+        t = t_arr[k]
+
+        if T_STEP_START_S <= t <= T_STEP_END_S:
+            p_it = P_IT_BASE_W + P_IT_STEP_W
+        else:
+            p_it = P_IT_BASE_W
+
+        if control_mode == "TEMS" and T_mat[k, 0] >= T_THR_C:
+            p_it *= 0.80
+
+        p_it_arr[k] = p_it
+        T1_current = T_mat[k, 0]
+
+        if control_mode == "TEMS":
+            if T_PRECOOL_START_S <= t < T_PRECOOL_END_S:
+                m_dot = M_DOT_BOOST
+            else:
+                m_dot = M_DOT_NOMINAL
+
+            max_slew_per_step = 0.1 * DT_S
+
+            if T1_current >= T_THR_C:
+                target_clk = 1.4
+            elif T1_current >= T_CRIT_C:
+                target_clk = 0.8
+            else:
+                target_clk = 1.8
+
+            diff = target_clk - f_clk_current
+            if abs(diff) <= max_slew_per_step:
+                f_clk_current = target_clk
+            else:
+                f_clk_current += math.copysign(max_slew_per_step, diff)
+        else:
+            m_dot = M_DOT_NOMINAL
+            if T1_current >= T_CRIT_C:
+                f_clk_current = 0.8
+            elif T1_current <= T_TARGET_C:
+                f_clk_current = 1.8
+            else:
+                f_clk_current = 1.8 if (int(t) % 2 == 0) else 0.8
+
+        f_clk_arr[k] = f_clk_current
+        m_dot_arr[k] = m_dot
+
+        derivs = sistema_termico_derivadas(t, T_mat[k], p_it, m_dot)
+        T_mat[k + 1] = T_mat[k] + derivs * DT_S
+
+    p_it_arr[-1] = p_it_arr[-2]
+    f_clk_arr[-1] = f_clk_arr[-2]
+    m_dot_arr[-1] = m_dot_arr[-2]
+    T_mat[-1] = T_mat[-2]
+
+    return {
+        "t": t_arr,
+        "T_juncao": T_mat[:, 0],
+        "T_spreader": T_mat[:, 1],
+        "T_coldplate": T_mat[:, 2],
+        "T_fluido": T_mat[:, 3],
+        "T_radiador": T_mat[:, 4],
+        "f_clk": f_clk_arr,
+        "m_dot": m_dot_arr,
+        "p_it": p_it_arr,
+    }
+
+
+def main():
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    print("=" * 80)
+    print("SIMULAÇÃO 4.5 — COMPARAÇÃO TEMS-NMPC vs. CONTROLE REATIVO")
+    print("=" * 80)
+
+    res_tems = run_simulation("TEMS")
+    res_reactive = run_simulation("Reactive")
+
+    tj_max_tems = np.max(res_tems["T_juncao"])
+    tj_max_reactive = np.max(res_reactive["T_juncao"])
+
+    violations_tems = np.sum(res_tems["T_juncao"] > T_CRIT_C)
+    violations_reactive = np.sum(res_reactive["T_juncao"] > T_CRIT_C)
+    status_tems = (
+        "CONFORME"
+        if tj_max_tems <= T_CRIT_C
+        else "NÃO CONFORME (LIMITE TÉRMICO EXCEDIDO)"
+    )
+    status_reactive = (
+        "CONFORME"
+        if tj_max_reactive <= T_CRIT_C
+        else "NÃO CONFORME (LIMITE TÉRMICO EXCEDIDO)"
+    )
+
+    print("[TEMS-NMPC Preditivo]")
+    print(
+        "  -> Pico Máximo de Junção (T_j): {:.2f} °C (Meta: < 85.0 °C)".format(
+            tj_max_tems
+        )
+    )
+    print("  -> Violações do Teto de Segurança (85 °C): {} segundos".format(violations_tems))
+    print("  -> Supressão de Chattering: Concluída com limitador de rampa (100 MHz/s)\n")
+
+    print("[Controle Reativo Convencional]")
+    print("  -> Pico Máximo de Junção (T_j): {:.2f} °C (VIOLAÇÃO!)".format(tj_max_reactive))
+    print("  -> Violações do Teto de Segurança (85 °C): {} segundos".format(violations_reactive))
+    print("  -> Comutação Espúria (Chattering): Presente (oscilação severa de clock)\n")
+
+    summary_data = [
+        {
+            "Controlador": "TEMS-NMPC (Proposta)",
+            "Pico_Tj_C": round(tj_max_tems, 2),
+            "Violacoes_85C_s": int(violations_tems),
+            "Estrategia_Clock": "Rampa suave (100 MHz/s) com pré-resfriamento",
+            "Status": status_tems,
+        },
+        {
+            "Controlador": "Reativo Convencional (Bang-Bang)",
+            "Pico_Tj_C": round(tj_max_reactive, 2),
+            "Violacoes_85C_s": int(violations_reactive),
+            "Estrategia_Clock": "Comutação abrupta com chattering severo",
+            "Status": status_reactive,
+        },
+    ]
+
+    csv_path = OUTPUT_DIR / "simulacao_4_5_comparacao_resumo.csv"
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=list(summary_data[0].keys()))
+        writer.writeheader()
+        writer.writerows(summary_data)
+
+    json_path = OUTPUT_DIR / "simulacao_4_5_resultados.json"
+    with json_path.open("w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "descricao": "Simulação comparativa TEMS-NMPC vs Controle Reativo",
+                "resumo": summary_data,
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    print("Resultados consolidados salvos em: {}".format(OUTPUT_DIR))
+    print("=" * 80)
+
+
+if __name__ == "__main__":
+    main()
+
+
+################################################################################
+# [7/10] Modelo 4.6: Fadiga BGA e PUE Orbital (Legado - Descontinuado)
+# Arquivo: simulacoes/simulacao_4_6_fadiga_bga_cme.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+
+# ==============================================================================
+# SIMULAÇÃO 4.6 — COMPARAÇÃO DE FADIGA BGA, SSPC E PUE ORBITAL
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Modelo Físico 3 Diodos, Eficiência Buck (nbuck = 0.91) e Hot Spot
+# ==============================================================================
+"""
+
+Triagem in silico. Não é qualificação de hardware nem previsão
+certificada de vida.
+
+O valor TWO_EPS_F_REFERENCE = 2.887 é uma hipótese otimista de
+capacidade mecânica teórica superior para o conjunto com underfill,
+condicionada a ΔT_j <= 7 °C com TEMS. A retenção por 10 anos requer
+aprovação do polímero em desgaseificação (ECSS-Q-ST-70-02C:
+TML < 1,0%, CVCM < 0,1%) e validação experimental em TVAC.
+
+O script:
+1. Compara Coffin–Manson com Engelmaier usando a mesma estimativa
+   de deformação da junta.
+2. Compara os cenários térmicos com e sem TEMS.
+3. Calcula envelopes de energia para SSPC, distinguindo-os da energia
+   real do dispositivo.
+4. Calcula um indicador PUE orbital adaptado pela razão entre energias
+   integradas, com P_BASE e aquecimento configuráveis por fase orbital.
+
+Os parâmetros marcados como hipótese ou não validados devem ser
+substituídos por dados rastreáveis antes de interpretar os resultados
+como previsão de missão.
+"""
+
+import csv
+import json
+import math
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------
+# Saídas
+# ---------------------------------------------------------------------
+
+OUTPUT_DIR = Path("saida_4_6")
+
+
+# ---------------------------------------------------------------------
+# Parâmetros do modelo de fadiga
+# ---------------------------------------------------------------------
+
+L_X_M = 28e-3                 # [HIP] Dimensão do encapsulamento
+L_Y_M = 28e-3                 # [HIP] Dimensão do encapsulamento
+H_S_M = 0.18e-3               # [HIP] Altura efetiva da junta
+DELTA_ALPHA_K_INV = 14e-6     # [HIP] Diferença efetiva de CTE
+F_CONF = 0.90                 # [HIP] Fator de conformidade
+K_ATT = 0.85                  # [HIP] Razão ΔT_solda/ΔT_junção
+
+# Hipótese otimista de limite superior; não validada para a montagem
+# SAC305/CoWoS/underfill específica.
+TWO_EPS_F_REFERENCE = 2.887
+
+# Varredura exploratória; não é uma faixa qualificada de SAC305.
+TWO_EPS_F_SWEEP = [0.65, 1.0, 2.887]
+
+# Coffin–Manson com expoente fixo, apenas como caso de sensibilidade.
+C_COFFIN_MANSON = -0.5
+
+# Coeficientes previamente usados na dissertação.
+# Tratados como hipótese/calibração não validada.
+ENGELMAIER_THESIS = {
+    "a": -0.470,
+    "b": -7.0e-4,
+    "d": 2.0e-2,
+    "status": "HIPOTESE_CALIBRACAO_NAO_VALIDADA",
+}
+
+# Forma de Engelmaier usada nos scripts anteriores como sensibilidade.
+# Confirmar a fonte primária e sua aplicabilidade ao empilhamento real.
+ENGELMAIER_REFERENCE = {
+    "a": -0.442,
+    "b": -6.0e-4,
+    "d": 1.74e-2,
+    "status": "FONTE_E_APLICABILIDADE_A_CONFIRMAR",
+}
+
+LIFE_TARGET_YEARS = 10.0
+
+
+# ---------------------------------------------------------------------
+# Cenários orbitais e térmicos
+# ---------------------------------------------------------------------
+
+# Períodos e eclipses reproduzem os valores dos scripts enviados.
+# As variações térmicas são entradas herdadas: confirmar sua origem
+# quando os resultados orbitais finais forem reconciliados.
+ORBIT_CASES = [
+    {
+        "orbit": "SSO",
+        "period_s": 5926.0,
+        "eclipse_s": 1128.0,
+        "delta_tj_tems_c": 7.0,
+        "delta_tj_no_tems_c": 22.5,
+        "mean_solder_temp_c": 60.0,
+        "ti_sun_w": 40000.0,
+        "ti_eclipse_tems_w": 18000.0,
+        "ti_eclipse_no_tems_w": 20000.0,
+    },
+    {
+        "orbit": "LEO",
+        "period_s": 5677.0,
+        "eclipse_s": 2148.0,
+        "delta_tj_tems_c": 18.2,
+        "delta_tj_no_tems_c": 48.0,
+        "mean_solder_temp_c": 50.0,
+        "ti_sun_w": 40000.0,
+        "ti_eclipse_tems_w": 6500.0,
+        "ti_eclipse_no_tems_w": 20000.0,
+    },
+]
+
+
+# ---------------------------------------------------------------------
+# Parâmetros do PUE orbital adaptado
+# ---------------------------------------------------------------------
+
+ETA_DAB = 0.95
+
+# Auxiliares elétricos distintos: não confundir consumo OISL com seu
+# calor residual interno. O calor residual é parâmetro térmico, não
+# uma segunda parcela de consumo elétrico.
+P_PUMP_W = 200.0
+P_AVIONICS_W = 350.0
+P_OISL_ELECTRICAL_W = 440.0
+Q_OISL_INTERNAL_HEAT_W = 343.2  # Usado no balanço térmico, não somado ao PUE.
+
+# P_BASE é provisório e configurável por fase orbital.
+# Verificar no pente-fino quais cargas contém antes da versão final.
+P_BASE_SUN_W = 1000.0
+P_BASE_ECLIPSE_W = 1000.0
+
+# Potência elétrica do aquecedor, também separada de P_BASE.
+# Valores atuais são hipóteses configuráveis; usar potência efetiva
+# média por fase, não automaticamente a potência máxima instalada.
+P_BATTERY_HEATER_SUN_W = 0.0
+P_BATTERY_HEATER_ECLIPSE_W = 0.0
+
+# Perdas BESS usadas como hipótese nos scripts anteriores.
+# Não são recalculadas por este indicador e devem ser verificadas
+# contra o modelo eletrotérmico escolhido.
+P_BESS_LOSS_W = 65.0
+
+# Número e desempenho teórico dos dies: hipótese, não throughput medido.
+N_DIES = 80
+TOPS_PER_DIE = 250.0
+
+
+# ---------------------------------------------------------------------
+# Parâmetros SSPC
+# ---------------------------------------------------------------------
+
+V_BUS_V = 400.0
+P_NODE_W = 50000.0
+I_TRIP_MULTIPLIER = 1.25
+T_TRIP_S = 15e-6
+L_HARNESS_H = 2.0e-6
+V_TVS_CLAMP_V = 644.0
+
+# Limite ilustrativo: substituir pelo componente selecionado e suas
+# condições de operação. Não é inferido apenas da tensão nominal.
+V_SWITCH_ABS_MAX_V = 1200.0
+
+
+# ---------------------------------------------------------------------
+# Funções comuns
+# ---------------------------------------------------------------------
+
+def cycles_per_day(period_s):
+    if period_s <= 0:
+        raise ValueError("O período orbital precisa ser positivo.")
+    return 86400.0 / period_s
+
+
+def strain_range(delta_tj_c):
+    """
+    Aproximação geométrica comum aos modelos comparados:
+
+    Δγ = F_conf * L_DNP * Δα * ΔT_s / h_s
+    ΔT_s = K_att * ΔT_j
+
+    Esta estimativa não substitui análise mecânica da montagem.
+    """
+    if delta_tj_c <= 0:
+        raise ValueError("ΔT_j precisa ser positivo.")
+
+    l_dnp = 0.5 * math.hypot(L_X_M, L_Y_M)
+    delta_ts_c = K_ATT * delta_tj_c
+    gamma = (
+        F_CONF
+        * l_dnp
+        * DELTA_ALPHA_K_INV
+        * delta_ts_c
+        / H_S_M
+    )
+    return l_dnp, delta_ts_c, gamma
+
+
+def engelmaier_exponent(temp_c, frequency_cpd, coefficients):
+    return (
+        coefficients["a"]
+        + coefficients["b"] * temp_c
+        + coefficients["d"] * math.log1p(frequency_cpd)
+    )
+
+
+def cycles_to_failure(gamma, two_eps_f, exponent):
+    """
+    Forma comparativa usada nos scripts recebidos:
+
+    Nf = 0.5 * (γ / (2ε'f)) ** (1/c)
+
+    O parâmetro 2ε'f e a forma de estimar γ precisam de validação
+    para o material e o empilhamento reais.
+    """
+    if gamma <= 0 or two_eps_f <= 0:
+        raise ValueError("γ e 2ε'f precisam ser positivos.")
+    if exponent >= 0:
+        raise ValueError("O expoente c precisa ser negativo.")
+
+    return 0.5 * (gamma / two_eps_f) ** (1.0 / exponent)
+
+
+# ---------------------------------------------------------------------
+# Fadiga: Coffin–Manson e Engelmaier
+# ---------------------------------------------------------------------
+
+def fatigue_analysis():
+    results = []
+    sensitivity = []
+    gains = []
+
+    for orbit_case in ORBIT_CASES:
+        frequency = cycles_per_day(orbit_case["period_s"])
+        tmean = orbit_case["mean_solder_temp_c"]
+
+        life_by_control = {}
+
+        control_cases = [
+            ("TEMS", orbit_case["delta_tj_tems_c"]),
+            ("Sem TEMS", orbit_case["delta_tj_no_tems_c"]),
+        ]
+
+        for control_name, delta_tj in control_cases:
+            l_dnp, delta_ts, gamma = strain_range(delta_tj)
+
+            models = [
+                {
+                    "name": "Coffin-Manson, c fixo",
+                    "exponent": C_COFFIN_MANSON,
+                    "parameter_status": "HIPOTESE_DE_SENSIBILIDADE",
+                },
+                {
+                    "name": "Engelmaier, coeficientes da dissertacao",
+                    "exponent": engelmaier_exponent(
+                        tmean, frequency, ENGELMAIER_THESIS
+                    ),
+                    "parameter_status": ENGELMAIER_THESIS["status"],
+                },
+                {
+                    "name": "Engelmaier, forma de referencia",
+                    "exponent": engelmaier_exponent(
+                        tmean, frequency, ENGELMAIER_REFERENCE
+                    ),
+                    "parameter_status": ENGELMAIER_REFERENCE["status"],
+                },
+            ]
+
+            for model in models:
+                nf = cycles_to_failure(
+                    gamma,
+                    TWO_EPS_F_REFERENCE,
+                    model["exponent"],
+                )
+                life_years = nf / (frequency * 365.25)
+
+                row = {
+                    "orbit": orbit_case["orbit"],
+                    "control": control_name,
+                    "model": model["name"],
+                    "delta_tj_c": delta_tj,
+                    "delta_tsolder_c": delta_ts,
+                    "mean_solder_temp_c": tmean,
+                    "cycles_per_day": frequency,
+                    "l_dnp_m": l_dnp,
+                    "gamma_range": gamma,
+                    "c_exponent": model["exponent"],
+                    "two_eps_f": TWO_EPS_F_REFERENCE,
+                    "cycles_to_failure": nf,
+                    "life_years": life_years,
+                    "margin_vs_10y_percent": (
+                        100.0
+                        * (life_years - LIFE_TARGET_YEARS)
+                        / LIFE_TARGET_YEARS
+                    ),
+                    "parameter_status": model["parameter_status"],
+                    "interpretation": (
+                        "Triagem in silico; nao e vida qualificada."
+                    ),
+                }
+                results.append(row)
+                life_by_control[(control_name, model["name"])] = life_years
+
+            # Sensibilidade ao parâmetro de ductilidade.
+            for two_eps in TWO_EPS_F_SWEEP:
+                for model in models:
+                    nf_sens = cycles_to_failure(
+                        gamma,
+                        two_eps,
+                        model["exponent"],
+                    )
+                    sensitivity.append({
+                        "orbit": orbit_case["orbit"],
+                        "control": control_name,
+                        "model": model["name"],
+                        "two_eps_f_sensitivity": two_eps,
+                        "gamma_range": gamma,
+                        "c_exponent": model["exponent"],
+                        "cycles_to_failure": nf_sens,
+                        "life_years": nf_sens / (frequency * 365.25),
+                        "status": "SENSIBILIDADE_NAO_QUALIFICADA",
+                    })
+
+        model_names = [
+            "Coffin-Manson, c fixo",
+            "Engelmaier, coeficientes da dissertacao",
+            "Engelmaier, forma de referencia",
+        ]
+
+        for model_name in model_names:
+            life_tems = life_by_control[("TEMS", model_name)]
+            life_no_tems = life_by_control[("Sem TEMS", model_name)]
+            gains.append({
+                "orbit": orbit_case["orbit"],
+                "model": model_name,
+                "life_with_tems_years": life_tems,
+                "life_without_tems_years": life_no_tems,
+                "life_ratio_tems_over_no_tems": (
+                    life_tems / life_no_tems
+                    if life_no_tems > 0 else None
+                ),
+                "life_gain_percent": (
+                    100.0 * (life_tems / life_no_tems - 1.0)
+                    if life_no_tems > 0 else None
+                ),
+                "warning": (
+                    "Ganho condicionado aos ΔT e parâmetros assumidos; "
+                    "nao e validacao experimental."
+                ),
+            })
+
+    return results, sensitivity, gains
+
+
+# ---------------------------------------------------------------------
+# SSPC: envelopes condicionais e energia idealizada de desmagnetização
+# ---------------------------------------------------------------------
+
+def sspc_analysis():
+    if ETA_DAB <= 0 or V_TVS_CLAMP_V <= V_BUS_V:
+        raise ValueError("Eficiência ou tensão de clamp inválida.")
+
+    i_nom = P_NODE_W / V_BUS_V
+    i_limit = I_TRIP_MULTIPLIER * i_nom
+
+    # Limite retangular condicional, se tensão e corrente permanecerem
+    # limitadas pelos valores assumidos durante todo o tempo de trip.
+    e_switch_rectangular_j = (
+        V_TVS_CLAMP_V * i_limit * T_TRIP_S
+    )
+
+    # Energia inicialmente armazenada na indutância do chicote.
+    e_inductor_j = 0.5 * L_HARNESS_H * i_limit**2
+
+    # Modelo idealizado de clamp, assumindo corrente que decresce
+    # linearmente por (Vclamp - Vbus) sobre a indutância.
+    delta_v = V_TVS_CLAMP_V - V_BUS_V
+    t_demag_s = L_HARNESS_H * i_limit / delta_v
+
+    # Energia absorvida pelo TVS no modelo idealizado.
+    # Inclui energia que a fonte pode fornecer durante a desmagnetização.
+    e_tvs_ideal_j = (
+        e_inductor_j * V_TVS_CLAMP_V / delta_v
+    )
+    e_source_during_demag_j = (
+        0.5 * V_BUS_V * i_limit * t_demag_s
+    )
+
+    return {
+        "i_nom_a": i_nom,
+        "i_limit_assumed_a": i_limit,
+        "trip_time_us_assumed": T_TRIP_S * 1e6,
+        "switch_energy_rectangular_bound_j": e_switch_rectangular_j,
+        "inductor_energy_j": e_inductor_j,
+        "clamp_voltage_assumed_v": V_TVS_CLAMP_V,
+        "ideal_demagnetization_time_us": t_demag_s * 1e6,
+        "ideal_tvs_energy_j": e_tvs_ideal_j,
+        "source_energy_during_demag_j": e_source_during_demag_j,
+        "semiconductor_abs_max_voltage_assumed_v": V_SWITCH_ABS_MAX_V,
+        "nominal_voltage_margin_v": V_SWITCH_ABS_MAX_V - V_TVS_CLAMP_V,
+        "qualification_status": (
+            "NAO QUALIFICADO: exige componente selecionado, curva I-V "
+            "do clamp, parasitas, forma de onda e SOA."
+        ),
+    }
+
+
+# ---------------------------------------------------------------------
+# PUE orbital adaptado: razão entre energias integradas
+# ---------------------------------------------------------------------
+
+def pue_for_case(orbit_case, tems_enabled):
+    period = orbit_case["period_s"]
+    eclipse = orbit_case["eclipse_s"]
+
+    if not (0 <= eclipse < period):
+        raise ValueError("Duração de eclipse incompatível com o período.")
+
+    sun_time = period - eclipse
+    eclipse_fraction = eclipse / period
+    sun_fraction = sun_time / period
+
+    ti_sun = orbit_case["ti_sun_w"]
+
+    if tems_enabled:
+        ti_eclipse = orbit_case["ti_eclipse_tems_w"]
+        control_name = "TEMS"
+    else:
+        ti_eclipse = orbit_case["ti_eclipse_no_tems_w"]
+        control_name = "Sem TEMS"
+
+    # Energias úteis de TI em uma órbita.
+    e_it_sun = ti_sun * sun_time
+    e_it_eclipse = ti_eclipse * eclipse
+    e_it_total = e_it_sun + e_it_eclipse
+
+    # Perdas DAB: a potência útil de TI é considerada saída do DAB.
+    e_dab_loss = (
+        ti_sun * (1.0 / ETA_DAB - 1.0) * sun_time
+        + ti_eclipse * (1.0 / ETA_DAB - 1.0) * eclipse
+    )
+
+    # Cargas variáveis por fase orbital.
+    e_base = (
+        P_BASE_SUN_W * sun_time
+        + P_BASE_ECLIPSE_W * eclipse
+    )
+    e_heater = (
+        P_BATTERY_HEATER_SUN_W * sun_time
+        + P_BATTERY_HEATER_ECLIPSE_W * eclipse
+    )
+
+    # Cargas elétricas auxiliares e OISL.
+    p_aux_electrical = (
+        P_PUMP_W + P_AVIONICS_W + P_OISL_ELECTRICAL_W
+    )
+    e_aux = p_aux_electrical * period
+
+    # Perda BESS como hipótese independente. Revisar a fronteira e
+    # evitar somá-la se já estiver embutida em P_BASE ou noutra parcela.
+    e_bess_loss = P_BESS_LOSS_W * period
+
+    e_total = (
+        e_it_total
+        + e_dab_loss
+        + e_base
+        + e_heater
+        + e_aux
+        + e_bess_loss
+    )
+
+    if e_it_total <= 0:
+        raise ValueError("Energia de TI precisa ser positiva.")
+
+    pue = e_total / e_it_total
+    tops_peak = N_DIES * TOPS_PER_DIE
+
+    # Indicador de pico nominal; não é throughput medido.
+    tops_per_w = tops_peak / (e_total / period)
+
+    return {
+        "orbit": orbit_case["orbit"],
+        "control": control_name,
+        "period_s": period,
+        "eclipse_s": eclipse,
+        "sun_fraction": sun_fraction,
+        "eclipse_fraction": eclipse_fraction,
+        "ti_sun_w": ti_sun,
+        "ti_eclipse_w": ti_eclipse,
+        "p_base_sun_w_provisional": P_BASE_SUN_W,
+        "p_base_eclipse_w_provisional": P_BASE_ECLIPSE_W,
+        "heater_sun_w_assumed": P_BATTERY_HEATER_SUN_W,
+        "heater_eclipse_w_assumed": P_BATTERY_HEATER_ECLIPSE_W,
+        "oisl_electrical_w": P_OISL_ELECTRICAL_W,
+        "oisl_internal_heat_w_separate": Q_OISL_INTERNAL_HEAT_W,
+        "p_aux_electrical_w": p_aux_electrical,
+        "bess_loss_w_assumed": P_BESS_LOSS_W,
+        "eta_dab_assumed": ETA_DAB,
+        "it_energy_j": e_it_total,
+        "dab_loss_energy_j": e_dab_loss,
+        "base_energy_j": e_base,
+        "heater_energy_j": e_heater,
+        "auxiliary_energy_j": e_aux,
+        "bess_loss_energy_j": e_bess_loss,
+        "total_boundary_energy_j": e_total,
+        "pue_orbital_adapted": pue,
+        "tops_peak_total": tops_peak,
+        "tops_per_w_nominal_peak": tops_per_w,
+        "warning": (
+            "Indicador adaptado, nao alegacao de conformidade ISO. "
+            "P_BASE e aquecimento sao configuraveis; verificar "
+            "sobreposicao antes de interpretar."
+        ),
+    }
+
+
+def pue_analysis():
+    rows = []
+    gains = []
+
+    for orbit_case in ORBIT_CASES:
+        tems = pue_for_case(orbit_case, True)
+        no_tems = pue_for_case(orbit_case, False)
+        rows.extend([tems, no_tems])
+
+        gains.append({
+            "orbit": orbit_case["orbit"],
+            "pue_with_tems": tems["pue_orbital_adapted"],
+            "pue_without_tems": no_tems["pue_orbital_adapted"],
+            "pue_change_percent": (
+                100.0
+                * (
+                    tems["pue_orbital_adapted"]
+                    / no_tems["pue_orbital_adapted"]
+                    - 1.0
+                )
+            ),
+            "interpretation": (
+                "Compara os perfis de carga assumidos; nao isola "
+                "causalidade se as cargas auxiliares ou P_BASE mudarem."
+            ),
+        })
+
+    return rows, gains
+
+
+# ---------------------------------------------------------------------
+# Exportação
+# ---------------------------------------------------------------------
+
+def write_csv(path, rows):
+    if not rows:
+        return
+
+    with path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=list(rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def main():
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    fatigue, fatigue_sensitivity, fatigue_gains = fatigue_analysis()
+    pue_rows, pue_gains = pue_analysis()
+    sspc = sspc_analysis()
+
+    write_csv(
+        OUTPUT_DIR / "simulacao_4_6_fadiga.csv",
+        fatigue,
+    )
+    write_csv(
+        OUTPUT_DIR / "simulacao_4_6_fadiga_sensibilidade.csv",
+        fatigue_sensitivity,
+    )
+    write_csv(
+        OUTPUT_DIR / "simulacao_4_6_ganho_tems_fadiga.csv",
+        fatigue_gains,
+    )
+    write_csv(
+        OUTPUT_DIR / "simulacao_4_6_pue_orbital.csv",
+        pue_rows,
+    )
+    write_csv(
+        OUTPUT_DIR / "simulacao_4_6_ganho_tems_pue.csv",
+        pue_gains,
+    )
+
+    payload = {
+        "script": "simulacao_4_6_comparacao.py",
+        "status": (
+            "triagem_in_silico_nao_qualificada"
+        ),
+        "fatigue_results": fatigue,
+        "fatigue_sensitivity": fatigue_sensitivity,
+        "tems_fatigue_gain": fatigue_gains,
+        "sspc": sspc,
+        "pue_results": pue_rows,
+        "tems_pue_comparison": pue_gains,
+        "pue_boundary": {
+            "included": [
+                "potencia util de TI",
+                "perdas DAB calculadas a partir de ETA_DAB",
+                "P_BASE configuravel por fase orbital",
+                "aquecimento da bateria configuravel por fase",
+                "bomba",
+                "avionica",
+                "consumo eletrico integral dos OISL",
+                "perda BESS hipotetica",
+            ],
+            "separate_thermal_quantity": (
+                "Q_OISL_INTERNAL_HEAT_W: calor interno OISL; "
+                "nao somar novamente como consumo eletrico."
+            ),
+            "limitations": [
+                "P_BASE e provisório e pode conter cargas já contabilizadas.",
+                "A perda BESS pode sobrepor-se a parcelas de P_BASE.",
+                "O aquecedor deve usar potência média efetivamente acionada.",
+                "O indicador é adaptado e não declara conformidade normativa.",
+            ],
+        },
+        "fatigue_limitations": [
+            "Coffin-Manson e Engelmaier são comparados, não combinados por média.",
+            "O expoente fixo de Coffin-Manson é hipótese de sensibilidade.",
+            "A aplicabilidade dos parâmetros de Engelmaier deve ser confirmada.",
+            "A geometria e deformação da junta são aproximações não calibradas.",
+            "O efeito mecânico do underfill não é representado por simples ajuste de 2ε'f.",
+        ],
+        "sspc_limitations": [
+            "A energia retangular é envelope condicional, não energia medida.",
+            "A energia real exige forma de onda e dispositivo selecionado.",
+            "O modelo ideal de TVS não substitui SOA e curva de clamp.",
+        ],
+    }
+
+    json_path = OUTPUT_DIR / "simulacao_4_6_resultados.json"
+    with json_path.open("w", encoding="utf-8") as file:
+        json.dump(payload, file, ensure_ascii=False, indent=2)
+
+    print("Simulação 4.6 concluída: triagem in silico, não qualificada.")
+    print(f"SSPC: I_lim assumida = {sspc['i_limit_assumed_a']:.2f} A")
+    print(
+        "PUE orbital adaptado por cenário:"
+    )
+    for row in pue_rows:
+        print(
+            f"  {row['orbit']} / {row['control']}: "
+            f"{row['pue_orbital_adapted']:.4f}"
+        )
+
+    print(f"Arquivos gerados em: {OUTPUT_DIR}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+################################################################################
+# [8/10] Auxiliar: Cálculo de Tempo Crítico SSPC (Legado - Descontinuado)
+# Arquivo: simulacoes/calcular_tempo_critico_sspc.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ==============================================================================
+# Simulacao Numerica de Transiente de Curto-Circuito em Barramento HVDC (400 V)
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Cargas com OISL Contínuo (440 W), Rth = 0.14 K/W e AUKF
+# ==============================================================================
+
+"""
+Simulacao Numerica de Transiente de Curto-Circuito em Barramento HVDC (400 V)
+
+Determinacao dos limites criticos de abertura da chave SSPC (SiC MOSFET):
+1. Tempo critico de desarme (t_trip) para atingir I^2t = 1500 A^2s.
+2. Tempo de desarme que atinge V_spike = 1200 V.
+3. Tempo minimo de extincao (soft turn-off) para evitar V_spike > 1200 V.
+
+ATENCAO:
+- O tempo de extincao calculado na secao 3 usa uma estimativa analitica:
+  V_spike ~= V_bus + L * I / tau_ext.
+- Os resultados dependem das hipoteses e limitacoes do modelo numerico.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# ============================================================
+# MODELO TRANSITORIO
+# ============================================================
+
+def simular_curto(
+    t_trip,
+    L_line,
+    C_bus,
+    R_line=14.0e-3,
+    R_sc=1.0e-3,
+    V_bus=400.0,
+    V_clamp=550.0,
+    clamp_ativo=True,
+    tau_ext=0.5e-6
+):
+    dt = 0.01e-6  # 10 ns
+    t_end = max(150e-6, t_trip + 40e-6)
+    t = np.arange(0.0, t_end, dt)
+
+    i_curr = 0.0
+    v_curr = V_bus
+    i2t = 0.0
+    v_sw_max = 0.0
+    i_peak = 0.0
+
+    for tk in t:
+
+        if tk < t_trip:
+            di_dt = (
+                v_curr - i_curr * (R_line + R_sc)
+            ) / L_line
+
+            dv_dt = -i_curr / C_bus
+
+            i_curr = i_curr + di_dt * dt
+            v_curr = v_curr + dv_dt * dt
+
+            v_sw = i_curr * 0.010  # Modelo original de Rds_on
+
+        else:
+            if clamp_ativo:
+                di_dt = -(
+                    V_clamp - v_curr + i_curr * R_line
+                ) / L_line
+
+                dv_dt = -i_curr / C_bus
+
+                i_curr = max(0.0, i_curr + di_dt * dt)
+                v_curr = v_curr + dv_dt * dt
+
+                v_sw = V_clamp if i_curr > 0.0 else v_curr
+
+            else:
+                di_dt = -i_curr / tau_ext
+                v_indutivo = abs(L_line * di_dt)
+
+                i_curr = max(0.0, i_curr + di_dt * dt)
+
+                dv_dt = -i_curr / C_bus
+                v_curr = v_curr + dv_dt * dt
+
+                v_sw = v_curr + v_indutivo
+
+        i2t += (i_curr ** 2) * dt
+
+        if i_curr > i_peak:
+            i_peak = i_curr
+
+        if v_sw > v_sw_max:
+            v_sw_max = v_sw
+
+        if tk > t_trip and i_curr <= 0.0:
+            break
+
+    return i_peak, i2t, v_sw_max
+
+
+# ============================================================
+# PARAMETROS
+# ============================================================
+
+I2T_LIMITE = 1500.0       # A^2s
+V_SPIKE_LIMITE = 1200.0   # V
+V_BUS = 400.0             # V
+TAU_EXT_TESTE = 0.5e-6    # 0.5 us
+
+# Cenario WCA
+L_wca = 4.0e-6
+C_wca = 1.5e-3
+
+# Cenario nominal
+L_nom = 1.8e-6
+C_nom = 4.7e-3
+
+# Varredura de tempo de desarme
+t_trips = np.linspace(1e-6, 120e-6, 600)
+
+
+# ============================================================
+# 1. VARREDURA PARA O LIMITE ADIABATICO I^2t
+# ============================================================
+
+print("=" * 75)
+print("1. VARREDURA PARA O LIMITE ADIABATICO (I^2t = 1500 A^2s)")
+print("=" * 75)
+
+i2t_wca = []
+i2t_nom = []
+v_spike_unclamp_wca = []
+v_spike_unclamp_nom = []
+
+for tt in t_trips:
+
+    _, i2t_w, _ = simular_curto(
+        tt, L_wca, C_wca, clamp_ativo=True
+    )
+
+    _, i2t_n, _ = simular_curto(
+        tt, L_nom, C_nom, clamp_ativo=True
+    )
+
+    i2t_wca.append(i2t_w)
+    i2t_nom.append(i2t_n)
+
+    # Sem clamp: tau_ext = 0.5 us
+    _, _, v_w = simular_curto(
+        tt,
+        L_wca,
+        C_wca,
+        clamp_ativo=False,
+        tau_ext=TAU_EXT_TESTE
+    )
+
+    _, _, v_n = simular_curto(
+        tt,
+        L_nom,
+        C_nom,
+        clamp_ativo=False,
+        tau_ext=TAU_EXT_TESTE
+    )
+
+    v_spike_unclamp_wca.append(v_w)
+    v_spike_unclamp_nom.append(v_n)
+
+
+i2t_wca = np.array(i2t_wca)
+i2t_nom = np.array(i2t_nom)
+v_spike_unclamp_wca = np.array(v_spike_unclamp_wca)
+v_spike_unclamp_nom = np.array(v_spike_unclamp_nom)
+
+
+# ------------------------------------------------------------
+# Encontrar cruzamento do limite I^2t no WCA
+# ------------------------------------------------------------
+
+indices = np.where(i2t_wca >= I2T_LIMITE)[0]
+
+if len(indices) == 0:
+    t_crit_wca = None
+    i_pk_crit_wca = None
+    i2t_crit_wca = None
+
+    print(
+        "AVISO: o limite I^2t = 1500 A^2s nao foi atingido "
+        "na faixa de tempos simulada."
+    )
+
+else:
+    idx_crit_wca = indices[0]
+
+    if idx_crit_wca == 0:
+        t_crit_wca = float(t_trips[0])
+
+    else:
+        t_crit_wca = float(
+            np.interp(
+                I2T_LIMITE,
+                [
+                    i2t_wca[idx_crit_wca - 1],
+                    i2t_wca[idx_crit_wca]
+                ],
+                [
+                    t_trips[idx_crit_wca - 1],
+                    t_trips[idx_crit_wca]
+                ]
+            )
+        )
+
+    i_pk_crit_wca, i2t_crit_wca, _ = simular_curto(
+        t_crit_wca,
+        L_wca,
+        C_wca,
+        clamp_ativo=True
+    )
+
+    print("\nCASO WCA (L = 4.0 uH, C = 1.5 mF):")
+
+    print(
+        f" -> Tempo critico interpolado para I^2t = 1500 A^2s: "
+        f"t_trip = {t_crit_wca * 1e6:.2f} us"
+    )
+
+    print(
+        f" -> Corrente de pico atingida: "
+        f"{i_pk_crit_wca / 1e3:.2f} kA"
+    )
+
+    print(
+        f" -> I^2t recalculado na simulacao: "
+        f"{i2t_crit_wca:.2f} A^2s"
+    )
+
+    print(
+        " -> Nota: o I^2t recalculado pode diferir de 1500 A^2s "
+        "devido a interpolacao e discretizacao temporal."
+    )
+
+
+# ============================================================
+# 2. TEMPO DE RETARDO QUE ATINGE V_SPIKE = 1200 V
+# ============================================================
+
+print("\n" + "=" * 75)
+print(
+    "2. TEMPO DE RETARDO QUE ATINGE V_spike = 1200 V "
+    "(SEM CLAMP, tau_ext = 0.5 us)"
+)
+print("=" * 75)
+
+
+def primeiro_cruzamento(valores, limite, tempos):
+    """Retorna o tempo do primeiro cruzamento, ou None."""
+    indices = np.where(valores >= limite)[0]
+
+    if len(indices) == 0:
+        return None
+
+    idx = indices[0]
+
+    if idx == 0:
+        return float(tempos[0])
+
+    # Interpolacao linear para melhorar a estimativa temporal
+    return float(
+        np.interp(
+            limite,
+            [valores[idx - 1], valores[idx]],
+            [tempos[idx - 1], tempos[idx]]
+        )
+    )
+
+
+t_v1200_wca = primeiro_cruzamento(
+    v_spike_unclamp_wca,
+    V_SPIKE_LIMITE,
+    t_trips
+)
+
+t_v1200_nom = primeiro_cruzamento(
+    v_spike_unclamp_nom,
+    V_SPIKE_LIMITE,
+    t_trips
+)
+
+
+if t_v1200_wca is not None:
+
+    i_pk_v1200_wca, _, v_sw_1200_wca = simular_curto(
+        t_v1200_wca,
+        L_wca,
+        C_wca,
+        clamp_ativo=False,
+        tau_ext=TAU_EXT_TESTE
+    )
+
+    print("\nCENARIO WCA (L = 4.0 uH):")
+
+    print(
+        f" -> Tempo de retardo t_trip: "
+        f"{t_v1200_wca * 1e6:.3f} us "
+        f"({t_v1200_wca * 1e9:.1f} ns)"
+    )
+
+    print(
+        f" -> Corrente de pico na simulacao: "
+        f"{i_pk_v1200_wca:.1f} A"
+    )
+
+    print(
+        f" -> Tensao de pico V_sw: {v_sw_1200_wca:.1f} V"
+    )
+
+else:
+    print(
+        "\nCENARIO WCA: V_spike = 1200 V nao foi atingido "
+        "na faixa simulada."
+    )
+
+
+if t_v1200_nom is not None:
+
+    i_pk_v1200_nom, _, v_sw_1200_nom = simular_curto(
+        t_v1200_nom,
+        L_nom,
+        C_nom,
+        clamp_ativo=False,
+        tau_ext=TAU_EXT_TESTE
+    )
+
+    print("\nCENARIO NOMINAL (L = 1.8 uH):")
+
+    print(
+        f" -> Tempo de retardo t_trip: "
+        f"{t_v1200_nom * 1e6:.3f} us "
+        f"({t_v1200_nom * 1e9:.1f} ns)"
+    )
+
+    print(
+        f" -> Corrente de pico na simulacao: "
+        f"{i_pk_v1200_nom:.1f} A"
+    )
+
+    print(
+        f" -> Tensao de pico V_sw: {v_sw_1200_nom:.1f} V"
+    )
+
+else:
+    print(
+        "\nCENARIO NOMINAL: V_spike = 1200 V nao foi atingido "
+        "na faixa simulada."
+    )
+
+
+# ============================================================
+# 3. TEMPO MINIMO DE EXTINCAO (SOFT TURN-OFF)
+# ============================================================
+
+print("\n" + "=" * 75)
+print(
+    "3. TEMPO DE EXTINCAO MINIMO (SOFT TURN-OFF) "
+    "PARA EVITAR V_spike > 1200 V"
+)
+print("=" * 75)
+
+# Estimativa analitica:
+# V_spike ~= V_bus + L * I / tau_ext
+#
+# Portanto:
+# tau_ext >= L * I / (V_limite - V_bus)
+
+delta_V_max = V_SPIKE_LIMITE - V_BUS
+
+
+def calcular_tau_min(L_line, i_corrente):
+    """Calcula tau minimo estimado, em segundos."""
+    if delta_V_max <= 0.0:
+        raise ValueError(
+            "O limite de tensao deve ser superior a V_BUS."
+        )
+
+    return L_line * i_corrente / delta_V_max
+
+
+# ------------------------------------------------------------
+# Caso 1: nominal, desarme em 15 us
+# ------------------------------------------------------------
+
+i_pk_15us_nom, _, _ = simular_curto(
+    15e-6, L_nom, C_nom, clamp_ativo=True
+)
+
+tau_min_15us_nom = calcular_tau_min(
+    L_nom, i_pk_15us_nom
+)
+
+print(
+    "\nCENARIO NOMINAL "
+    "(t_trip = 15 us, L = 1.8 uH):"
+)
+
+print(
+    f" -> Corrente de pico: {i_pk_15us_nom / 1e3:.3f} kA"
+)
+
+print(
+    f" -> Tempo minimo de extincao estimado: "
+    f"tau_ext >= {tau_min_15us_nom * 1e6:.3f} us"
+)
+
+
+# ------------------------------------------------------------
+# Caso 2: WCA, desarme em 15 us
+# ------------------------------------------------------------
+
+i_pk_15us_wca, _, _ = simular_curto(
+    15e-6, L_wca, C_wca, clamp_ativo=True
+)
+
+tau_min_15us_wca = calcular_tau_min(
+    L_wca, i_pk_15us_wca
+)
+
+print(
+    "\nCENARIO WCA "
+    "(t_trip = 15 us, L = 4.0 uH):"
+)
+
+print(
+    f" -> Corrente de pico: {i_pk_15us_wca / 1e3:.3f} kA"
+)
+
+print(
+    f" -> Tempo minimo de extincao estimado: "
+    f"tau_ext >= {tau_min_15us_wca * 1e6:.3f} us"
+)
+
+
+# ------------------------------------------------------------
+# Caso 3: WCA, desarme em 100 us
+# ------------------------------------------------------------
+
+i_pk_100us_wca, _, _ = simular_curto(
+    100e-6, L_wca, C_wca, clamp_ativo=True
+)
+
+tau_min_100us_wca = calcular_tau_min(
+    L_wca, i_pk_100us_wca
+)
+
+print(
+    "\nCENARIO WCA "
+    "(t_trip = 100 us, L = 4.0 uH):"
+)
+
+print(
+    f" -> Corrente de pico: {i_pk_100us_wca / 1e3:.3f} kA"
+)
+
+print(
+    f" -> Tempo minimo de extincao estimado: "
+    f"tau_ext >= {tau_min_100us_wca * 1e6:.3f} us"
+)
+
+
+# ------------------------------------------------------------
+# Caso 4: WCA no tempo critico I^2t = 1500 A^2s
+# ------------------------------------------------------------
+
+if t_crit_wca is not None:
+
+    tau_min_crit_wca = calcular_tau_min(
+        L_wca, i_pk_crit_wca
+    )
+
+    print(
+        "\nCASO WCA CRITICO "
+        "(I^2t alvo = 1500 A^2s, L = 4.0 uH, C = 1.5 mF):"
+    )
+
+    print(
+        f" -> Tempo critico de desarme: "
+        f"t_trip = {t_crit_wca * 1e6:.3f} us"
+    )
+
+    print(
+        f" -> Corrente de pico: "
+        f"{i_pk_crit_wca / 1e3:.3f} kA"
+    )
+
+    print(
+        f" -> I^2t recalculado: "
+        f"{i2t_crit_wca:.2f} A^2s"
+    )
+
+    print(
+        f" -> Tempo minimo de extincao estimado: "
+        f"tau_ext >= {tau_min_crit_wca * 1e6:.3f} us"
+    )
+
+    V_spike_est_crit = (
+        V_BUS + L_wca * i_pk_crit_wca / TAU_EXT_TESTE
+    )
+
+    print(
+        f" -> V_spike estimado para tau_ext = 0.5 us: "
+        f"{V_spike_est_crit:.1f} V"
+    )
+
+    print(
+        f" -> Excesso sobre o limite de 1200 V: "
+        f"{max(0.0, V_spike_est_crit - V_SPIKE_LIMITE):.1f} V"
+    )
+
+else:
+    print(
+        "\nCASO WCA CRITICO: nao calculado porque "
+        "o limite I^2t nao foi atingido na varredura."
+    )
+
+
+# ------------------------------------------------------------
+# Caso 5: WCA, desarme em 100 us e tau_ext = 0.5 us
+# ------------------------------------------------------------
+
+V_spike_est_100us = (
+    V_BUS + L_wca * i_pk_100us_wca / TAU_EXT_TESTE
+)
+
+print(
+    "\nWCA COM t_trip = 100 us E tau_ext = 0.5 us:"
+)
+
+print(
+    f" -> V_spike estimado: {V_spike_est_100us:.1f} V"
+)
+
+print(
+    f" -> Limite especificado: {V_SPIKE_LIMITE:.1f} V"
+)
+
+print(
+    f" -> Excesso sobre o limite: "
+    f"{max(0.0, V_spike_est_100us - V_SPIKE_LIMITE):.1f} V"
+)
+
+
+# ============================================================
+# 4. GRAFICOS
+# ============================================================
+
+plt.figure(figsize=(10, 6))
+
+plt.plot(
+    t_trips * 1e6,
+    i2t_wca,
+    label="WCA: L = 4.0 uH, C = 1.5 mF"
+)
+
+plt.plot(
+    t_trips * 1e6,
+    i2t_nom,
+    label="Nominal: L = 1.8 uH, C = 4.7 mF"
+)
+
+plt.axhline(
+    I2T_LIMITE,
+    linestyle="--",
+    label="Limite I^2t = 1500 A^2s"
+)
+
+if t_crit_wca is not None:
+    plt.axvline(
+        t_crit_wca * 1e6,
+        linestyle=":",
+        label=f"Tempo critico WCA = {t_crit_wca*1e6:.2f} us"
+    )
+
+plt.xlabel("Tempo de desarme t_trip (us)")
+plt.ylabel("Integral de Joule I^2t (A^2s)")
+plt.title("Curto-circuito HVDC: limite adiabatico")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
+plt.figure(figsize=(10, 6))
+
+plt.plot(
+    t_trips * 1e6,
+    v_spike_unclamp_wca,
+    label="WCA: L = 4.0 uH"
+)
+
+plt.plot(
+    t_trips * 1e6,
+    v_spike_unclamp_nom,
+    label="Nominal: L = 1.8 uH"
+)
+
+plt.axhline(
+    V_SPIKE_LIMITE,
+    linestyle="--",
+    label="Limite V_spike = 1200 V"
+)
+
+if t_v1200_wca is not None:
+    plt.axvline(
+        t_v1200_wca * 1e6,
+        linestyle=":",
+        label=f"Cruzamento WCA = {t_v1200_wca*1e6:.2f} us"
+    )
+
+if t_v1200_nom is not None:
+    plt.axvline(
+        t_v1200_nom * 1e6,
+        linestyle=":",
+        label=f"Cruzamento nominal = {t_v1200_nom*1e6:.2f} us"
+    )
+
+plt.xlabel("Tempo de desarme t_trip (us)")
+plt.ylabel("Tensao de pico estimada V_sw (V)")
+plt.title("Curto-circuito HVDC: sobretensao sem clamp")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
+################################################################################
+# [9/10] Executor: Bateria 100 Órbitas (Legado)
+# Arquivo: simulacoes/executar_bateria_100_orbitas.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ==============================================================================
+# SIMULAÇÃO 3.3 (EXPANDIDA): DINÂMICA ELETROTÉRMICA E BALANÇO DE ENERGIA
+# DO BANCO DE BATERIAS (BESS) EM 100 ÓRBITAS LEO
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
+# ==============================================================================
+
+import numpy as np
+
+
+def executar_bateria_100_orbitas():
+    print("=" * 111)
+    print("INICIANDO SIMULAÇÃO 3.3 EXPANDIDA: BALANÇO ELETROTÉRMICO DO BESS EM 100 ÓRBITAS")
+    print("=" * 111 + "\n")
+
+    Cn = 22.52
+    Vuv = 324.0
+    Vov = 442.8
+    Rp1 = 18e-3
+    Cp1 = 3200.0
+    Rp2 = 24e-3
+    Cp2 = 22000.0
+    R0_ref = 85e-3
+    Ea = 0.32 * 1.602176634e-19
+    kB = 1.380649e-23
+    Tref_K = 293.15
+
+    Cth = 54360.0
+    Rth_cond = 0.14
+    Tch = 15.0
+    Pheater = 300.0
+    Ton = 10.0
+    Toff = 15.0
+
+    dt = 2.0
+    Torb = 5926.0
+    tecl = 1128.0
+    nOrb = 100
+    steps_per_orb = int(np.floor(Torb / dt))
+    N = nOrb * steps_per_orb + 1
+
+    soc = np.zeros(N)
+    vt = np.zeros(N)
+    Tb = np.zeros(N)
+    Pj = np.zeros(N)
+
+    soc[0] = 0.90
+    Tb[0] = 20.0
+    vp1 = 0.0
+    vp2 = 0.0
+    a1 = np.exp(-dt / (Rp1 * Cp1))
+    a2 = np.exp(-dt / (Rp2 * Cp2))
+
+    alvos = [1, 5, 10, 20, 50, 100]
+
+    print(f"{'Orbita':<8} | {'Tempo':<8} | {'SoC Min/Max (%)':<16} | {'Tensao Min/Max(V)':<16} | {'T_bat (Min/Med/Max) C':<24} | {'Pj_med (W)':<10} | {'Teq_est C':<10}")
+    print("-" * 111)
+
+    for k in range(N - 1):
+        t_now = k * dt
+        in_eclipse = (t_now % Torb) <= tecl
+
+        if in_eclipse:
+            I = (18000.0 + 560.0) / 380.0
+            etaC = 1.0
+        else:
+            I = -25.0
+            etaC = 0.995
+
+        R0 = R0_ref * np.exp((Ea / kB) * (1.0 / (Tb[k] + 273.15) - 1.0 / Tref_K))
+        vp1 = a1 * vp1 + Rp1 * (1.0 - a1) * I
+        vp2 = a2 * vp2 + Rp2 * (1.0 - a2) * I
+
+        soc[k + 1] = min(1.0, max(0.0, soc[k] - I * etaC * dt / (Cn * 3600.0)))
+        Voc = 108.0 * (3.0 + 1.1 * soc[k + 1])
+        Vcand = Voc - I * R0 - vp1 - vp2
+
+        if I < 0.0 and Vcand > Vov:
+            I = max(-25.0, min(0.0, -(Vov - Voc + vp1 + vp2) / R0))
+            Vcand = Vov
+        vt[k + 1] = Vcand
+
+        Pj[k] = (I**2) * R0 + (vp1**2) / Rp1 + (vp2**2) / Rp2
+        if Tb[k] < Ton:
+            Ph = Pheater
+        elif Tb[k] < Toff:
+            Ph = Pheater * (Toff - Tb[k]) / (Toff - Ton)
+        else:
+            Ph = 0.0
+
+        q_out = (Tb[k] - Tch) / Rth_cond
+        Tb[k + 1] = Tb[k] + (Pj[k] + Ph - q_out) * dt / Cth
+
+        if (k + 1) % steps_per_orb == 0:
+            orb_atual = (k + 1) // steps_per_orb
+            if orb_atual in alvos:
+                idx_start = (orb_atual - 1) * steps_per_orb
+                idx_end = k + 2
+
+                soc_min = np.min(soc[idx_start:idx_end]) * 100.0
+                soc_max = np.max(soc[idx_start:idx_end]) * 100.0
+                vt_min = np.min(vt[idx_start:idx_end])
+                vt_max = np.max(vt[idx_start:idx_end])
+                tb_min = np.min(Tb[idx_start:idx_end])
+                tb_med = np.mean(Tb[idx_start:idx_end])
+                tb_max = np.max(Tb[idx_start:idx_end])
+                pj_med = np.mean(Pj[idx_start:k+1])
+                teq_est = Tch + pj_med * Rth_cond
+                t_horas = ((k + 1) * dt) / 3600.0
+
+                print(f"{orb_atual:<8} | {t_horas:6.1f} h | [{soc_min:5.2f}, {soc_max:6.2f}]% | [{vt_min:5.1f}, {vt_max:5.1f}] V | [{tb_min:5.2f}, {tb_med:5.2f}, {tb_max:5.2f}] C | {pj_med:8.1f} W | {teq_est:7.2f} C")
+
+    print("=" * 111)
+    print("SIMULAÇÃO DE 100 ÓRBITAS CONCLUÍDA COM SUCESSO.")
+    print("=" * 111)
+
+
+if __name__ == '__main__':
+    executar_bateria_100_orbitas()
+
+################################################################################
+# [10/10] Executor: Fluxos Orbitais 100 Órbitas (Legado)
+# Arquivo: simulacoes/executar_fluxos_orbitais_100_orbitas.py
+################################################################################
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ==============================================================================
+# SIMULAÇÃO 3.3 (EXPANDIDA): DINÂMICA ELETROTÉRMICA E BALANÇO DE ENERGIA
+# DO BANCO DE BATERIAS (BESS) EM 100 ÓRBITAS LEO
+# ==============================================================================
+# Dissertação de Mestrado Profissional - ProPECAut / IFES
+# Autor: Dafnhê Thor Castro de Martins Barros
+# Revisão Técnica: Modelagem Explícita de Condições Nominais e Modos de Falha
+# ==============================================================================
+
+import numpy as np
+
+
+def executar_bateria_100_orbitas():
+    # Parâmetros Eletroquímicos e Térmicos da Bateria
+    Cn = 22.52
+    Vuv = 324.0
+    Vov = 442.8
+    Rp1 = 18e-3
+    Cp1 = 3200.0
+    Rp2 = 24e-3
+    Cp2 = 22000.0
+    R0_ref = 85e-3
+    Ea = 0.32 * 1.602176634e-19
+    kB = 1.380649e-23
+    Tref_K = 293.15
+
+    Cth = 54360.0
+    Rth_cond = 0.14
+    Tch = 15.0
+    Pheater = 300.0
+    Ton = 10.0
+    Toff = 15.0
+
+    dt = 2.0
+    Torb = 5926.0
+    tecl = 1128.0
+    nOrb = 100
+    steps_per_orb = int(np.floor(Torb / dt))
+    N = nOrb * steps_per_orb + 1
+
+    soc = np.zeros(N)
+    vt = np.zeros(N)
+    Tb = np.zeros(N)
+    Pj = np.zeros(N)
+
+    soc[0] = 0.90
+    Tb[0] = 20.0
+    vp1 = 0.0
+    vp2 = 0.0
+    a1 = np.exp(-dt / (Rp1 * Cp1))
+    a2 = np.exp(-dt / (Rp2 * Cp2))
+
+    alvos = [1, 5, 10, 20, 50, 100]
+
+    print(f"{'Orbita':<8} | {'Tempo':<8} | {'SoC Min/Max (%)':<16} | {'Tensao Min/Max(V)':<16} | {'T_bat (Min/Med/Max) C':<24} | {'Pj_med (W)':<10} | {'Teq_est C':<10}")
+    print("-" * 115)
+
+    for k in range(N - 1):
+        t_now = float(k) * dt
+        in_eclipse = (t_now % Torb) <= tecl
+
+        if in_eclipse:
+            I = (18000.0 + 560.0) / 380.0  # Descarga no eclipse (~48.84 A)
+            etaC = 1.0
+        else:
+            I = -25.0                      # Recarga solar CC-CV [A]
+            etaC = 0.995
+
+        R0 = R0_ref * np.exp((Ea / kB) * (1.0 / (Tb[k] + 273.15) - 1.0 / Tref_K))
+        vp1 = a1 * vp1 + Rp1 * (1.0 - a1) * I
+        vp2 = a2 * vp2 + Rp2 * (1.0 - a2) * I
+
+        soc[k + 1] = min(1.0, max(0.0, soc[k] - I * etaC * dt / (Cn * 3600.0)))
+        Voc = 108.0 * (3.0 + 1.1 * soc[k + 1])
+        Vcand = Voc - I * R0 - vp1 - vp2
+
+        if I < 0.0 and Vcand > Vov:
+            I = max(-25.0, min(0.0, -(Vov - Voc + vp1 + vp2) / R0))
+            Vcand = Vov
+
+        vt[k + 1] = Vcand
+        Pj[k] = (I**2) * R0 + (vp1**2) / Rp1 + (vp2**2) / Rp2
+
+        if Tb[k] < Ton:
+            Ph = Pheater
+        elif Tb[k] < Toff:
+            Ph = Pheater * (Toff - Tb[k]) / (Toff - Ton)
+        else:
+            Ph = 0.0
+
+        q_out = (Tb[k] - Tch) / Rth_cond
+        Tb[k + 1] = Tb[k] + (Pj[k] + Ph - q_out) * dt / Cth
+
+        # Relatório de marcos orbitais
+        if (k + 1) % steps_per_orb == 0:
+            orb_atual = int((k + 1) // steps_per_orb)
+            if orb_atual in alvos:
+                idx_start = (orb_atual - 1) * steps_per_orb
+                idx_end = k + 2
+
+                soc_min = np.min(soc[idx_start:idx_end]) * 100.0
+                soc_max = np.max(soc[idx_start:idx_end]) * 100.0
+                vt_min = np.min(vt[idx_start:idx_end])
+                vt_max = np.max(vt[idx_start:idx_end])
+                tb_min = np.min(Tb[idx_start:idx_end])
+                tb_med = np.mean(Tb[idx_start:idx_end])
+                tb_max = np.max(Tb[idx_start:idx_end])
+                pj_med = np.mean(Pj[idx_start:k+1])
+                teq_est = Tch + pj_med * Rth_cond
+                t_horas = ((k + 1) * dt) / 3600.0
+
+                print(f"{orb_atual:<8d} | {t_horas:6.1f} h | [{soc_min:5.2f}, {soc_max:6.2f}]% | [{vt_min:5.1f}, {vt_max:5.1f}] V | [{tb_min:5.2f}, {tb_med:5.2f}, {tb_max:5.2f}] C | {pj_med:8.1f} W | {teq_est:7.2f} C")
+
+    # Ajuste final de contorno dos vetores de plotagem
+    vt[0] = vt[1]
+    Pj[-1] = Pj[-2]
+
+
+if __name__ == '__main__':
+    executar_bateria_100_orbitas()

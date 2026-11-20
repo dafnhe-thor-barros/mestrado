@@ -1,0 +1,423 @@
+"""modelo_orbital.py -- Marco 1 (Parte 2): geometria orbital e fluxos ambientais. Reconstruido do zero.
+Etiquetas: [FONTE] lida em fonte aberta nesta conversa | [CALCULADO] | [HIPOTESE DECLARADA] | [PENDENTE].
+Nao validado experimentalmente (sem TVAC/orbita). Testes: funcoes test_* neste arquivo. Verificado: `python modelo_orbital.py` (run_selftests).
+Compatibilidade com pytest NAO verificada (pytest ausente no sandbox). Acelerecao J2 do propagador: [NAO VERIFICADO em fonte].
+Eclipse operacional deste modulo: Terra ESFERICA de raio a (WGS84). O achatamento so entra no raycast de diagnostico (Parte 3 pendente).
+Diagnosticos: run_diagnostics(), run_diagnostics_2().
+"""
+import math, json
+from datetime import datetime, timezone, timedelta
+import numpy as np
+from scipy.integrate import solve_ivp
+
+# ---------------- Constantes ----------------
+WGS84_A_M = 6378137.0                 # [FONTE] NGA.STND.0036_1.0.0_WGS84 (2014-07-08), Tab. 3.1 (lida)
+WGS84_INV_F = 298.257223563           # [FONTE] idem
+WGS84_GM = 3.986004418e14             # [FONTE] idem [m3/s2]
+WGS84_J2 = 1.082629821313e-3          # [FONTE] idem, "J2geo" (tabela lida via texto extraido; pagina nao vista)
+WGS84_B_M = WGS84_A_M * (1.0 - 1.0 / WGS84_INV_F)   # [CALCULADO]; NGA lista b = 6356752.3142 m
+C4_NORMAL, C6_NORMAL = 7.90303733511320e-07, -1.68724961151417e-09  # [FONTE] NGA Tab. 6.1: coef. NORMALIZADOS C(n,0) do campo NORMAL (elipsoide) do WGS84, NAO do EGM2008; nao usados ainda
+C3_EGM2008 = 0.957161207093473e-06    # [FONTE] NGA Tab. 5.1 (n=3,m=0), normalizado, EGM2008 (texto extraido); nao usado; C(4..6,0) EGM2008 [PENDENTE: nao lidos]
+R_SUN_M = 6.957e8                     # [FONTE] IAU 2015 Res. B3 (lida)
+AU_M = 149597870700.0                 # [FONTE] IAU 2012 Res. B2 (lida)
+S_NOMINAL = 1361.0                    # [FONTE] IAU 2015 Res. B3 (lida); Kopp&Lean 2011: 1360.8+-0.5 (lida)
+SUN_RATE_RAD_S = 2 * math.pi / (365.2422 * 86400.0)   # [NAO VERIFICADO] ano tropico 365.2422 d lembrado de memoria; o primer GSFC contem os tokens "0.9856" e "98.2", mas o slide/contexto NAO foi visto
+ALBEDO = 0.30                         # [FONTE] NASA SP-8067 (1971), Sec. 3.1, p.27 (lida): albedo 0.30 +-0.02, Terra lambertiana uniforme (1a aprox.)
+Q_IR = 237.0                          # [FONTE] idem: emissao 237 +-7 W/m2; legado usa 234 (sem fonte)
+EPS_RAD, ALPHA_RAD = 0.88, 0.14       # [PENDENTE] legado, sem fonte (revestimento do radiador)
+THR_T_S, THR_Q_WM2 = 11.28, 2.8       # [HIPOTESE DECLARADA] limiares do usuario (aprovados)
+MEAS = {}
+
+def rad(x): return math.radians(x)
+def deg(x): return math.degrees(x)
+
+# ---------------- Tempo e Sol ----------------
+def jd_from_datetime(dt):
+    """JD = 2440587.5 + t_unix/86400 (UTC). Verificado por teste: 2000-01-01 12:00Z -> 2451545.0."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return 2440587.5 + dt.timestamp() / 86400.0
+
+def sun_usno(jd):
+    """Algoritmo USNO 'Computing Approximate Solar Coordinates' [FONTE, lida]: ~1 arcmin em +-2 seculos de 2000."""
+    D = jd - 2451545.0
+    g = rad((357.529 + 0.98560028 * D) % 360.0)
+    q = (280.459 + 0.98564736 * D) % 360.0
+    L = rad((q + 1.915 * math.sin(g) + 0.020 * math.sin(2 * g)) % 360.0)
+    R = 1.00014 - 0.01671 * math.cos(g) - 0.00014 * math.cos(2 * g)
+    e = rad(23.439 - 0.00000036 * D)
+    ra = math.atan2(math.cos(e) * math.sin(L), math.cos(L))
+    dec = math.asin(math.sin(e) * math.sin(L))
+    eqt_h = (q / 15.0 - deg(ra) / 15.0 + 12.0) % 24.0 - 12.0   # EqT = q/15 - RA (USNO)
+    vec = np.array([math.cos(dec) * math.cos(ra), math.cos(dec) * math.sin(ra), math.sin(dec)])
+    return {"vec": vec, "ra_deg": deg(ra), "dec_deg": deg(dec), "R_au": R, "q_deg": q, "eqt_min": eqt_h * 60.0}
+
+# ---------------- Orbita ----------------
+def kepler_period_s(alt_m):
+    a = WGS84_A_M + alt_m
+    return 2 * math.pi * math.sqrt(a ** 3 / WGS84_GM)
+
+def sso_inclination_deg(alt_m):
+    """cos i = -Omega_sun / (1.5 J2 (Re/a)^2 n)  com dOmega/dt = -1.5 J2 (Re/p)^2 n cos i, e=0.
+    [NAO VERIFICADO em fonte lida] A formula so foi conferida por CONSISTENCIA CRUZADA com o propagador J2 numerico (test_j2_taxa_secular_vs_propagador).
+    'a' e interpretado como semi-eixo MEDIO."""
+    a = WGS84_A_M + alt_m
+    n = math.sqrt(WGS84_GM / a ** 3)
+    return deg(math.acos(-SUN_RATE_RAD_S / (1.5 * WGS84_J2 * (WGS84_A_M / a) ** 2 * n)))
+
+def raan_from_ltan_deg(ltan_h, q_deg):
+    """LTAN em tempo solar MEDIO local: Omega = alpha_sol_medio + 15 deg*(LTAN-12h); alpha_sol_medio = q (USNO). [CALCULADO]"""
+    return (q_deg + 15.0 * (ltan_h - 12.0)) % 360.0
+
+def orbit_frame(raan, inc):
+    cO, sO, ci, si = math.cos(raan), math.sin(raan), math.cos(inc), math.sin(inc)
+    P = np.array([cO, sO, 0.0]); Q = np.array([-sO * ci, cO * ci, si])
+    return P, Q, np.cross(P, Q)
+
+def orbit_geometry(dt, ltan_h, alt_m, inc_deg=None, raan_deg=None, shift_s=0.0, const_sun_dist=False):
+    jd = jd_from_datetime(dt) + shift_s / 86400.0
+    s = sun_usno(jd)
+    inc = sso_inclination_deg(alt_m) if inc_deg is None else inc_deg
+    raan = raan_from_ltan_deg(ltan_h, s["q_deg"]) if raan_deg is None else raan_deg
+    P, Q, h = orbit_frame(rad(raan), rad(inc))
+    beta = deg(math.asin(max(-1.0, min(1.0, float(h @ s["vec"])))))
+    R_au = 1.0 if const_sun_dist else s["R_au"]
+    rs = math.asin(R_SUN_M / (R_au * AU_M))
+    return {"beta_deg": beta, "raan_deg": raan, "inc_deg": inc, "sun": s["vec"], "rs_rad": rs, "T_s": kepler_period_s(alt_m), "q_deg": s["q_deg"]}
+
+def raan_for_beta0(dt, alt_m, inc_deg):
+    s = sun_usno(jd_from_datetime(dt))["vec"]
+    best = (1e9, 0.0)
+    for k in range(7200):
+        o = k * 0.05
+        _, _, h = orbit_frame(rad(o), rad(inc_deg))
+        v = abs(float(h @ s))
+        if v < best[0]: best = (v, o)
+    return best[1]
+
+# ---------------- Eclipse ----------------
+def sunlit_fraction(g, rs, re, legacy=False, clip=True):
+    """Fracao do disco solar visivel; g = separacao angular Sol-centro da Terra. Interseccao de 2 discos (lente planar).
+    Raio: A=rs^2 acos(.)+re^2 acos(.)-0.5 sqrt((-d+rs+re)(d+rs-re)(d-rs+re)(d+rs+re)). legacy=True reproduz o 3o fator errado."""
+    g = np.atleast_1d(np.asarray(g, float)); out = np.ones_like(g)
+    out[g <= re - rs] = 0.0
+    pen = (g > re - rs) & (g < re + rs)
+    s = g[pen]
+    a1 = np.clip((s * s + rs * rs - re * re) / (2 * s * rs), -1, 1)
+    a2 = np.clip((s * s + re * re - rs * rs) / (2 * s * re), -1, 1)
+    f3 = (s - re + rs) if legacy else (s - rs + re)
+    rad_ = np.maximum(0.0, (-s + rs + re) * (s + rs - re) * f3 * (s + re + rs))
+    ov = rs * rs * np.arccos(a1) + re * re * np.arccos(a2) - 0.5 * np.sqrt(rad_)
+    out[pen] = 1.0 - ov / (math.pi * rs * rs)
+    return np.clip(out, 0.0, 1.0) if clip else out
+
+def eclipse_cyl_s(beta_deg, alt_m):
+    """Sombra cilindrica (Sol pontual): t = (T/pi) acos( sqrt(1-(Re/r)^2)/cos(beta) ). [CALCULADO]"""
+    r = WGS84_A_M + alt_m
+    x = math.sqrt(1.0 - (WGS84_A_M / r) ** 2) / math.cos(rad(beta_deg))
+    return kepler_period_s(alt_m) / math.pi * math.acos(x) if x < 1.0 else 0.0
+
+def eclipse_cone_s(beta_deg, alt_m, rs, n=20000, legacy=False):
+    """Eclipse equivalente por orbita = integral de (1-fracao_solar) dt; cos(gamma) = -cos(beta) cos(theta)."""
+    r = WGS84_A_M + alt_m; T = kepler_period_s(alt_m); rho = math.asin(WGS84_A_M / r)
+    th = (np.arange(n) + 0.5) * 2 * math.pi / n
+    g = np.arccos(np.clip(-math.cos(rad(beta_deg)) * np.cos(th), -1, 1))
+    return float((1.0 - sunlit_fraction(g, rs, rho, legacy)).sum() * T / n)
+
+def eclipse_ray_s(raan_deg, inc_deg, sun_vec, alt_m, a_m=WGS84_A_M, b_m=WGS84_B_M, n=100000):
+    """Teste independente por raio contra elipsoide (Sol pontual, raios paralelos): z' = z a/b transforma em esfera."""
+    r = WGS84_A_M + alt_m; T = kepler_period_s(alt_m)
+    P, Q, _ = orbit_frame(rad(raan_deg), rad(inc_deg))
+    u = (np.arange(n) + 0.5) * 2 * math.pi / n
+    pos = r * (np.cos(u)[:, None] * P + np.sin(u)[:, None] * Q)
+    k = a_m / b_m
+    p = pos.copy(); p[:, 2] *= k
+    d = np.array(sun_vec, float); d[2] *= k
+    A = float(d @ d); B = 2.0 * (p @ d); C = (p * p).sum(1) - a_m ** 2
+    return float(((B < 0) & (B * B - 4 * A * C > 0)).sum() * T / n)
+
+# ---------------- Fator de visao da Terra ----------------
+def view_factor_closed(alt_m, phi_deg, legacy=False):
+    H = (WGS84_A_M + alt_m) / WGS84_A_M; thm = math.asin(1.0 / H); root = math.sqrt(H * H - 1.0); phi = rad(phi_deg)
+    cl = lambda v, lo, hi: max(lo, min(hi, v))
+    if phi <= math.pi / 2 - thm: return cl(math.cos(phi) / H ** 2, 0.0, 1.0)
+    if phi <= math.pi / 2 + thm:
+        sp = math.sin(phi)
+        a1 = cl(root / (H * sp), -1, 1)
+        a2 = cl((1.0 if legacy else -1.0) * root * math.cos(phi) / sp, -1, 1)
+        rd = max(0.0, 1.0 - H * H * math.cos(phi) ** 2)
+        f = 0.5 - math.asin(a1) / math.pi + math.cos(phi) / (math.pi * H * H) * math.acos(a2) - root * math.sqrt(rd) / (math.pi * H * H)
+        return cl(f, 0.0, 1.0)
+    return 0.0
+
+def view_factor_quad(alt_m, phi_deg, na=1200, nz=1200):
+    """F = (1/pi) Int_calota max(0, cos psi) dOmega (Terra lambertiana uniforme: 1a aproximacao SP-8067, via resumo)."""
+    H = (WGS84_A_M + alt_m) / WGS84_A_M; thm = math.asin(1.0 / H); phi = rad(phi_deg)
+    al = (np.arange(na) + 0.5) * thm / na; ze = (np.arange(nz) + 0.5) * 2 * math.pi / nz
+    A, Z = np.meshgrid(al, ze, indexing="ij")
+    c = np.sin(A) * np.cos(Z) * math.sin(phi) + np.cos(A) * math.cos(phi)
+    return float((np.maximum(c, 0.0) * np.sin(A)).sum() * (thm / na) * (2 * math.pi / nz) / math.pi)
+
+# ---------------- Atitude do radiador e fluxos ambientais ----------------
+def radiator_env(theta, beta_deg, alt_m, law="s_cross_r", legacy_vf=False, albedo=ALBEDO, q_ir=Q_IR, eps=EPS_RAD, alpha=ALPHA_RAD, G=S_NOMINAL):
+    """Sistema do legado: r=(cos th, sin th, 0), s=(cos b, 0, sin b). Leis: 's_cross_r' (opcao 1, n = s x r/|.|, phi=90 sempre),
+    'inertial_fixed' (opcao 2, n = h_perp_s fixo no inercial), 'legacy' (n=-s). Por face (dupla face: soma F(phi)+F(180-phi) se phi!=90).
+    Albedo no ponto subsatelite: q = alpha G a F mu, mu=max(0, r.s) [HIPOTESE DECLARADA, herdada do legado]."""
+    b = rad(beta_deg)
+    r = np.array([math.cos(theta), math.sin(theta), 0.0]); s = np.array([math.cos(b), 0.0, math.sin(b)]); h = np.array([0.0, 0.0, 1.0])
+    if law == "s_cross_r":
+        n = np.cross(s, r); nn = np.linalg.norm(n)
+        n = h if nn < 1e-9 else n / nn      # degenerado so se r || s (beta ~ 0): usa normal da orbita
+    elif law == "inertial_fixed":
+        n = h - float(h @ s) * s; n = n / np.linalg.norm(n)
+    else:
+        n = -s
+    phi = deg(math.acos(max(-1.0, min(1.0, float(-n @ r)))))
+    F = view_factor_closed(alt_m, phi, legacy=legacy_vf)
+    mu = max(0.0, float(r @ s))
+    return {"phi_deg": phi, "F": F, "q_ir": eps * q_ir * F, "q_alb": alpha * G * albedo * F * mu,
+            "q_sol": alpha * G * max(0.0, float(n @ s)), "n": n}
+
+# ---------------- Propagador J2 (verificacao) ----------------
+def _acc_j2(t, y):
+    r = y[:3]; rn = float(np.linalg.norm(r)); k = 1.5 * WGS84_J2 * (WGS84_A_M / rn) ** 2; z2 = (r[2] / rn) ** 2
+    f = -WGS84_GM / rn ** 3
+    return np.concatenate([y[3:], [f * r[0] * (1 - k * (5 * z2 - 1)), f * r[1] * (1 - k * (5 * z2 - 1)), f * r[2] * (1 - k * (5 * z2 - 3))]])
+
+def propagate_j2(raan_deg, inc_deg, alt_m, t_end_s, step_s):
+    r0 = WGS84_A_M + alt_m; P, Q, _ = orbit_frame(rad(raan_deg), rad(inc_deg))
+    y0 = np.concatenate([r0 * P, math.sqrt(WGS84_GM / r0) * Q]); ts = np.arange(0.0, t_end_s + step_s, step_s)
+    sol = solve_ivp(_acc_j2, (0.0, ts[-1]), y0, method="DOP853", t_eval=ts, rtol=1e-10, atol=1e-4)
+    return ts, sol.y[:3].T, sol.y[3:].T
+
+def j2_drift_deg_day(ts, R, V):
+    hv = np.cross(R, V); om = np.unwrap(np.arctan2(hv[:, 0], -hv[:, 1]))
+    return deg(np.polyfit(ts, om, 1)[0]) * 86400.0
+
+def secular_raan_deg_day(alt_m, inc_deg):
+    a = WGS84_A_M + alt_m; n = math.sqrt(WGS84_GM / a ** 3)
+    return deg(-1.5 * WGS84_J2 * (WGS84_A_M / a) ** 2 * n * math.cos(rad(inc_deg))) * 86400.0
+
+# ================= TESTES (pytest-compativeis) =================
+def test_jd_j2000():
+    jd = jd_from_datetime(datetime(2000, 1, 1, 12, tzinfo=timezone.utc)); MEAS["jd_j2000"] = jd
+    assert abs(jd - 2451545.0) < 1e-9, jd
+
+def test_wgs84_b_contra_NGA():
+    MEAS["b_m"] = WGS84_B_M
+    assert abs(WGS84_B_M - 6356752.3142) < 1e-3, WGS84_B_M
+
+def test_periodo_700km():
+    T = kepler_period_s(700e3); MEAS["T700_s"] = T
+    assert abs(T - 5926.38) < 0.02, T
+
+def test_sso_inclinacao():
+    i = sso_inclination_deg(700e3); MEAS["i_sso_700_deg"] = i
+    assert 98.15 < i < 98.25, i
+    assert abs(secular_raan_deg_day(700e3, i) - deg(SUN_RATE_RAD_S) * 86400.0) < 1e-9
+
+def test_sol_equinocio_solsticio_eqt():
+    d19 = sun_usno(jd_from_datetime(datetime(2026, 3, 19, 12, tzinfo=timezone.utc)))["dec_deg"]
+    d22 = sun_usno(jd_from_datetime(datetime(2026, 3, 22, 12, tzinfo=timezone.utc)))["dec_deg"]
+    ds = sun_usno(jd_from_datetime(datetime(2026, 6, 21, 12, tzinfo=timezone.utc)))["dec_deg"]
+    eq = [sun_usno(jd_from_datetime(datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(days=k)))["eqt_min"] for k in range(365)]
+    MEAS["dec_solsticio"] = ds; MEAS["eqt_max_min"] = [max(eq), min(eq)]
+    assert d19 < 0.0 < d22 and 23.35 < ds < 23.50, (d19, d22, ds)
+    assert 16.0 < max(eq) < 17.0 and -15.0 < min(eq) < -13.5, (max(eq), min(eq))
+
+def test_beta_ltan():
+    d0 = datetime(2026, 1, 1, tzinfo=timezone.utc); res = {}
+    for L in (18.0, 6.0, 10.5):
+        b = [abs(orbit_geometry(d0 + timedelta(days=k), L, 700e3)["beta_deg"]) for k in range(365)]
+        res[L] = (min(b), max(b))
+    MEAS["beta_min_max_2026"] = res
+    assert 57.0 < res[18.0][0] < 60.0 and res[18.0][1] > 85.0, res
+    assert 57.0 < res[6.0][0] < 60.0, res
+    assert res[10.5][1] < 30.0 and res[10.5][0] > 10.0, res
+
+def test_lente_vs_integracao_esferica():
+    rs = math.asin(R_SUN_M / AU_M); re = math.asin(WGS84_A_M / (WGS84_A_M + 700e3)); worst = 0.0
+    xs = np.linspace(-rs, rs, 301); X, Y = np.meshgrid(xs, xs); r = np.hypot(X, Y); m = r <= rs; ph = np.arctan2(Y, X)
+    vx = np.sin(r) * np.cos(ph); vz = np.cos(r)
+    for k in (-0.9, -0.5, 0.0, 0.5, 0.9):
+        g = re + k * rs
+        ex = float(((np.arccos(np.clip(vx * math.sin(g) + vz * math.cos(g), -1, 1)) > re) & m).sum() / m.sum())
+        worst = max(worst, abs(float(sunlit_fraction(g, rs, re)[0]) - ex))
+    leg = float(sunlit_fraction(re, rs, re, legacy=True, clip=False)[0]); MEAS["lente_max_err"] = worst; MEAS["lente_legado_k0_sem_clamp"] = leg
+    assert worst < 4e-3, worst
+    assert leg < -10.0, leg
+
+def test_limite_cilindrico():
+    d = abs(eclipse_cone_s(30.0, 700e3, 1e-7, n=200000) - eclipse_cyl_s(30.0, 700e3)); MEAS["cone_vs_cil_rs_to_0_s"] = d
+    assert d < 0.5, d
+
+def test_raycast_independente_vs_analitico():
+    s = sun_usno(jd_from_datetime(datetime(2026, 5, 1, tzinfo=timezone.utc)))["vec"]; raan, inc = 70.0, 98.19
+    _, _, h = orbit_frame(rad(raan), rad(inc)); beta = deg(math.asin(float(h @ s)))
+    t_ray = eclipse_ray_s(raan, inc, s, 700e3, a_m=WGS84_A_M, b_m=WGS84_A_M); t_cyl = eclipse_cyl_s(beta, 700e3)
+    MEAS["raycast_vs_analitico"] = [beta, t_ray, t_cyl]
+    assert abs(t_ray - t_cyl) < 0.5, (t_ray, t_cyl)
+
+def test_convergencia_em_n():
+    ref = eclipse_cone_s(63.8, 700e3, math.asin(R_SUN_M / AU_M), n=640000)
+    err = {n: abs(eclipse_cone_s(63.8, 700e3, math.asin(R_SUN_M / AU_M), n=n) - ref) for n in (5000, 10000, 20000, 40000)}
+    MEAS["convergencia_n"] = err
+    assert err[40000] < 0.5 and err[40000] < err[10000] / 2.0 + 1e-9, err
+
+def test_eclipse_monotono_em_beta():
+    rs = math.asin(R_SUN_M / AU_M); v = [eclipse_cone_s(b, 700e3, rs, n=40000) for b in np.arange(0.0, 64.6, 0.5)]
+    assert all(v[i + 1] <= v[i] + 0.05 for i in range(len(v) - 1))
+
+def test_fator_de_visao_vs_quadratura():
+    worst = 0.0
+    for p in (10, 26, 30, 45, 60, 90, 120, 150, 154):
+        worst = max(worst, abs(view_factor_closed(700e3, p) - view_factor_quad(700e3, p)))
+    leg30 = abs(view_factor_closed(700e3, 30, legacy=True) - view_factor_quad(700e3, 30)); MEAS["F_max_err"] = worst; MEAS["F_legado_err_30deg"] = leg30
+    assert worst < 5e-4, worst
+    assert leg30 > 0.3, leg30
+
+def test_fator_de_visao_limites_e_continuidade():
+    H = (WGS84_A_M + 700e3) / WGS84_A_M; thm = deg(math.asin(1 / H))
+    assert abs(view_factor_closed(700e3, 0.0) - 1 / H ** 2) < 1e-12
+    assert view_factor_closed(700e3, 170.0) == 0.0
+    assert abs(view_factor_closed(700e3, 90 - thm - 1e-6) - view_factor_closed(700e3, 90 - thm + 1e-6)) < 1e-4
+    assert abs(view_factor_closed(700e3, 90 + thm - 1e-6) - view_factor_closed(700e3, 90 + thm + 1e-6)) < 1e-4
+
+def test_radiador_opcao1_phi90_sem_sol_direto():
+    for th in np.linspace(0.0, 2 * math.pi, 37):
+        e = radiator_env(th, 58.4, 700e3, law="s_cross_r")
+        assert abs(e["phi_deg"] - 90.0) < 1e-6 and abs(e["q_sol"]) < 1e-9, (th, e["phi_deg"], e["q_sol"])
+
+def test_j2_taxa_secular_vs_propagador():
+    g = orbit_geometry(datetime(2026, 3, 1, tzinfo=timezone.utc), 18.0, 700e3)
+    ts, R, V = propagate_j2(g["raan_deg"], g["inc_deg"], 700e3, 86400.0, 20.0)
+    num = j2_drift_deg_day(ts, R, V); ana = secular_raan_deg_day(700e3, g["inc_deg"]); MEAS["j2_taxa_[num,ana,alvo_SSO]_deg_dia"] = [num, ana, deg(SUN_RATE_RAD_S) * 86400.0]
+    assert abs(num - ana) / abs(ana) < 0.02, (num, ana)
+
+def test_reprodutibilidade():
+    rs = math.asin(R_SUN_M / AU_M)
+    assert eclipse_cone_s(60.0, 700e3, rs) == eclipse_cone_s(60.0, 700e3, rs)
+
+def test_limites_fisicos():
+    rs = math.asin(R_SUN_M / AU_M); g = np.linspace(0, 3.1, 4000); f = sunlit_fraction(g, rs, math.asin(WGS84_A_M / (WGS84_A_M + 700e3)))
+    assert f.min() >= 0.0 and f.max() <= 1.0
+    assert all(0.0 <= view_factor_closed(700e3, p) <= 1.0 for p in np.linspace(0, 180, 361))
+
+TESTS = [test_jd_j2000, test_wgs84_b_contra_NGA, test_periodo_700km, test_sso_inclinacao, test_sol_equinocio_solsticio_eqt, test_beta_ltan,
+         test_lente_vs_integracao_esferica, test_limite_cilindrico, test_raycast_independente_vs_analitico, test_convergencia_em_n,
+         test_eclipse_monotono_em_beta, test_fator_de_visao_vs_quadratura, test_fator_de_visao_limites_e_continuidade,
+         test_radiador_opcao1_phi90_sem_sol_direto, test_j2_taxa_secular_vs_propagador, test_reprodutibilidade, test_limites_fisicos]
+
+def run_selftests():
+    out = {}
+    for f in TESTS:
+        try:
+            f(); out[f.__name__] = "PASS"
+        except AssertionError as e:
+            out[f.__name__] = "FAIL: " + str(e)[:300]
+        except Exception as e:
+            out[f.__name__] = "ERROR " + type(e).__name__ + ": " + str(e)[:300]
+    return out
+
+# ================= DIAGNOSTICO DE RELEVANCIA (Tabela de impacto) =================
+def _legacy_beta(dt, ltan, inc=98.2):
+    doy = dt.timetuple().tm_yday; fd = doy + (0.0 - 12.0) / 24.0
+    d = rad(23.44 * math.sin(rad(360.0 * (fd - 81.0) / 365.0))); dw = rad(15.0 * (ltan - 12.0)); i = rad(inc)
+    return deg(math.asin(max(-1, min(1, math.sin(i) * math.cos(d) * math.sin(dw) + math.cos(i) * math.sin(d)))))
+
+def _ecl_day(beta, alt, rs, kind, n=20000):
+    if abs(beta) > 64.9: return 0.0
+    return eclipse_cyl_s(beta, alt) if kind == "cyl" else eclipse_cone_s(beta, alt, rs, n=n)
+
+def _stat(arr, thr):
+    a = np.abs(np.array(arr)); return {"max_abs": float(a.max()), "dia_max": int(a.argmax()), "n_dias_gt_limiar": int((a > thr).sum())}
+
+def run_diagnostics():
+    out = {}; alt = 700e3; d0 = datetime(2026, 1, 1, tzinfo=timezone.utc); days = [d0 + timedelta(days=k) for k in range(365)]
+    for name, L in (("LTAN18", 18.0), ("LTAN06", 6.0), ("LTAN10.5", 10.5)):
+        G = [orbit_geometry(d, L, alt) for d in days]; Gc = [orbit_geometry(d, L, alt, const_sun_dist=True) for d in days]
+        Gs = [orbit_geometry(d, L, alt, shift_s=100.0) for d in days]
+        be = [g["beta_deg"] for g in G]; rs = [g["rs_rad"] for g in G]
+        cone = [_ecl_day(be[k], alt, rs[k], "cone") for k in range(365)]; cyl = [_ecl_day(be[k], alt, rs[k], "cyl") for k in range(365)]
+        leg = [eclipse_cone_s(be[k], alt, rs[k], legacy=True) if abs(be[k]) <= 64.9 else 0.0 for k in range(365)]
+        bl = [_legacy_beta(d, L) for d in days]; cone_l = [_ecl_day(bl[k], alt, rs[k], "cone") for k in range(365)]
+        cone_c = [_ecl_day(Gc[k]["beta_deg"], alt, Gc[k]["rs_rad"], "cone") for k in range(365)]
+        cone_s = [_ecl_day(Gs[k]["beta_deg"], alt, Gs[k]["rs_rad"], "cone") for k in range(365)]
+        rs_leg = math.asin(696340e3 / 1.496e11); cone_old = [_ecl_day(be[k], alt, rs_leg, "cone") for k in range(365)]
+        out[name] = {"ecl_max_s": max(cone), "ecl_min_s": min(cone), "ecl_medio_s": float(np.mean(cone)), "dias_com_eclipse": int(sum(1 for x in cone if x > 0.5)),
+                     "beta_abs_min_max": [float(min(abs(x) for x in be)), float(max(abs(x) for x in be))],
+                     "penumbra_cone_menos_cilindro": _stat(np.array(cone) - np.array(cyl), THR_T_S),
+                     "legado_menos_corrigido_lente": _stat(np.array(leg) - np.array(cone), THR_T_S),
+                     "efemeride_legado_vs_USNO_dbeta_deg_max": float(np.max(np.abs(np.array(bl) - np.array(be)))),
+                     "efemeride_legado_vs_USNO_dt_ecl": _stat(np.array(cone_l) - np.array(cone), THR_T_S),
+                     "distancia_Sol_const_1AU_vs_R(t)": _stat(np.array(cone_c) - np.array(cone), THR_T_S),
+                     "TT-UTC_100s_hipotese": dict(_stat(np.array(cone_s) - np.array(cone), THR_T_S), dbeta_max_deg=float(max(abs(Gs[k]["beta_deg"] - be[k]) for k in range(365)))),
+                     "Rsol_UA_legado_vs_IAU": _stat(np.array(cone_old) - np.array(cone), THR_T_S)}
+    # oblateness: elipsoide WGS84 vs esfera de raio a (raycast, Sol pontual)
+    obl = {}
+    for name, L in (("LTAN18", 18.0), ("LTAN10.5", 10.5)):
+        v = []
+        for k in range(0, 365, 15):
+            g = orbit_geometry(days[k], L, alt)
+            if abs(g["beta_deg"]) > 66.0: continue
+            e1 = eclipse_ray_s(g["raan_deg"], g["inc_deg"], g["sun"], alt); e0 = eclipse_ray_s(g["raan_deg"], g["inc_deg"], g["sun"], alt, a_m=WGS84_A_M, b_m=WGS84_A_M)
+            v.append([k, g["beta_deg"], e1 - e0])
+        obl[name] = {"amostras": len(v), "max_abs_dt_s": max(abs(x[2]) for x in v) if v else None, "pior": max(v, key=lambda x: abs(x[2])) if v else None}
+    dleo = datetime(2026, 3, 1, tzinfo=timezone.utc); ro = raan_for_beta0(dleo, 500e3, 51.6); gl = orbit_geometry(dleo, 0.0, 500e3, inc_deg=51.6, raan_deg=ro)
+    e1 = eclipse_ray_s(ro, 51.6, gl["sun"], 500e3); e0 = eclipse_ray_s(ro, 51.6, gl["sun"], 500e3, a_m=WGS84_A_M, b_m=WGS84_A_M)
+    obl["LEO500_i51.6_beta~0"] = {"beta_deg": gl["beta_deg"], "t_ecl_elipsoide_s": e1, "t_ecl_esfera_a_s": e0, "dt_s": e1 - e0, "T_s": gl["T_s"]}
+    out["achatamento_WGS84"] = obl
+    # J2 short-period: propagador vs Kepler+secular, 13 orbitas, dia de menor |beta| (LTAN 18)
+    kmin = int(np.argmin([abs(orbit_geometry(d, 18.0, alt)["beta_deg"]) for d in days])); g = orbit_geometry(days[kmin], 18.0, alt)
+    T = g["T_s"]; step = 2.0; ts, R, V = propagate_j2(g["raan_deg"], g["inc_deg"], alt, 13 * T, step)
+    jd0 = jd_from_datetime(days[kmin]); tk = np.linspace(0, 13 * T, 60); sv = np.array([sun_usno(jd0 + t / 86400.0)["vec"] for t in tk])
+    S = np.stack([np.interp(ts, tk, sv[:, j]) for j in range(3)], 1); S = S / np.linalg.norm(S, axis=1)[:, None]
+    along = (R * S).sum(1); perp2 = (R * R).sum(1) - along ** 2; sh_j2 = (along < 0) & (perp2 < WGS84_A_M ** 2)
+    r0 = WGS84_A_M + alt; n0 = math.sqrt(WGS84_GM / r0 ** 3); om = rad(g["raan_deg"]) + rad(secular_raan_deg_day(alt, g["inc_deg"])) / 86400.0 * ts; ii = rad(g["inc_deg"]); u = n0 * ts
+    Rk = r0 * np.stack([np.cos(u) * np.cos(om) - np.sin(u) * np.sin(om) * math.cos(ii), np.cos(u) * np.sin(om) + np.sin(u) * np.cos(om) * math.cos(ii), np.sin(u) * math.sin(ii)], 1)
+    alk = (Rk * S).sum(1); sh_k = (alk < 0) & (((Rk * Rk).sum(1) - alk ** 2) < WGS84_A_M ** 2)
+    out["J2_curto_periodo"] = {"dia": kmin, "beta_deg": g["beta_deg"], "t_ecl_por_orbita_J2_s": float(sh_j2.sum() * step / 13), "t_ecl_por_orbita_kepler_secular_s": float(sh_k.sum() * step / 13),
+                               "altitude_min_max_km_J2": [float((np.linalg.norm(R, axis=1).min() - WGS84_A_M) / 1e3), float((np.linalg.norm(R, axis=1).max() - WGS84_A_M) / 1e3)],
+                               "taxa_RAAN_num_ana_alvo_deg_dia": [j2_drift_deg_day(ts, R, V), secular_raan_deg_day(alt, g["inc_deg"]), deg(SUN_RATE_RAD_S) * 86400.0]}
+    # fluxos ambientais no radiador (orbita-media e maximo por face), W/m2
+    env = {}
+    for bname, b in (("beta58.4", 58.4), ("beta75", 75.0), ("beta20", 20.0)):
+        row = {}
+        for lab, law, lv in (("legado_n=-s_F_legado", "legacy", True), ("legado_n=-s_F_corrigido", "legacy", False), ("opcao1_s_x_r", "s_cross_r", False), ("opcao2_inercial", "inertial_fixed", False)):
+            q = [radiator_env(t, b, alt, law=law, legacy_vf=lv) for t in np.linspace(0, 2 * math.pi, 361)[:-1]]
+            tot = np.array([e["q_ir"] + e["q_alb"] + e["q_sol"] for e in q]); row[lab] = {"q_med": float(tot.mean()), "q_max": float(tot.max()), "q_ir_med": float(np.mean([e["q_ir"] for e in q]))}
+        env[bname] = row
+    out["fluxos_radiador_Wm2"] = env
+    return out
+
+def run_diagnostics_2():
+    """Efeitos no dia de projeto (menor |beta|): achatamento WGS84, convencao de LTAN (tempo solar medio x aparente), inclinacao dt/dbeta."""
+    out = {}; alt = 700e3; d0 = datetime(2026, 1, 1, tzinfo=timezone.utc); days = [d0 + timedelta(days=k) for k in range(730)]
+    out["dt_ecl_por_grau_beta_cil_s_por_deg"] = {str(b): (eclipse_cyl_s(b + 0.05, alt) - eclipse_cyl_s(b - 0.05, alt)) / 0.1 for b in (58.4, 61.0, 63.0, 63.8)}
+    obl = {}
+    for name, L in (("LTAN18", 18.0), ("LTAN06", 6.0)):
+        bs = [abs(orbit_geometry(d, L, alt)["beta_deg"]) for d in days[:365]]; k0 = int(np.argmin(bs)); rows = []
+        for off in (-40, -20, 0, 20, 40):
+            kk = k0 + off; g = orbit_geometry(days[kk], L, alt)
+            e1 = eclipse_ray_s(g["raan_deg"], g["inc_deg"], g["sun"], alt)
+            e0 = eclipse_ray_s(g["raan_deg"], g["inc_deg"], g["sun"], alt, a_m=WGS84_A_M, b_m=WGS84_A_M)
+            rows.append([kk, round(g["beta_deg"], 3), round(e1, 2), round(e0, 2), round(e1 - e0, 2)])
+        obl[name] = {"dia_menor_beta": k0, "linhas_[dia, beta, t_elipsoide, t_esfera_a, dif]": rows}
+    out["achatamento_WGS84_raycast_Sol_pontual"] = obl
+    rs = math.asin(R_SUN_M / AU_M); conv = {}
+    for name, L in (("LTAN18", 18.0), ("LTAN06", 6.0), ("LTAN10.5", 10.5)):
+        bm, ba = [], []
+        for d in days[:365]:
+            s = sun_usno(jd_from_datetime(d)); g = orbit_geometry(d, L, alt)
+            ga = orbit_geometry(d, L, alt, raan_deg=(s["ra_deg"] + 15.0 * (L - 12.0)) % 360.0)
+            bm.append(g["beta_deg"]); ba.append(ga["beta_deg"])
+        conv[name] = {"dbeta_max_deg": float(max(abs(a - b) for a, b in zip(bm, ba))),
+                      "beta_abs_min_medio_aparente": [float(min(abs(x) for x in bm)), float(min(abs(x) for x in ba))],
+                      "ecl_max_cil_medio_aparente_s": [float(max(_ecl_day(x, alt, rs, "cyl") for x in bm)), float(max(_ecl_day(x, alt, rs, "cyl") for x in ba))]}
+    out["convencao_LTAN_tempo_solar_medio_vs_aparente"] = conv
+    return out
+
+if __name__ == "__main__":
+    _out = {"testes": run_selftests(), "medidas": MEAS}
+    print(json.dumps(_out, indent=1, default=float))
+    result = {"json": json.dumps(_out, default=float)}
