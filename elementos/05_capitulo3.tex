@@ -1,495 +1,172 @@
+\chapter{Metodologia e Modelagem Matemática do Sistema Térmico-Energético Orbital}
+\label{cap:modelagem}
+
+Este capítulo apresenta a formulação matemática e computacional completa do sistema térmico-energético do data center orbital modular de $50\text{ kW}$, estruturada em cinco pilares acoplados: (i) ambiente orbital e geração fotovoltaica com armazenamento eletroquímico (BESS); (ii) geração de calor por cargas de inteligência artificial sob DVFS e perdas de conversão estática; (iii) dissipação térmica por condução e radiação no vácuo; (iv) modelo substituto preditivo baseado em física (\textit{Physics-Informed Neural Network} -- PINN) com estimador de gradiente de aleta; e (v) formulação do controlador preditivo térmico-energético (TEMS/DVFS).
+
+Visando rigor epistêmico e reprodutibilidade, todas as grandezas numéricas adotadas distinguem explicitamente os \textbf{dados verificados em fontes primárias} (normas, resoluções astronômicas e folhas de dados de fabricantes) das \textbf{hipóteses de projeto declaradas}. Todos os modelos descritos neste capítulo encontram-se implementados e verificados por suítes automatizadas de testes unitários e de conservação física (\texttt{pytest}) no repositório de código da dissertação (\texttt{simulacoes/v2\_auditado/}), em escopo estritamente \textit{in silico} (sem validação experimental em câmara termo-vácuo).
+
 % ==============================================================================
-% CAPÍTULO 3 - MODELAGEM MATEMÁTICA DO SUBSISTEMA ELÉTRICO E DE ARMAZENAMENTO
-% Arquivo: elementos/05_capitulo3.tex
+\section{Ambiente Orbital e Fluxos Radiativos Externos}
+\label{sec:modelo_orbital}
+
+A plataforma opera em órbita circular heliossíncrona (\textit{Sun-Synchronous Orbit} -- SSO) \textit{dawn-dusk} a altitude nominal $h = 700\text{ km}$, com hora local do nó ascendente (LTAN) nominal de $18\text{h}00$ em tempo solar médio local. Adotam-se os parâmetros definidores do elipsoide WGS84 \cite{nga2014wgs84}: semieixo maior equatorial $a_E = 6.378.137{,}0\text{ m}$, achatamento inverso $1/f = 298{,}257223563$, constante gravitacional geocêntrica $\mu_E = 3{,}986004418 \times 10^{14}\text{ m}^3/\text{s}^2$ e fator dinâmico zonal $J_2 = 1{,}082629821313 \times 10^{-3}$.
+
+Para que a precessão nodal secular causada pelo achatamento terrestre acompanhe exatamente a taxa média de translação solar ($\dot{\Omega}_\odot = 360^\circ / 365{,}24219\text{ dias} = 1{,}99106 \times 10^{-7}\text{ rad/s}$), a inclinação heliossíncrona $i$ satisfaz:
+\begin{equation}
+    \dot{\Omega} = -\frac{3}{2} \, n \, J_2 \left(\frac{a_E}{r}\right)^2 \cos i = \dot{\Omega}_\odot, \qquad n = \sqrt{\frac{\mu_E}{r^3}},
+    \label{eq:precessao_j2}
+\end{equation}
+onde $r = a_E + h = 7.078.137\text{ m}$. A solução da Eq.~(\ref{eq:precessao_j2}) fornece $i = 98{,}188^\circ$ (consistente com o valor de referência de $98{,}2^\circ$ reportado em \cite{nasa2018gdc}) e período kepleriano $T_{orb} = 2\pi / n = 5.926{,}38\text{ s}$ ($98{,}77\text{ min}$). Perturbações de ordem superior ($J_3\text{--}J_6$), arrasto atmosférico residual, atração lunissolar e escurecimento de limbo são declarados fora do escopo desta modelagem.
+
+A posição solar aparente (anomalia média $g$, longitude eclíptica aparente $L$, distância Terra-Sol $R_{TS}$ em unidades astronômicas e obliquidade média $\epsilon$) é computada pelo algoritmo de coordenadas solares aproximadas do \textit{U.S. Naval Observatory} \cite{usno_sun_approx}, combinado à unidade astronômica exata $1\text{ ua} = 149.597.870.700\text{ m}$ \cite{iau2012b2} e ao raio solar nominal $R_\odot = 6{,}957 \times 10^8\text{ m}$ \cite{iau2015b3}. A irradiância solar total (TSI) em $1\text{ ua}$ é $S_0 = 1.360{,}8 \pm 0{,}5\text{ W/m}^2$ \cite{kopp2011tsi} (consistente com a constante nominal de conversão solar $S_\odot^N = 1.361 \pm 1\text{ W/m}^2$ da Resolução IAU 2015 B3 \cite{iau2015b3}). No solstício de junho de 2026 (21/06/2026, próximo ao afélio, $R_{TS} \approx 1{,}0163\text{ ua}$), o ângulo solar $\beta$ em LTAN $18\text{h}00$ atinge o mínimo sazonal de $\beta = 58{,}374^\circ$ e a irradiância incidente cai para $G_{sol} = 1.316{,}63\text{ W/m}^2$.
+
+A duração de eclipse é obtida por interseção geométrica de raios sobre o elipsoide oblato WGS84 com modelo de cone penumbral (contabilizando o diâmetro angular solar finito $2\arcsin(R_\odot/R_{TS})$). No solstício de junho de 2026, o eclipse equivalente máximo em LTAN $18\text{h}00$ resulta em $t_{ecl} = 1.105{,}39\text{ s}$ ($18{,}42\text{ min}$), conforme ilustrado na Figura~\ref{fig:orbita_eclipse_ltan}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{figuras/fig_3_1_orbita_eclipse_ltan.png}
+    \caption{Caracterização orbital anual (2026) para SSO circular a $700\text{ km}$: (a) ângulo solar $\beta$ e (b) duração do eclipse por órbita (elipsoide WGS84 + cone penumbral) para LTAN $18\text{h}00$, $16\text{h}30$ e $12\text{h}00$.}
+    \label{fig:orbita_eclipse_ltan}
+\end{figure}
+
+Adota-se atitude de radiador orientada perpendicularmente ao plano orbital e ao vetor solar ($\hat{\mathbf{n}}_{rad} \parallel \hat{\mathbf{s}} \times \hat{\mathbf{r}}$, incidência solar direta nula nas faces do radiador e ângulo entre a normal do radiador e o nadir constante em $\phi = 90^\circ$). Para uma superfície plana ortogonal ao nadir a altitude $h = 700\text{ km}$ ($H = r / a_E = 1{,}10975$), o fator de visão analítico placa-esfera para a Terra é:
+\begin{equation}
+    F(90^\circ) = \frac{1}{\pi}\left[\arcsin\!\left(\frac{1}{H}\right) - \frac{\sqrt{H^2 - 1}}{H^2}\right] = 0{,}232871.
+    \label{eq:fator_visao_90}
+\end{equation}
+Utilizando os valores médios globais anuais da norma NASA SP-8067 \cite{nasa1971sp8067} para emissão infravermelha planetária ($q_{IR,E} = 237 \pm 7\text{ W/m}^2$) e albedo terrestre ($a_{alb} = 0{,}30 \pm 0{,}02$), o fluxo infravermelho incidente sobre cada face do radiador é $q_{IR} = F(90^\circ)\, q_{IR,E} = 55{,}19\text{ W/m}^2$ (ou $48{,}57\text{ W/m}^2$ integrado no modelo radiativo de duas faces sob a absorção infravermelha efetiva $\varepsilon$).
+
 % ==============================================================================
-
-\section{MODELAGEM MATEMÁTICA DO SUBSISTEMA ELÉTRICO E DE ARMAZENAMENTO}
-\label{sec:capitulo3}
-
-\subsection{Premissas de Rendimento Estático e Dinâmico}
-\label{sec:premissas-eta}
-
-O dimensionamento elétrico parte das premissas de rendimento estático e dinâmico consolidadas nesta seção. A distribuição primária adota barramento HVDC regulado para minimizar as perdas ôhmicas por condução, em estrita aderência às diretrizes de veículos espaciais da NASA \cite{bever2006hvguide,ferguson2006nasastd4005,kerslake2011septug,sarfi2024mwscale,nasa2026smallspacecraft}.
-
-\subsection{Arquitetura Geral de Potência e Distribuição Primária}
-\label{sec:distribuicao-primaria}
+\section{Geração Fotovoltaica, Arquitetura HVDC e Balanço de Potência}
 \label{sec:arquitetura_barramento_balanco}
 
-A topologia de distribuição primária de alta tensão é ilustrada na Figura~\ref{fig:hvdc}, fundamentada na arquitetura de distribuição proposta por Sarfi e Beik \cite{sarfi2024mwscale}, na qual a geração primária alimenta um barramento central regulado em $V_{bus} = 400\text{ V}$.
+\subsection{Subsistema Fotovoltaico AM0 (Spectrolab XTJ)}
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{figuras/figura_3_1_1_arquitetura_HVDC.png}
-    \caption{Arquitetura conceitual de barramento de alta tensão e distribuição de potência.}
-    \label{fig:hvdc}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: adaptado de Sarfi e Beik \cite{sarfi2024mwscale}.}
-\end{figure}
-
-As eficiências dos conversores chaveados e as referências tecnológicas de semicondutores espaciais são sumarizadas na Tabela~\ref{tab:eta-ref}.
-
-\begin{table}[htbp]
-\centering
-\small
-\caption{Valores nominais e referências tecnológicas para os estágios de conversão.}
-\label{tab:eta-ref}
-\begin{tabular}{p{3.2cm} p{2.8cm} p{6.8cm}}
-\toprule
-\textbf{Referência} & \textbf{Estágio} & \textbf{Informação Utilizada} \\
-\midrule
-TPS50601A-SP \cite{ti_tps50601a} & Buck síncrono rad-hard, 3--7~V & Rendimento de pico de 96,6\%; base do modelo descendente. \\
-ISL70003SEH \cite{renesas_isl70003seh} & Buck síncrono rad-hard, 3--13,2~V & Pico de 95\%; curvas de rendimento sob variação térmica. \\
-RIC70849F \cite{infineon_ric70849f} & Controlador Buck GaN & Define a classe tecnológica de chaveamento a 150~kHz. \\
-Huselstein et al. \cite{huselstein2024} & DAB isolado (BOOST-DAB), 30~kW & Rendimento nominal de aproximadamente 97\%. \\
-UM3198 \cite{st_um3198} & DAB bidirecional SiC, 25~kW & Rendimento de pico de 98,2\% em 100~kHz. \\
-Esteve et al. \cite{esteve2024} & DAB com modulação SPS & Estratégia de modulação com frequência variável. \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor a partir dos documentos citados.}
-\end{table}
-
-A seleção dos semicondutores e componentes magnéticos dos conversores estáticos é detalhada na Seção~\ref{sec:gan-dcdc} (com propriedades do material de núcleo magnético de alta frequência consolidada na Tabela~\ref{tab:anexo_ferroxcube_3c95} do Anexo~A). Os requisitos de isolamento dielétrico, espaçamento em placa e imunidade a descargas por efeito corona e arco elétrico em plasma de baixa órbita (LEO) foram balizados segundo normas consolidadas da NASA e da ESA \cite{nasa2026smallspacecraft,ECSS_E_ST_31C_2008,kerslake2011septug,bever2006hvguide,ferguson2006nasastd4005}. As diretrizes para os ensaios térmicos e ciclos de vida útil do sistema de baterias de íons de lítio seguem as recomendações de engenharia aeroespacial \cite{nasa2021liionguidelines,jun2020leobattery}.
-
-\subsection{Estabilidade de Pequenos Sinais e Critério de Middlebrook}
-\label{sec:estabilidade-middlebrook}
-
-A impedância incremental refletida pelas cargas computacionais sob regulação em ponto de carga ($P_{CPL}$) e o critério clássico de estabilidade de Middlebrook \cite{middlebrook1976} impõem limites conservadores de impedância de saída para garantir amortecimento supercrítico ($\zeta \ge 1$). Nos barramentos primário e secundário, a impedância de saída passiva da rede é governada por:
+A geração primária emprega células espaciais de tripla junção GaInP/GaAs/Ge \textbf{Spectrolab XTJ} (eficiência nominal BOL de $29{,}5\%$ sob espectro AM0 a $28^\circ\text{C}$, área ativa $A_{cel} = 26{,}62\text{ cm}^2$, $V_{mp} = 2{,}34\text{ V}$, $J_{mp} = 17{,}0\text{ mA/cm}^2$, coeficientes térmicos $\mathrm{d}V_{mp}/\mathrm{d}T = -6{,}4\text{ mV/}^\circ\text{C}$ e $\mathrm{d}J_{mp}/\mathrm{d}T = +11{,}1\,\mu\text{A}/(\text{cm}^2\cdot{}^\circ\text{C})$) \cite{spectrolab_xtj_prime}. A potência gerada em fim de vida (EOL) no ponto de máxima potência é modelada em função da irradiância $G_{sol}$, da temperatura de operação do painel $T_{pv}$ e dos fatores de degradação por radiação ($R_{Vmp} = 0{,}94$, $R_{Jmp} = 0{,}97$ para fluência equivalente de $2{,}5 \times 10^{14}\text{ e}^-/\text{cm}^2$, $1\text{ MeV}$, hipótese de projeto) e de empacotamento ($\eta_{pack} = 0{,}90$, fator de perdas de interconexão/vidro $\eta_{inst} = 0{,}92$):
 \begin{equation}
-    Z_{out}(s) = \frac{(s L_{dist} + R_{dist})(s C_{bus} ESR + 1)}{s^2 L_{dist} C_{bus} + s C_{bus} (R_{dist} + ESR) + 1}
-    \label{eq:zout_bus}
-\end{equation}
-\begin{equation}
-    C_{bus,min} \ge \max\left( \frac{4 L_{dist}}{R_{dist}^2}, \, \frac{L_{dist} \Delta I^2}{V_{nom}^2 - V_{min}^2}, \, \frac{L_{dist} P_{CPL}^2 \cdot GM^2}{V_{bus}^4} \right)
-    \label{eq:cbus}
+    P_{FV}(G_{sol}, T_{pv}) = N_{cel} \, A_{cel} \, \eta_{inst} \, \left(\frac{G_{sol}}{S_{AM0}}\right) \left[R_{Jmp} J_{mp} + \frac{\mathrm{d}J_{mp}}{\mathrm{d}T}(T_{pv} - 28)\right] \left[R_{Vmp} V_{mp} + \frac{\mathrm{d}V_{mp}}{\mathrm{d}T}(T_{pv} - 28)\right].
+    \label{eq:potencia_fv}
 \end{equation}
 
-Para o barramento primário de $400\text{ V}$ operando com carga constante de $20\text{ kW}$, tem-se:
+Dimensionando o arranjo para entregar $P_{FV,EOL} = 50{,}0\text{ kW}$ líquidos na saída do arranjo (antes do conversor Buck) na condição crítica de afélio ($G_{sol} = 1.316{,}63\text{ W/m}^2$) e temperatura de painel $T_{pv} = 65^\circ\text{C}$ (hipótese de projeto), obtém-se $N_{cel} = 27.073$ células, correspondendo a uma área ativa de células $A_{cel,tot} = 161{,}49\text{ m}^2$ e área bruta de painel $A_{painel} = 179{,}43\text{ m}^2$.
+
+\subsection{Barramento HVDC de 400 V e Perdas de Conversão}
+
+O barramento primário opera em $400\text{ VDC}$ regulado, interligando o arranjo fotovoltaico (via estágio Buck MPPT de eficiência $\eta_{buck} = 0{,}97$), o banco de baterias (via conversor bidirecional de eficiência $\eta_{bd} = 0{,}96$), o estágio isolado de rack $400\text{ V} \to 48\text{ V}$ (Dual Active Bridge -- DAB, $\eta_{dab} = 0{,}96$) e a carga auxiliar de plataforma ($P_{aux} = 2.000\text{ W}$, incluindo aviônica, ADCS e terminais OISL), todos adotados como hipóteses de projeto.
+
+Para evitar dupla contagem das perdas de conversão do estágio regulador interno de ponto de carga ($48\text{ V} \to V_{core}$), adota-se a fronteira física especificada na folha de dados do módulo NVIDIA A100 SXM4 \cite{nvidia_a100_datasheet}: o TDP de $400\text{ W}$ refere-se à potência elétrica de entrada do módulo em $48\text{ VDC}$, implicando eficiência externa de POL unitária ($\eta_{POL,ext} = 1{,}0$, hipótese declarada). O balanço instantâneo de potência no barramento HVDC é:
+\begin{equation}
+    \eta_{buck}\, P_{FV}(t) + P_{bess,bus}(t) = \frac{P_{TI}(t)}{\eta_{dab}} + P_{aux},
+    \label{eq:balanco_hvdc}
+\end{equation}
+onde $P_{bess,bus}(t) > 0$ indica descarga do BESS para o barramento (e $P_{bess,bus}(t) < 0$ indica recarga). As perdas dissipadas internamente como calor nos conversores somam:
+\begin{equation}
+    Q_{conv}(t) = (1 - \eta_{buck}) P_{FV}(t) + \left(\frac{1}{\eta_{dab}} - 1\right) P_{TI}(t) + Q_{bd}(t),
+    \label{eq:perdas_conv}
+\end{equation}
+em que $\kappa_{dab} = (1/\eta_{dab}) - 1 = 0{,}04167$ acopla diretamente a dissipação do DAB à potência computacional $P_{TI}(t)$.
+
+% ==============================================================================
+\section{Sistema de Armazenamento Eletroquímico (BESS)}
+\label{sec:modelo_bess}
+
+O banco de baterias emprega a célula espacial de íons de lítio \textbf{Saft VES 16} \cite{saft_ves16}, cujos parâmetros primários verificados são: tensão nominal $V_{nom} = 3{,}6\text{ V}$, capacidade nominal $C_{nom} = 4{,}5\text{ Ah}$ ($16{,}2\text{ Wh}$/célula), energia específica mínima de $140\text{ Wh/kg}$, massa máxima $m_{cel} = 0{,}115\text{ kg}$, limite inferior de tensão em descarga contínua de $2{,}7\text{ V}$, tensão máxima de carga de $4{,}1\text{ V}$, corrente contínua recomendada de carga em LEO de $C/2{,}5$ ($1{,}8\text{ A}$), corrente máxima de descarga de $20\text{ A}$ e vida útil qualificada de $60.000$ ciclos em LEO a $40\%$ de DoD.
+
+Para compatibilização de tensão com o barramento HVDC ($108 \times 3{,}6\text{ V} = 388{,}8\text{ V}$), adota-se arquitetura em série $N_s = 108$ células por ramo, degradação de capacidade EOL de $20\%$ ($C_{EOL} = 0{,}80\,C_{nom}$), eficiências eletroquímicas $\eta_{ch} = \eta_{dis} = 0{,}97$ e envelope operacional estrito de estado de carga $SoC \in [0{,}70,\; 0{,}95]$ ($\Delta SoC_{\max} = 25\%$, assegurando margem sobre a qualificação de $40\%$ DoD — hipóteses de projeto). A dinâmica macroscópica do $SoC$ obedece ao balanço energético:
+\begin{equation}
+    \frac{\mathrm{d}\,SoC}{\mathrm{d}t} =
+    \begin{cases}
+        \dfrac{\eta_{ch}\,\eta_{bd}\,(-P_{bess,bus}(t))}{E_{EOL}}, & \text{se } P_{bess,bus}(t) < 0 \text{ (carga)}, \\[10pt]
+        -\dfrac{P_{bess,bus}(t)}{\eta_{dis}\,\eta_{bd}\,E_{EOL}}, & \text{se } P_{bess,bus}(t) > 0 \text{ (descarga)},
+    \end{cases}
+    \label{eq:dinamica_soc}
+\end{equation}
+onde $E_{EOL} = 0{,}80\, N_p\, N_s\, V_{nom}\, C_{nom}$ é a energia útil instalada em fim de vida. Para sustentar $P_{TI,ecl} = 18{,}0\text{ kW}$ mais $P_{aux} = 2{,}0\text{ kW}$ durante o eclipse crítico de $1.105{,}39\text{ s}$ mantendo $SoC \ge 0{,}70$ e garantindo fechamento periódico de carga na fase iluminada ($t_{sol} = T_{orb} - t_{ecl} = 4.820{,}99\text{ s}$), o dimensionamento fechado com $\eta_{POL,ext} = 1{,}0$ resulta em \textbf{19 ramos em paralelo ($19\text{P}108\text{S}$, $2.052$ células, $236{,}0\text{ kg}$ apenas em células)} e potência computacional sustentável máxima no sol de \textbf{$P_{TI,sol,sust} = 38{,}18\text{ kW}$} (sendo $40{,}0\text{ kW}$ a capacidade de pico térmico/elétrico da carga útil).
+
+% ==============================================================================
+\section{Cargas Computacionais de IA: DVFS e Fuga Térmica}
+\label{sec:modelo_ia}
+
+A carga útil computacional é composta por $N_{mod} = 100$ módulos aceleradores de referência \textbf{NVIDIA A100 SXM4} ($400\text{ W}$ de TDP nominal por módulo, $624\text{ TOPS}$ INT8 densos por módulo, totalizando $40{,}0\text{ kW}$ de pico) \cite{nvidia_a100_datasheet}. A potência elétrica dissipada integralmente em calor por módulo, em função da frequência de operação $f \in [300,\; 1.410]\text{ MHz}$ e da temperatura de junção $T_j$ (em $^\circ\text{C}$), é decomposta em parcelas estática fixa, dinâmica com escalonamento tensão-frequência (DVFS) e de corrente de fuga dependente da temperatura:
+\begin{equation}
+    P_{mod}(f, T_j) = P_{fix} + P_{dyn}(V, f) + P_{leak}(V, T_j),
+    \label{eq:potencia_ia_total}
+\end{equation}
+com:
 \begin{align}
-    |r_{in,400V}| &= \frac{V_{bus}^2}{P_{CPL}} = \frac{400^2}{20\times 10^3} = 8{,}00\,\Omega \\
-    |Z_{out,400}| &\le 0{,}1 \cdot |r_{in,400V}| = 0{,}800\,\Omega
+    V(f) &= V_{\min} + (V_{nom} - V_{\min}) \operatorname{clip}\!\left(\frac{f - f_v}{f_{nom} - f_v},\; 0,\; 1\right), \\
+    P_{dyn}(V, f) &= u \,(1 - \alpha_{fix} - \alpha_{leak}) \, P_{TDP} \left(\frac{V}{V_{nom}}\right)^2 \left(\frac{f}{f_{nom}}\right), \\
+    P_{leak}(V, T_j) &= \alpha_{leak}\, P_{TDP} \left(\frac{V}{V_{nom}}\right)^{k_v} \exp\!\Big[\beta_T (T_j - T_{ref})\Big],
 \end{align}
-mantendo uma margem de segurança estritamente superior ao teto exigido por projeto.
-
-\subsection{Subsistema de Armazenamento Eletroquímico (BESS)}
-\label{sec:bess}
-\label{sec:bess-orbital}
-
-A Figura~\ref{fig:bess-orbital} ilustra o comportamento dinâmico de carga e descarga do banco de baterias BESS ao longo de múltiplos ciclos orbitais em baixa órbita terrestre, considerando a carga base contínua $P_{base}$.
+onde $P_{TDP} = 400\text{ W}$, $f_{nom} = 1.410\text{ MHz}$ (\textit{GPU Boost Clock} da arquitetura A100), $u = 1{,}0$ (utilização plena), e os parâmetros da lei $V(f)$ e de fuga ($V_{\min} = 0{,}70\text{ V}$, $V_{nom} = 1{,}00\text{ V}$, $f_v = 0{,}50\,f_{nom}$, $\alpha_{fix} = 0{,}12$, $\alpha_{leak} = 0{,}15$, $k_v = 1{,}5$, $\beta_T = 0{,}025\text{ K}^{-1}$, $T_{ref} = 80^\circ\text{C}$) são adotados como hipóteses de projeto calibradas para fechar exatamente $P_{mod}(1.410\text{ MHz}, 80^\circ\text{C}) = 400{,}0\text{ W}$. A Figura~\ref{fig:ia_dvfs_fuga} evidencia o ganho cúbico aproximado do DVFS e o peso crescente da fuga térmica em $T_j = 80^\circ\text{C}$.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.90\textwidth]{figuras/figura_3_1_balanco_orbital_bess.png}
-    \caption{Balanço orbital de energia e evolução do estado de carga (SoC) do BESS.}
-    \label{fig:bess-orbital}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
+    \includegraphics[width=0.98\textwidth]{figuras/fig_3_2_ia_dvfs_fuga.png}
+    \caption{Modelo eletrotérmico do módulo acelerador de referência (NVIDIA A100 SXM4): (a) potência total por módulo em função da frequência $f$ e da temperatura de junção $T_j$; (b) decomposição entre parcelas fixa, dinâmica e de fuga em $T_j = 80^\circ\text{C}$.}
+    \label{fig:ia_dvfs_fuga}
 \end{figure}
 
-A gestão operacional do subsistema de armazenamento é classificada em três regimes:
-\begin{enumerate}[label=\textbf{\alph*.)}, leftmargin=1.5cm]
-    \item \textbf{Modo de Falha BAT-F01 (Falha do TEMS / Sobrecarga sem Modulação):} Na ausência de redução da carga de processamento das GPUs durante a umbra da Terra, o banco opera em descarga profunda acelerada, reduzindo drasticamente a retenção de capacidade cíclica da bateria.
-    \item \textbf{Regime Nominal com Modulação de Carga (Controle TEMS):} Modulação adaptativa das cargas de computação via técnicas de DVFS ao longo do eclipse, mantendo a profundidade de descarga ($\mathrm{DoD}$) estritamente dentro da faixa recomendada de $20\%$ a $30\%$, em conformidade com a norma ECSS-E-ST-20-32C.
-    \item \textbf{Recarga Solar e Proteção por Controle CC-CV:} Durante o período de insolação, a taxa de recarga solar é regulada em corrente constante (CC) até atingir a tensão de corte de flutuação, migrando suavemente para tensão constante (CV).
-\end{enumerate}
+% ==============================================================================
+\section{Planta Térmica de Referência no Vácuo (EDP 1D + EDO)}
+\label{sec:planta_termica}
 
-O comportamento estatístico do banco de baterias ao longo de 20 órbitas é detalhado na Tabela~\ref{tab:bess20}.
+A planta térmica de referência (\texttt{modelo\_termico.py}) acopla três subsistemas físicos em conservação estrita de energia: (i) o nó concentrado de junção dos módulos aceleradores ($T_j$, capacitância térmica $C_{mod} = 600\text{ J/K}$ e resistência térmica interna junção-coletor $R_{int} = 0{,}08\text{ K/W}$ por módulo — hipóteses de projeto); (ii) o nó do coletor/fluido térmico na raiz do radiador ($T_{raiz} = T(0,t)$, capacitância $C_{fluid} = 60.000\text{ J/K}$); e (iii) uma aleta metálica de radiador de liga de alumínio 6061-T6 ($k = 167\text{ W/(m}\cdot\text{K)}$, espessura $\delta = 2{,}0\text{ mm}$, meia-largura entre tubos $L = 0{,}15\text{ m}$, capacidade térmica superficial $c_a = 4.860\text{ J/(m}^2\cdot\text{K)}$) irradiando pelas duas faces para o espaço profundo ($T_s = 3{,}0\text{ K}$).
 
-\begin{table}[htbp]
-\centering
-\small
-\caption{Avaliação do BESS ao longo de 20 órbitas sob diferentes regimes e órbitas.}
-\label{tab:bess20}
-\begin{tabular}{p{3.6cm} p{1.9cm} r r r r p{2.4cm}}
-\toprule
-\textbf{Caso} & \textbf{Regime} & \textbf{$P_{IT}$ sol} & \textbf{$P_{pv}$} & \textbf{$SoC_{min}$} & \textbf{$V_{min}$} & \textbf{Status} \\
- & & \textbf{(kW)} & \textbf{(kW)} & \textbf{(\%)} & \textbf{(V)} & \\
-\midrule
-nominal\_32kW\_script & LEO 500 km & 32,00 & 44,45 & 45,97 & 375,83 & OK \\
-nominal\_40kW\_cap4 & LEO 500 km & 40,00 & 44,45 & 0,00 & $<324$ & VIOLA (3ª órbita) \\
-nominal\_Pmax\_sust & LEO 500 km & 37,99 & 46,14 & 45,58 & 375,32 & OK \\
-falha\_BAT\_F01 & LEO 500 km & 40,00 & 44,45 & 0,00 & $<324$ & VIOLA ($t\approx19{,}4$~min) \\
-nominal\_32kW\_script & SSO 700 km & 32,00 & 44,45 & 28,08 & 351,13 & OK \\
-nominal\_40kW\_cap4 & SSO 700 km & 40,00 & 44,45 & 0,00 & $<324$ & VIOLA (2ª órbita) \\
-nominal\_Pmax\_sust & SSO 700 km & 38,10 & 46,14 & 27,75 & 350,66 & OK \\
-falha\_BAT\_F01 & SSO 700 km & 40,00 & 44,45 & 0,00 & $<324$ & VIOLA ($t\approx108{,}1$~min) \\
-nominal\_32kW\_script & GEO & 32,00 & 44,45 & 20,42 & 346,14 & OK \\
-nominal\_40kW\_cap4 & GEO & 40,00 & 44,45 & 20,42 & 346,14 & OK \\
-nominal\_Pmax\_sust & GEO & 40,00 & 46,14 & 20,42 & 346,14 & OK \\
-falha\_BAT\_F01 & GEO & 40,00 & 44,45 & 0,00 & $<324$ & VIOLA ($t\approx19{,}5$~min) \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor (Script~3.1, Apêndice~B).}
-\end{table}
-
-A potência máxima sustentável de processamento de dados ($P_{IT,max}$) frente à capacidade fotovoltaica da asa solar é confrontada na Tabela~\ref{tab:pitmax}.
-
-\begin{table}[htbp]
-\centering
-\small
-\caption{Capacidade de potência máxima de TI sustentável em fim de vida (EOL).}
-\label{tab:pitmax}
-\begin{tabular}{p{2.2cm} p{4.2cm} r r r}
-\toprule
-\textbf{Regime} & \textbf{Cenário Fotovoltaico EOL} & \textbf{$P_{pv}$ (kW)} & \textbf{$P_{IT,max}$ (kW)} & \textbf{Folga (kW)} \\
-\midrule
-LEO 500 km & 85$^\circ$C (clamp 444,4 V) & 46,14 & 37,99 & $-2{,}01$ \\
-LEO 500 km & 65$^\circ$C ($V_{bus}=400$ V) & 49,73 & 40,00 & 0,00 \\
-LEO 500 km & 28$^\circ$C (3 diodos) & 54,18 & 40,00 & 0,00 \\
-SSO 700 km & 85$^\circ$C (clamp 444,4 V) & 46,14 & 38,10 & $-1{,}90$ \\
-SSO 700 km & 65$^\circ$C ($V_{bus}=400$ V) & 49,73 & 40,00 & 0,00 \\
-SSO 700 km & 28$^\circ$C (3 diodos) & 54,18 & 40,00 & 0,00 \\
-GEO & 85$^\circ$C (clamp 444,4 V) & 46,14 & 40,00 & 0,00 \\
-GEO & 65$^\circ$C ($V_{bus}=400$ V) & 49,73 & 40,00 & 0,00 \\
-GEO & 28$^\circ$C (3 diodos) & 54,18 & 40,00 & 0,00 \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor. Todos os cenários atendem a 20 órbitas completas.}
-\end{table}
-
-Durante a passagem pelo cone de sombra da Terra, a perda de potência dissipada por efeito Joule no pack eletroquímico é deduzida de forma desmembrada por:
-\begin{equation}
-\begin{split}
-    \bar{P}_{J} &= R_{0} \cdot \bar{I}_{ecl}^2 = R_{0} \left( \frac{P_{base}}{\bar{V}_{bat}} \right)^2 \\
-                &= 45\times 10^{-3} \times \left( \frac{1000}{375{,}83} \right)^2 \approx 0{,}319\,\mathrm{W/pack} \implies \bar{P}_{J,tot} = 58{,}3\,\mathrm{W}
-\end{split}
-\label{eq:perda_joule_bess}
-\end{equation}
-
-\subsection{Proteção de Alta Tensão e Chaves de Estado Sólido (SSPC)}
-\label{sec:sspc}
-
-A atuação do controlador de potência de estado sólido (SSPC) sob evento de curto-circuito franco no barramento primário é apresentada na Figura~\ref{fig:curto}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{figuras/figura_3_2_falhas_eletrotermicas_sspc.png}
-    \caption{Resposta transitória de extinção de falta e sobretensão induzida no SSPC.}
-    \label{fig:curto}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{figure}
-
-O comportamento térmico e a taxa de quebra de corrente $di/dt$ obedecem às limitações físicas impostas pela susceptibilidade radiativa dos semicondutores de potência \cite{galloway2018,lauenstein2018}. O balanço térmico do chassi e dos dissipadores de calor em regime contínuo e transitório é reportado na Tabela~\ref{tab:chassi}.
-
-\begin{table}[htbp]
-\centering
-\small
-\caption{Diagnóstico de perdas e temperatura máxima do estágio conversor.}
-\label{tab:chassi}
-\begin{tabular}{p{2.2cm} r r r r r r p{1.4cm}}
-\toprule
-\textbf{Caso Térmico} & \textbf{$\eta_{dab}$} & \textbf{$G_{th}$} & \textbf{$T_{sink}$} & \textbf{$P_{loss}$} & \textbf{$T_{max}$} & \textbf{Margem} & \textbf{Status} \\
- & \textbf{(\%)} & \textbf{(W/K)} & \textbf{($^\circ$C)} & \textbf{(W)} & \textbf{($^\circ$C)} & \textbf{vs. 65$^\circ$C} & \\
-\midrule
-nominal & 95,0 & 120,0 & 45,00 & 2843,2 & 68,69 & $-3{,}69$ & VIOLA \\
-falha\_WCA & 90,0 & 80,0 & 45,00 & 5343,2 & 111,63 & $-46{,}63$ & VIOLA \\
-nominal & 95,0 & 120,0 & 51,94 & 2843,2 & 75,63 & $-10{,}63$ & VIOLA \\
-falha\_WCA & 90,0 & 80,0 & 51,94 & 5343,2 & 118,57 & $-53{,}57$ & VIOLA \\
-nominal & 95,0 & 120,0 & 55,00 & 2843,2 & 78,69 & $-13{,}69$ & VIOLA \\
-falha\_WCA & 90,0 & 80,0 & 55,00 & 5343,2 & 121,63 & $-56{,}63$ & VIOLA \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor (Script~3.1, integração em 2,5~h).}
-\end{table}
-
-A Tabela~\ref{tab:wca-hvdc} sintetiza os parâmetros limites de projeto e condições de pior caso (\textit{Worst-Case Analysis} --- WCA) para o barramento HVDC.
-
-\begin{table}[htbp]
-\centering
-\small
-\caption{Parâmetros de projeto e limites operacionais para o barramento HVDC.}
-\label{tab:wca-hvdc}
-\begin{tabular}{p{3.2cm} p{1.2cm} p{1.8cm} p{2.2cm} p{1.8cm} p{3.2cm}}
-\toprule
-\textbf{Parâmetro} & \textbf{Símb.} & \textbf{Mínimo} & \textbf{Nominal} & \textbf{Máximo} & \textbf{Referência / Origem} \\
-\midrule
-Tensão do barramento & $V_{bus}$ & 324,0 V & 400,0 V & 442,8 V & \cite{bever2006hvguide,ferguson2006nasastd4005,nasa2026smallspacecraft} \\
-Potência demandada & $P_{load}$ & 3,0 kW & 42,24 kW & 50,0 kW & 2 racks IA, perdas e bus \\
-Rendimento do DAB & $\eta_{dab}$ & 90,0\% & 95,0\% & 96,55\% & \cite{huselstein2024,st_um3198} \\
-Rendimento do Buck & $\eta_{buck}$ & --- & 91,0\% & 96,6\% & \cite{ti_tps50601a,renesas_isl70003seh} \\
-Carga em eclipse & $P_{base}$ & --- & 1,00 kW & --- & Hipótese de projeto \\
-BESS ($E_{bat}, R_0$) & Pack & 8,4 kWh / 32~m$\Omega$ & 9,0 kWh / 45~m$\Omega$ & 9,6 kWh / 85~m$\Omega$ & Células espaciais Li-ion \\
-Resistência de linha & $R_{dist}$ & 10 m$\Omega$ & 14 m$\Omega$ & 50 m$\Omega$ & Barramento alumínio AWG 4 \\
-Amortecimento & $\zeta$ & 0,097 & 0,358 & 0,484 & Rede passiva com ESR \\
-Indutância e capacit. & $L, C$ & 1,0 $\mu$H / 1,5 mF & 1,8 $\mu$H / 4,7 mF & 4,0 $\mu$H / 6,0 mF & Desacoplamento HVDC \\
-Tempo de corte SSPC & $t_{trip}$ & 8 $\mu$s & 15 $\mu$s & 74,54 $\mu$s & Limiar adiabático GaN \\
-Religamento de falta & $N_{rel}$ & 0 & --- & 0 & Latch-off definitivo \\
-Condutância ao LHP & $G_{th}$ & 80 W/K & 120 W/K & 160 W/K & \cite{gilmore2002handbook,meseguer2012thermal} \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{table}
-
-\subsection{Modelagem do Gerador Fotovoltaico Multijunção e Rastreamento MPPT}
-\label{sec:fv}
-
-O número de strings em paralelo necessárias para suprir a demanda da carga de pico no barramento regulado é governado pela relação de dimensionamento:
-\begin{equation}
-    N_{p,req} = \left\lceil \frac{P_{bus,alvo}}{N_s \cdot P_{mpp,cel} \cdot \eta_{buck}} \right\rceil
-\end{equation}
-
-Para o nó de $50\text{ kW}$ em início de vida (BOL), a potência instalada e a tensão de máxima potência da string sob temperatura de catálogo ($28^\circ\text{C}$) são expressas por:
+Integrando a condição de contorno radiativa 3D na espessura da aleta fina (número de Biot transversal $\ll 1$), o campo unidimensional de temperatura $T(x,t)$ ($0 < x < L$) e a temperatura de junção $T_j(t)$ satisfazem o sistema EDP-EDO não linear:
 \begin{align}
-    P_{BOL} &= 52.416 \times (2{,}406\text{ V} \times 0{,}5282\text{ A}) \approx 66{,}61\,\mathrm{kW} \\
-    V_{mp,str}(+28^\circ\mathrm{C}) &= 208 \times 2{,}406\,\mathrm{V} = \mathbf{500{,}45\,\mathrm{V}}
+    c_a \frac{\partial T}{\partial t} &= \frac{\partial}{\partial x}\!\left(k \delta \frac{\partial T}{\partial x}\right) - 2\,\varepsilon\,\sigma \left(T^4 - T_s^4\right) + q_{abs}(t), && 0 < x < L, \label{eq:edp_aleta} \\
+    \left.\frac{\partial T}{\partial x}\right|_{x=L} &= 0, && \text{(plano de simetria adiabático)} \label{eq:bc_ponta} \\
+    \frac{C_{fluid}}{\ell}\frac{\mathrm{d}T(0,t)}{\mathrm{d}t} &= k\delta \left.\frac{\partial T}{\partial x}\right|_{x=0} + \frac{N_{mod}}{\ell}\left[\frac{T_j - T(0,t)}{R_{int}} + \kappa_{dab} P_{mod}(f, T_j)\right] + \frac{Q_{rest}(t)}{\ell}, && \text{(contorno na raiz)} \label{eq:bc_raiz} \\
+    C_{mod}\frac{\mathrm{d}T_j}{\mathrm{d}t} &= P_{mod}(f, T_j) - \frac{T_j - T(0,t)}{R_{int}}, && \text{(EDO da junção)} \label{eq:edo_modulo}
 \end{align}
+onde $\sigma = 5{,}670374419 \times 10^{-8}\text{ W/(m}^2\cdot\text{K}^4)$ é a constante exata de Stefan-Boltzmann \cite{tiesinga2021codata}, $\ell = A_{pl} / L$ é o comprimento total equivalente de tubos coletores para uma área de planta $A_{pl}$ (área emissora total $A_{emit} = 2 A_{pl}$ nas duas faces), $q_{abs}(t)$ é o fluxo ambiental absorvido por unidade de área de planta (soma do infravermelho terrestre e do albedo solar incidente nas duas faces) e $Q_{rest}(t)$ agrupa o calor residual dos conversores Buck/bidirecional e da carga auxiliar.
 
-A Tabela~\ref{tab:pbus} resume a sensibilidade da extração de potência e o número de strings exigidas em função da temperatura de operação.
+Para o revestimento termo-óptico do radiador, adota-se o revestimento branco inorgânico \textbf{Z-93} em fim de vida conservador (estimativa de 30 anos em LEO da \textit{Space Station Freedom}: $\alpha_s = 0{,}36$, $\varepsilon = 0{,}90$, conforme resumo oficial NASA NTRS \cite{hasegawa1992z93}; como referência comparativa de sensibilidade, emprega-se Teflon prateado Ag/FEP com $\alpha_s = 0{,}085$ e $\varepsilon = 0{,}76$ \cite{heaney1974agfep}). A discretização espacial por volumes finitos conservativos ($N = 160$ nós) e integração temporal pelo método de Crank-Nicolson com partida amortecida de Rannacher (dois meios passos de Euler implícito) e resolução de Newton-Raphson garante ordem de convergência $2{,}00$ verificada e fechamento global de energia da ordem de $10^{-13}$ (em regime permanente) a $10^{-6}$ (em janelas transientes).
 
-\begin{table}[htbp]
-\centering
-\small
-\caption{Capacidade de extração do arranjo fotovoltaico em função da temperatura.}
-\label{tab:pbus}
-\begin{tabular}{r r r r r r r}
-\toprule
-\textbf{$T$ ($^\circ$C)} & \textbf{$V_{bat}$ (V)} & \textbf{$V_{ref,str}$ (V)} & \textbf{$P_{BOL}$ (kW)} & \textbf{$P_{bus,EOL}$ (kW)} & \textbf{Fração MPP (\%)} & \textbf{$N_{p,req}$} \\
-\midrule
-28,0 & 400,0 & 500,45 & 67,53 & 54,18 & 100,00 & 217 \\
-28,0 & 442,8 & 500,45 & 67,53 & 54,18 & 100,00 & 217 \\
-65,0 & 400,0 & 453,77 & 61,98 & 49,73 & 100,00 & 236 \\
-65,0 & 442,8 & 492,00 & 61,98 & 38,81 & 78,03 & 302 \\
-85,0 & 400,0 & 444,44 & 58,95 & 46,14 & 97,55 & 254 \\
-85,0 & 442,8 & 492,00 & 58,95 & 11,75 & 24,85 & 998 \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor (Script~3.2).}
-\end{table}
-
-A célula fotovoltaica espacial de tripla junção GaInP/GaAs/Ge com diodos de desvio (\textit{bypass}) integrados \cite{cotal2000triplejunction,spectrolab_xtj_prime} é apresentada esquematicamente na Figura~\ref{fig:celula}.
+Dimensionando a área do radiador para sustentar $P_{TI,sol,sust} = 38{,}18\text{ kW}$ no sol com $T_j \le 80^\circ\text{C}$, obtém-se $A_{pl} = 49{,}90\text{ m}^2$ ($A_{emit} = 99{,}80\text{ m}^2$). A Figura~\ref{fig:planta_termica_s0_s1} demonstra a necessidade física do controle ativo: com essa mesma área de radiador, a operação contínua a $1.410\text{ MHz}$ (cenário S0) eleva a junção a $T_{j,\max} = 86{,}67^\circ\text{C}$ (violando o limite de $80^\circ\text{C}$), ao passo que o despacho sustentável (cenário S1) mantém $T_{j,\max} = 78{,}52^\circ\text{C}$.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.70\textwidth]{figuras/figura_3_2_1_modelo_3_diodos.png}
-    \caption{Circuito elétrico equivalente com três subcélulas fotovoltaicas em série.}
-    \label{fig:celula}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: adaptado de Cotal et al. \cite{cotal2000triplejunction}.}
+    \includegraphics[width=0.98\textwidth]{figuras/fig_3_3_planta_termica_s0_s1.png}
+    \caption{Resposta térmica em regime periódico da planta de referência ($A_{pl} = 49{,}90\text{ m}^2$, Z-93 EOL): (a) cenário S0 ($1.410\text{ MHz}$ contínuo, violação de $80^\circ\text{C}$); (b) cenário S1 (despacho energeticamente sustentável, $T_{j,\max} = 78{,}52^\circ\text{C}$).}
+    \label{fig:planta_termica_s0_s1}
 \end{figure}
 
-Os parâmetros eletroquímicos de cada subcamada semicondutora são sumarizados na Tabela~\ref{tab:subcel}.
+% ==============================================================================
+\section{Modelo Substituto Preditivo Baseado em Física (PINN) e Estimador de Gradiente}
+\label{sec:modelo_pinn}
 
-\begin{table}[htbp]
-\centering
-\small
-\caption{Parâmetros elétricos e papel físico de cada subcamada da célula XTJ Prime.}
-\label{tab:subcel}
-\begin{tabular}{p{3.2cm} r r r r p{3.4cm}}
-\toprule
-\textbf{Subcélula} & \textbf{$V_{oc,i}$ (V)} & \textbf{$n_i$} & \textbf{$R_{sh,i}$ ($\Omega$)} & \textbf{$J_{sc,i}$ (mA/cm$^2$)} & \textbf{Papel Físico} \\
-\midrule
-Topo (GaInP) & $\approx 1{,}42$ & 1,15 & 2500 & 18,00 & Limitante em início de vida. \\
-Intermediária (GaAs) & $\approx 1{,}01$ & 1,15 & 3500 & 18,35 & Limitante em fim de vida. \\
-Base (Ge) & $\approx 0{,}29$ & 1,75 & 200 & 26,50 & Excesso no infravermelho. \\
-Célula completa & 2,720 & 4,05 & --- & 18,00 & $R_s=0{,}0914\,\Omega$ calibrado. \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: Cotal et al. \cite{cotal2000triplejunction} com calibração empírica do autor.}
-\end{table}
+Para viabilizar o controle preditivo em tempo real sem executar o solucionador de volumes finitos a cada passo de otimização, constrói-se um \textbf{Modelo Substituto Preditivo Baseado em Física (\textit{Physics-Informed Neural Network} -- PINN)} que aprende a solução paramétrica do sistema Eqs.~(\ref{eq:edp_aleta})--(\ref{eq:edo_modulo}) sobre uma janela deslizante de predição $W = 300\text{ s}$ (hipótese de projeto). Ressalta-se que o modelo constitui um substituto preditivo \textit{in silico}, e não um gêmeo digital embarcado (ausência de enlace bidirecional com hardware físico).
 
-A Figura~\ref{fig:fv} apresenta as curvas características I-V e P-V da string de 208 células sob diferentes patamares de temperatura orbital.
+A arquitetura (\texttt{modelo\_pinn.py}, versão 2) emprega duas redes neurais totalmente conectadas paralelas com ativação tangente hiperbólica ($\tanh$, 4 camadas ocultas de 64 neurônios cada, totalizando $26.178$ parâmetros): $\hat{T}(\xi, \tau; \mathbf{p})$ para o campo adimensional da aleta ($\xi = x/L \in [0,1]$, $\tau = t/W \in [0,1]$) e $\hat{T}_j(\tau; \mathbf{p})$ para a junção, condicionadas ao vetor físico de seis entradas $\mathbf{p} = (f,\; q_{abs},\; Q_{rest},\; T_{j,0},\; T_{raiz,0},\; \Delta_{ponta})$, onde $\Delta_{ponta} = T_{raiz,0} - T_{ponta,0} \in [0,\; 15]\text{ K}$ parametriza o perfil quadrático inicial da aleta $T_0(\xi) = (T_{raiz,0} - \Delta_{ponta}) + \Delta_{ponta}(1 - \xi)^2$ (cuja divergência máxima frente ao perfil exato do solver em regime periódico foi medida em $\le 0{,}03\text{ K}$).
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{figuras/figura_3_3_desempenho_termico_radiacao_am0.png}
-    \caption{Curvas características I-V e P-V do gerador fotovoltaico sob espectro AM0.}
-    \label{fig:fv}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{figure}
-
-A caracterização paramétrica global do subsistema solar é consolidada na Tabela~\ref{tab:fv-param}.
-
-\begin{table}[htbp]
-\centering
-\small
-\caption{Parâmetros nominais e limites do subsistema de geração fotovoltaica.}
-\label{tab:fv-param}
-\begin{tabular}{p{3.0cm} p{1.2cm} p{1.8cm} p{2.2cm} p{2.0cm} p{2.4cm}}
-\toprule
-\textbf{Parâmetro} & \textbf{Símb.} & \textbf{Mínimo} & \textbf{Nominal} & \textbf{Máximo} & \textbf{Classificação} \\
-\midrule
-Irradiância solar & $G_{AM0}$ & 1322 W/m$^2$ & 1361 W/m$^2$ & 1414 W/m$^2$ & ASTM E490-22 \\
-Tensões subcélula & $V_{oc,1..3}$ & --- & 1,42/1,01/0,29 V & --- & Catálogo COTS \\
-Área ativa (nó) & $A_{at,no}$ & 58,95 kW & 158,19 m$^2$ & 85,52 kW & 52.416 células \\
-Área total (cluster) & $A_{at,tot}$ & --- & 3163,8 m$^2$ & 1,35 MW & 20 nós orbitais \\
-Tensão MPP string & $V_{mp,str}$ & 429,0 V & 453,8 V & 667,0 V & Modelo 3 diodos \\
-Retenção 10 anos & EOL & 88,17\% & 90,42\% & 91,74\% & Radiação DDD \\
-Potência líquida EOL & $P_{bus,EOL}$ & 46,14 kW & 49,73 kW & 54,18 kW & Regulação em 400 V \\
-Ponto quente (\textit{hot spot}) & $T_{hs}$ & --- & 60,0$^\circ$C & 279,4$^\circ$C & Com e sem bypass \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{table}
-
-A dinâmica transitória de rastreamento de ponto de máxima potência com o algoritmo adaptativo P\&O-AP e a proteção contra pontos quentes (\textit{hot spots}) são ilustradas na Figura~\ref{fig:mppt}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{figuras/figura_3_4_contingencias_hotspot_mppt.png}
-    \caption{Rastreamento de máxima potência pelo algoritmo P\&O-AP e resposta térmica.}
-    \label{fig:mppt}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{figure}
-
-\subsection{Modelagem Térmico-Elétrica dos Semicondutores GaN e Conversores}
-\label{sec:gan-dcdc}
-\label{sec:conversores_estaticos}
-\label{sec:magneticos}
-
-Os estágios de comutação e os semicondutores GaN de alta frequência empregados no conversor multiportas são apresentados na Figura~\ref{fig:dab}, fundamentados na topologia proposta por Sarfi e Beik \cite{sarfi2024mwscale}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.80\textwidth]{figuras/figura_3_4_estagios_comutacao_DC_DC.png}
-    \caption{Esquema elétrico dos estágios de comutação do conversor CC-CC primário.}
-    \label{fig:dab}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: adaptado de Sarfi e Beik \cite{sarfi2024mwscale}.}
-\end{figure}
-
-A resistência térmica de condução da junção para a carcaça e a impedância térmica equivalente $R_{th}$ do encapsulamento obedecem à formulação analítica:
+A condição inicial em $\tau = 0$ é imposta de forma exata por construção (\textit{hard initial condition}):
 \begin{equation}
-    R_{th,eq} = R_{th,jc} + R_{th,TIM} + R_{th,base}
-    \label{eq:rth_gan}
+    \hat{T}(\xi, \tau; \mathbf{p}) = T_0(\xi; \mathbf{p}) + \tau\,\Delta T_{esc}\,\mathcal{N}_{aleta}(\xi, \tau, \tilde{\mathbf{p}}), \qquad
+    \hat{T}_j(\tau; \mathbf{p}) = T_{j,0} + \tau\,\Delta T_{esc}\,\mathcal{N}_{mod}(\tau, \tilde{\mathbf{p}}),
+    \label{eq:pinn_hard_ic}
 \end{equation}
+zerando identicamente o resíduo inicial ($\mathcal{L}_{ic} \equiv 0$). O treinamento é estritamente \textbf{baseado em física pura} (sem termo de dados supervisionados do solver, $w_{data} = 0$), minimizando os resíduos das Eqs.~(\ref{eq:edp_aleta})--(\ref{eq:edo_modulo}) normalizados em \textbf{kelvin equivalente} (dividindo a EDP por $h_{rad} = 4(2\varepsilon\sigma)T_{ref}^3$, o contorno da raiz por $s/R_{int}$ e multiplicando a EDO do módulo por $R_{int}$):
+\begin{equation}
+    \mathcal{L}_{fis}(\theta) = \mathcal{L}_{pde}(\theta) + \mathcal{L}_{bc}(\theta) + \mathcal{L}_{mod}(\theta),
+    \label{eq:pinn_loss_keq}
+\end{equation}
+com amostragem correlacionada no domínio operacional físico ($T_{j,0} - T_{raiz,0} \in [5,\; 40]\text{ K}$) e otimização em duas fases: $20.000$ iterações de Adam com decaimento cosseno seguidas de refinamento quasi-Newton (L-BFGS com busca de linha de Wolfe forte em lote fixo de colocação).
 
-A Tabela~\ref{tab:tj} analisa a temperatura de junção resultante em função do arranjo e do número de chaves empregadas.
+Como a temperatura na ponta da aleta ($T_{ponta}$) não é instrumentada em voo — dispondo o sistema apenas das leituras do diodo térmico interno das GPUs ($T_j$) e do sensor RTD Pt100 no coletor ($T_{raiz}$, Classe A segundo a IEC 60751, tolerância $\pm(0{,}15 + 0{,}002|T|)^\circ\text{C}$, ruído de leitura modelado em $\sigma_{RTD} = 0{,}05^\circ\text{C}$ e $\sigma_{Tj} = 0{,}5^\circ\text{C}$ a $T_s = 1{,}0\text{ s}$ como hipóteses de projeto) —, acopla-se um \textbf{estimador de $\Delta_{ponta}$ por mínimos quadrados ponderados} sobre uma janela de observação de $w_{obs} = 60\text{ s}$, utilizando a própria PINN como modelo direto.
 
-\begin{table}[htbp]
-\centering
-\small
-\caption{Temperatura de junção $T_j$ e margem térmica nos semicondutores GaN.}
-\label{tab:tj}
-\begin{tabular}{l r r r r r r}
-\toprule
-\textbf{Arranjo de Chaves} & \textbf{$T_j (T_c=45)$} & \textbf{$T_j (T_c=55)$} & \textbf{$T_j (T_c=60)$} & \textbf{$T_j (T_c=65)$} & \textbf{$T_{c,max}^{105}$} & \textbf{$T_{c,max}^{125}$} \\
-\midrule
-4 chaves (1 por ramo) & 161,0 & 178,3 & 187,0 & 195,7 & 12,7 & 24,2 \\
-8 chaves (2 por ramo) & 72,4 & 83,6 & 89,2 & 94,8 & 74,2 & 92,0 \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor com $R_{th}=1{,}52$~K/W (4 chaves) e $0{,}76$~K/W (8 chaves).}
-\end{table}
+% ==============================================================================
+\section{Formulação do Controlador Preditivo TEMS/DVFS}
+\label{sec:formulacao_tems}
 
-A sensibilidade às resistências parasitas de interligação das trilhas e condutores do secundário é avaliada na Tabela~\ref{tab:sens-interlig}.
-
-\begin{table}[htbp]
-\centering
-\small
-\caption{Sensibilidade das perdas por condução e do rendimento às interligações.}
-\label{tab:sens-interlig}
-\begin{tabular}{r r r r}
-\toprule
-\textbf{$R_{interlig}$ (m$\Omega$)} & \textbf{$P_{cond,sec}$ (W)} & \textbf{$P_{loss,total}$ (W)} & \textbf{$\eta$ (\%)} \\
-\midrule
-0,000 & 211,8 & 587,4 & 97,15 \\
-0,300 & 263,9 & 639,5 & 96,90 \\
-0,732 & 338,9 & 714,5 & 96,55 \\
-1,000 & 385,5 & 761,1 & 96,33 \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor (Script~3.4).}
-\end{table}
-
-A decomposição das perdas e o perfil de rendimento eletrotérmico são ilustrados na Figura~\ref{fig:gan}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{figuras/figura_3_7_eletrotermica_gan_perdas.png}
-    \caption{Decomposição de perdas de condução e comutação nos semicondutores GaN.}
-    \label{fig:gan}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{figure}
-
-A Tabela~\ref{tab:param-fontes} consolida a proveniência dos parâmetros do estágio de conversão.
-
-\begin{table}[htbp]
-\centering
-\small
-\caption{Origem e justificativa dos parâmetros adotados nos conversores.}
-\label{tab:param-fontes}
-\begin{tabular}{p{4.2cm} p{3.2cm} p{6.4cm}}
-\toprule
-\textbf{Parâmetro} & \textbf{Valor} & \textbf{Origem / Justificativa} \\
-\midrule
-$R_{th,jc}$ e $R_{DS(on)}$ do GS66516T & 0,27~K/W; 25~m$\Omega$ & Catálogo do fabricante \cite{infineon2024gs66516t} \\
-$R_{th,TIM}$ & 0,85~K/W & Especificação de interface térmica \\
-$R_{DS(on)}$ do retificador & 6~m$\Omega$ (máx.) & Catálogo IR HiRel \cite{infineon_ig1nt052n10r} \\
-$I_d$ e tensão de bloqueio & 52~A e 100~V & Catálogo IR HiRel \cite{infineon_ig1nt052n10r} \\
-Dispositivos por posição & 12 (48 no total) & Derating de corrente adotado \\
-Interligações secundário & 0,732~m$\Omega$ & Resistência distribuída de barramento \\
-Capacitores MLCC 2220 & $C_{ef}=11\,\mu\mathrm{F}$ & Catálogo Kyocera AVX \cite{kyocera_avx_esa} \\
-ESR do banco de MLCC & 0,27~m$\Omega$ & Associação de 1364 capacitores \\
-Capacitores de Tântalo & CWR Series & Qualificação espacial \cite{vishay_cwr_space} \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{table}
-
-A resposta em frequência da impedância de saída frente ao Critério de Middlebrook é demonstrada na Figura~\ref{fig:middlebrook}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{figuras/figura_3_8_estabilidade_cpl_banco_capacitivo.png}
-    \caption{Curvas de impedância de saída e limites de estabilidade de Middlebrook.}
-    \label{fig:middlebrook}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{figure}
-
-\subsection{Modelo Eletroquímico de Thevenin de 2ª Ordem e Estimador AUKF}
-\label{sec:thevenin-aukf}
-\label{sec:bess_eletrotermica_aukf}
-
-O circuito elétrico equivalente de Thevenin com dois ramos RC paralelos para modelagem dos fenômenos de transferência de carga e polarização difusiva é ilustrado na Figura~\ref{fig:thevenin}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.60\textwidth]{figuras/figura_3_5_1_circuito_thevenin.png}
-    \caption{Circuito equivalente de Thevenin de 2ª ordem para a célula de Li-ion.}
-    \label{fig:thevenin}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: adaptado de Feng et al. \cite{feng2022soc}.}
-\end{figure}
-
-A evolução temporal das sobretensões de polarização eletroquímica e a resposta térmica sob estresse de ciclagem são apresentadas na Figura~\ref{fig:bat-term}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{figuras/figura_3_5_dinamica_dp_eletroquimica.png}
-    \caption{Dinâmica de relaxamento de tensão dos ramos RC e gradiente térmico.}
-    \label{fig:bat-term}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{figure}
-
-A Tabela~\ref{tab:bess-orb} sumariza as métricas de recarga e dissipação térmica no pack ao longo da órbita.
-
-\begin{table}[htbp]
-\centering
-\small
-\caption{Métricas eletrotérmicas do pack BESS sob diferentes temperaturas de string.}
-\label{tab:bess-orb}
-\begin{tabular}{l r r r r r r r}
-\toprule
-\textbf{Cenário} & \textbf{$P_{chg}$ (kW)} & \textbf{$SoC_{min}$ (\%)} & \textbf{$SoC_{fim}$ (\%)} & \textbf{$\bar{I}_{ecl}$ (A)} & \textbf{$\bar{P}_{J}$ (W)} & \textbf{$T_{pico}$ ($^\circ$C)} & \textbf{$T_{eq}$ ($^\circ$C)} \\
-\midrule
-$85^\circ$C & 4,98 & 27,89 & 99,67 & 51,0 & 62,7 & 25,9 & 23,8 \\
-$65^\circ$C & 6,57 & 28,18 & 99,96 & 50,9 & 66,0 & 26,1 & 24,2 \\
-$28^\circ$C & 11,02 & 28,21 & 99,99 & 50,9 & 70,3 & 26,5 & 24,8 \\
-\bottomrule
-\end{tabular}
-\vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor.}
-\end{table}
-
-A arquitetura computacional do Filtro de Kalman Adaptativo Unscented (AUKF) livre de derivadas \cite{JulierUhlmann2004,feng2022soc} e o rastreamento em malha fechada do estado de carga sob degraus de potência são apresentados na Figura~\ref{fig:aukf-dupla}.
-
-\begin{figure}[htbp]
-    \centering
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{figuras/figura_3_5_3_estrutura_algoritmo.png}
-        \caption{Estrutura do estimador AUKF.}
-        \label{fig:aukf-alg}
-    \end{minipage}\hfill
-    \begin{minipage}{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{figuras/figura_3_6_convergencia_aukf_estresse.png}
-        \caption{Convergência sob degrau de carga.}
-        \label{fig:aukf-convergencia}
-        \label{fig:aukf-dupla}
-    \end{minipage}
-    \vspace{2pt}\par\noindent{\footnotesize Fonte: elaborado pelo autor com base em \cite{JulierUhlmann2004,feng2022soc}.}
-\end{figure}
+O Sistema de Gerenciamento Térmico-Energético (TEMS) opera em horizonte deslizante sobre a janela $W = 300\text{ s}$, recebendo a cada ciclo de controle as medições de $T_j(t)$, $T_{raiz}(t)$ e $SoC(t)$, estimando $\hat{\Delta}_{ponta}(t)$ e selecionando a frequência de relógio $f(t) \in [300,\; 1.410]\text{ MHz}$ (ou alocação equivalente de módulos ativos) que maximiza o rendimento computacional útil $P_{TI}$ sujeito às restrições rígidas de integridade térmica e energética:
+\begin{equation}
+    \max_{f \in [f_{\min},\, f_{nom}]} \; P_{TI}(f, \hat{T}_j)
+    \quad \text{sujeito a} \quad
+    \max_{\tau \in (0, 1]} \hat{T}_j(\tau; f) \le T_{j,\max} - m_T,
+    \qquad
+    SoC_{min} \le SoC(t + \Delta t) \le SoC_{max},
+    \label{eq:tems_otimizacao}
+\end{equation}
+em que $T_{j,\max} = 80^\circ\text{C}$, $m_T > 0$ é a margem de segurança térmica (que acomoda o erro residual da PINN e o viés de sensoriamento), $SoC_{min} = 0{,}70$ e $SoC_{max} = 0{,}95$. A verificação comparativa da PINN e o desempenho em malha fechada do controlador TEMS frente aos cenários sem controle e de controle reativo são apresentados no Capítulo~4.

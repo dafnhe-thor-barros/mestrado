@@ -12,27 +12,27 @@
 
 Este anexo consolida os extratos paramétricos das folhas de dados técnicos (\textit{datasheets}) e especificações de qualificação dos principais dispositivos semicondutores, células eletroquímicas e materiais magnéticos empregados na modelagem matemática e simulações dos Capítulos~3 e~4.
 
-\subsubsection*{A.1 Célula Solar Espacial de Tripla Junção (Spectrolab XTJ Prime)}
-Resume os dados de catálogo publicados pela Spectrolab para a célula solar de tripla junção GaInP/GaAs/Ge sob AM0 ($1353\,\mathrm{W/m^2}$, $28^\circ\text{C}$). Para a área ativa adotada de $30{,}18\,\mathrm{cm^2}$, os parâmetros elétricos e coeficientes térmicos são apresentados na Tabela~\ref{tab:anexo_xtj_prime}.
+\subsubsection*{A.1 Célula Solar Espacial de Tripla Junção (Spectrolab XTJ 29,5\%)}
+Resume os dados de catálogo publicados pela Spectrolab para a célula solar de tripla junção GaInP/GaAs/Ge \textbf{NeXt Triple Junction (XTJ)} sob espectro AM0 ($1353\,\mathrm{W/m^2}$, $28^\circ\text{C}$, folha de dados rev. 2010/2012). Para a área ativa de $26{,}62\,\mathrm{cm^2}$, os parâmetros elétricos e coeficientes térmicos utilizados no módulo \texttt{modelo\_fv.py} são apresentados na Tabela~\ref{tab:anexo_xtj_prime}.
 
 \begin{table}[!ht]
 \centering
 \small
 \renewcommand{\arraystretch}{0.85}
-\caption{Extrato da folha de dados técnicos da célula Spectrolab XTJ Prime.}
+\caption{Extrato da folha de dados técnicos da célula Spectrolab XTJ (29,5\%).}
 \label{tab:anexo_xtj_prime}
 \begin{tabular}{lcc}
 \hline
 \textbf{Característica Elétrica / Física (AM0, 28°C)} & \textbf{Valor Típico} & \textbf{Unidade} \\ \hline
-Eficiência de Conversão no MPP BOL declarada & $30{,}7$ & \% \\
-Tensão de Circuito Aberto ($V_{oc}$) & $2{,}720$ & V \\
-Densidade de Corrente de Curto-Circuito ($J_{sc}$) & $18{,}0$ & mA/cm$^2$ \\
-Tensão no Ponto de Máxima Potência ($V_{mp}$) & $2{,}406$ & V \\
-Densidade de Corrente no MPP ($J_{mp}$) & $17{,}5$ & mA/cm$^2$ \\
-Coeficiente Térmico de Tensão de Circuito Aberto ($dV_{oc}/dT$) & $-5{,}60$ & mV/K \\
-Coeficiente Térmico de Densidade de Corrente ($dJ_{sc}/dT$) & $+10{,}0$ & $\mu$A/(cm$^2\cdot$K) \\
-Coeficiente Térmico de Tensão MPP ($dV_{mp}/dT$) & $-6{,}30$ & mV/K \\
-Coeficiente Térmico de Densidade de Corrente MPP ($dJ_{mp}/dT$) & $+5{,}0$ & $\mu$A/(cm$^2\cdot$K) \\
+Eficiência de Conversão no MPP BOL declarada & $29{,}5$ & \% \\
+Tensão de Circuito Aberto ($V_{oc}$) & $2{,}633$ & V \\
+Densidade de Corrente de Curto-Circuito ($J_{sc}$) & $17{,}7$ & mA/cm$^2$ \\
+Tensão no Ponto de Máxima Potência ($V_{mp}$) & $2{,}340$ & V \\
+Densidade de Corrente no MPP ($J_{mp}$) & $17{,}0$ & mA/cm$^2$ \\
+Coeficiente Térmico de Tensão de Circuito Aberto ($dV_{oc}/dT$) & $-6{,}20$ & mV/K \\
+Coeficiente Térmico de Densidade de Corrente ($dJ_{sc}/dT$) & $+12{,}7$ & $\mu$A/(cm$^2\cdot$K) \\
+Coeficiente Térmico de Tensão MPP ($dV_{mp}/dT$) & $-6{,}40$ & mV/K \\
+Coeficiente Térmico de Densidade de Corrente MPP ($dJ_{mp}/dT$) & $+11{,}1$ & $\mu$A/(cm$^2\cdot$K) \\
 Espessura Típica do Substrato de Germânio & $140$ & $\mu$m \\
 Massa Específica Superficial com \textit{Coverglass} CMG $150\,\mu\text{m}$ & $84$ & mg/cm$^2$ \\
 Tensão de Ruptura Reversa Típica ($V_{break}$) & $-25\text{ a }-30$ & V \\ \hline
