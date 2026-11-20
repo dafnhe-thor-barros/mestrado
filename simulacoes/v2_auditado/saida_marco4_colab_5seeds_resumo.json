@@ -1,0 +1,86 @@
+{
+ "seeds_5": [
+  {
+   "seed": 0,
+   "pior_in_domain_C": 0.46477452995674184,
+   "mediana_in_domain_C": 0.2485666345415325,
+   "n_le_0p5C": 10,
+   "pior_subest_pico_C": -0.3943650288106255,
+   "rms_K_val_pde": 1.360722323552333,
+   "rms_K_val_bc": 0.287486159986661
+  },
+  {
+   "seed": 1,
+   "pior_in_domain_C": 0.46713530789713786,
+   "mediana_in_domain_C": 0.2952828342065459,
+   "n_le_0p5C": 10,
+   "pior_subest_pico_C": -0.20900125927937552,
+   "rms_K_val_pde": 2.8046792542912824,
+   "rms_K_val_bc": 0.3028462726156121
+  },
+  {
+   "seed": 2,
+   "pior_in_domain_C": 0.8707543634656076,
+   "mediana_in_domain_C": 0.3266551577726773,
+   "n_le_0p5C": 7,
+   "pior_subest_pico_C": -0.2913987202168755,
+   "rms_K_val_pde": 0.921333380177695,
+   "rms_K_val_bc": 0.41668403907163665
+  },
+  {
+   "seed": 3,
+   "pior_in_domain_C": 0.7635666889668755,
+   "mediana_in_domain_C": 0.2892142631740171,
+   "n_le_0p5C": 8,
+   "pior_subest_pico_C": -0.6935593647481255,
+   "rms_K_val_pde": 3.8081685459759456,
+   "rms_K_val_bc": 0.3072650407581415
+  },
+  {
+   "seed": 4,
+   "pior_in_domain_C": 0.5556919906286453,
+   "mediana_in_domain_C": 0.3103886147281969,
+   "n_le_0p5C": 9,
+   "pior_subest_pico_C": -0.22688456006062552,
+   "rms_K_val_pde": 1.6288190127643936,
+   "rms_K_val_bc": 0.7206265788793017
+  }
+ ],
+ "estatisticas_5_sementes": {
+  "pior_in_domain_media_C": 0.6243845761830016,
+  "pior_in_domain_std_C": 0.16431135271038969,
+  "pior_entre_sementes_C": 0.8707543634656076,
+  "mediana_in_domain_media_C": 0.29402150088459394,
+  "mediana_in_domain_std_C": 0.02616747350387212,
+  "pior_subestimacao_entre_sementes_C": -0.6935593647481255
+ },
+ "reamostragem_lbfgs": [
+  {
+   "ns_lbfgs": 96,
+   "offset": 1000,
+   "pior_in_domain_C": 0.5058817076911168,
+   "mediana_in_domain_C": 0.26537055172821056,
+   "n_le_0p5C": 9,
+   "pior_subest_pico_C": -0.4309861225606255,
+   "rms_K_val_pde": 1.8499801248049834
+  },
+  {
+   "ns_lbfgs": 96,
+   "offset": 2000,
+   "pior_in_domain_C": 0.7457749409200005,
+   "mediana_in_domain_C": 0.21388922757182627,
+   "n_le_0p5C": 9,
+   "pior_subest_pico_C": -0.7457749409200005,
+   "rms_K_val_pde": 1.172873313378141
+  },
+  {
+   "ns_lbfgs": 192,
+   "offset": 3000,
+   "pior_in_domain_C": 0.7157151264668755,
+   "mediana_in_domain_C": 0.2447273607192244,
+   "n_le_0p5C": 7,
+   "pior_subest_pico_C": -0.6981980366231255,
+   "rms_K_val_pde": 0.7315242302037251
+  }
+ ]
+}
