@@ -57,7 +57,10 @@ def monta(cfg):
     add(4, "pert", cfg["pert"], ["S1", "R_SINT", "TEMS_RC3", "TEMS_PINN"], sp, S)
     add(6, "ood", ["ood"], ["S1", "R_SINT", "TEMS_RC3", "TEMS_PINN"], sp, S)
     for cen in ("nominal", cfg["pert"][0]):
-        B[7].append(("traces_%s.json" % cen, ["--scenarios", cen, "--ctrls", "S0", "S1", "R_SINT", "TEMS_RC3", "TEMS_PINN", "--seeds", "0", "--sensor", sp] + base, "trace"))
+        cts = ["S0", "S1", "R_SINT", "TEMS_RC3", "TEMS_PINN"]
+        grupos = [cts] if cen == "nominal" else [[c] for c in cts]      # perturbacao: 1 processo por controlador, para que uma falha (ex.: S0 divergindo) nao perca as outras series
+        for g in grupos:
+            B[7].append(("traces_%s%s.json" % (cen, "" if len(g) > 1 else "_" + g[0]), ["--scenarios", cen, "--ctrls"] + g + ["--seeds", "0", "--sensor", sp] + base, "trace"))
     return B
 
 
@@ -102,6 +105,145 @@ def latencia(out, ckpt):
     r = subprocess.run([sys.executable, "marco5_tems.py", "--scenarios", "nominal", "--ctrls", "TEMS_RC3", "TEMS_PINN", "--seeds", "0", "--sensor", "sem_calibracao", "--norb", "4",
                         "--ckpt", ckpt, "--out", p], capture_output=True, text=True, env=ENV, cwd=AQUI)
     print("latencia isolada: codigo de saida", r.returncode, (r.stderr or "")[-400:])
+
+
+LIM_TJ = 80.0
+TEMS_CTRLS = ["TEMS_RC3", "TEMS_PINN"]
+
+
+def _nat(o):
+    return o.item() if hasattr(o, "item") else str(o)
+
+
+def _boot_ic(d, nboot=4000, seed=12345):
+    import numpy as np
+    d = np.asarray(d, float)
+    rng = np.random.default_rng(seed)
+    m = [rng.choice(d, len(d)).mean() for _ in range(nboot)]
+    return float(np.percentile(m, 2.5)), float(np.percentile(m, 97.5))
+
+
+def calcula_veredito(linhas, lat=None, tol_soc=1e-6):
+    """Veredito P1-P5 a partir de uma lista de dicts (uma por execucao, com a chave 'bloco'). Funcao pura: sem leitura de arquivos.
+    Regras (declaradas antes dos dados): P1 = T_j real maximo da execucao <= 80 C em TEMS (nominal, burst, quant; margem da regra, sem override de m_T, dt_ctrl = 60 s);
+    P2 = nos cenarios de perturbacao em que o S1 viola, o TEMS nao viola; P3 = SoC >= 0,70 (tol 1e-6) em R_SINT, R, TEMS; P4 = vazao do TEMS (interpolada na curva do Pareto)
+    no T_j real maximo da ultima orbita do R_SINT, comparada por semente com IC95 bootstrap; P5 = diferenca PINN-RC3 so e atribuivel se |media| > desvio entre sementes do RC3 e IC95 sem o zero."""
+    import numpy as np
+    import pandas as pd
+    df = pd.DataFrame(linhas)
+    if df.empty:
+        return {"erro": "sem resultados"}
+    for c, v in (("quant", "none"), ("mtotal", None), ("dt_ctrl", 60.0), ("n_infeasible", 0), ("infeasible_t_s", None), ("dE_over_ti_last3", None), ("decision_ms_mean", None)):
+        if c not in df:
+            df[c] = v
+    df["mt"] = pd.to_numeric(df["mtotal"], errors="coerce")
+    df["dt"] = pd.to_numeric(df["dt_ctrl"], errors="coerce").fillna(60.0)
+    df["quant"] = df["quant"].fillna("none").astype(str)
+    df["n_infeasible"] = pd.to_numeric(df["n_infeasible"], errors="coerce").fillna(0)
+    base = df[(df["dt"] == 60.0) & df["mt"].isna()]
+    out = {"n_execucoes": int(len(df))}
+    p1 = base[base["ctrl"].isin(TEMS_CTRLS + ["R_SINT"]) & base["bloco"].isin(["nominal", "burst", "quant"])]
+    g1 = p1.groupby(["ctrl", "bloco", "cenario", "sensor", "quant"]).agg(n=("seed", "count"), n_viol=("tj_max_C", lambda x: int((x > LIM_TJ).sum())), tj_pior=("tj_max_C", "max")).reset_index()
+    g1t, g1r = g1[g1["ctrl"].isin(TEMS_CTRLS)], g1[g1["ctrl"] == "R_SINT"]
+    p1_ok = bool(len(g1t) and (g1t["n_viol"] == 0).all())
+    r_seguro = bool(len(g1r) and (g1r["n_viol"] == 0).all())
+    out["P1"] = {"status": "INSUFICIENTE" if not len(g1t) else ("ATENDIDO" if p1_ok else "NAO_ATENDIDO"), "grupos_tems": int(len(g1t)), "execucoes_tems": int(g1t["n"].sum()) if len(g1t) else 0,
+                 "pior_tj_tems_C": float(g1t["tj_pior"].max()) if len(g1t) else None, "grupos_tems_com_violacao": g1t[g1t["n_viol"] > 0].round(4).to_dict("records"),
+                 "R_SINT_sem_violacao": r_seguro, "R_SINT_grupos_com_violacao": g1r[g1r["n_viol"] > 0].round(4).to_dict("records")}
+    pert = df[(df["bloco"] == "pert") & (df["dt"] == 60.0)]
+    s1 = pert[pert["ctrl"] == "S1"].groupby("cenario")["tj_max_C"].max()
+    s1_viola = [c for c, v in s1.items() if v > LIM_TJ]
+    l2 = []
+    for c in s1_viola:
+        for ct in TEMS_CTRLS + ["R_SINT"]:
+            x = pert[(pert["cenario"] == c) & (pert["ctrl"] == ct)]
+            l2.append({"cenario": c, "ctrl": ct, "n": int(len(x)), "n_viol": int((x["tj_max_C"] > LIM_TJ).sum()), "tj_pior_C": float(x["tj_max_C"].max()) if len(x) else None})
+    t_viol = [r for r in l2 if r["ctrl"] in TEMS_CTRLS and r["n_viol"] > 0]
+    t_sem = [r for r in l2 if r["ctrl"] in TEMS_CTRLS and r["n"] == 0]
+    out["P2"] = {"status": "NAO_APLICAVEL" if not s1_viola else ("INSUFICIENTE" if t_sem else ("ATENDIDO" if not t_viol else "NAO_ATENDIDO")),
+                 "cenarios_em_que_S1_viola": s1_viola, "detalhe": l2, "nota": "se NAO_ATENDIDO: reportar honestamente (clausula do pre-registro)"}
+    sup = df[df["ctrl"].isin(TEMS_CTRLS + ["R_SINT", "R", "TEMS_SOLVER"])]
+    v3 = sup[sup["soc_min"] < 0.70 - tol_soc]
+    out["P3"] = {"status": "INSUFICIENTE" if sup.empty else ("ATENDIDO" if v3.empty else "NAO_ATENDIDO"), "execucoes": int(len(sup)),
+                 "soc_min_pior": float(sup["soc_min"].min()) if len(sup) else None,
+                 "violacoes_amostra": v3[["bloco", "cenario", "ctrl", "sensor", "seed", "soc_min"]].head(50).to_dict("records")}
+    ref = base[(base["bloco"] == "nominal") & (base["cenario"] == "nominal") & (base["ctrl"] == "R_SINT")]
+    par = df[(df["bloco"] == "pareto") & df["ctrl"].isin(TEMS_CTRLS) & (df["dt"] == 60.0)]
+    rows4, classes = [], []
+    for sn in sorted(set(par["sensor"]) & set(ref["sensor"])):
+        for ct in TEMS_CTRLS:
+            diffs, fora = [], 0
+            for sd in sorted(set(ref[ref["sensor"] == sn]["seed"])):
+                r = ref[(ref["sensor"] == sn) & (ref["seed"] == sd)]
+                c = par[(par["sensor"] == sn) & (par["ctrl"] == ct) & (par["seed"] == sd)].sort_values("tj_max_last_C")
+                if len(c) < 2:
+                    continue
+                tj_r, tp_r = float(r["tj_max_last_C"].iloc[0]), float(r["tops_frac_last"].iloc[0])
+                x, y = c["tj_max_last_C"].values.astype(float), c["tops_frac_last"].values.astype(float)
+                if tj_r < x.min() or tj_r > x.max():
+                    fora += 1
+                    continue
+                diffs.append(float(np.interp(tj_r, x, y)) - tp_r)
+            if len(diffs) >= 3:
+                lo, hi = _boot_ic(diffs)
+                cl = "TEMS_MAIOR" if lo > 0 else ("TEMS_MENOR" if hi < 0 else "EMPATE")
+            else:
+                lo = hi = None
+                cl = "INSUFICIENTE"
+            rows4.append({"sensor": sn, "ctrl": ct, "n_pares": len(diffs), "fora_do_alcance_do_pareto": fora, "dif_media_vazao": float(np.mean(diffs)) if diffs else None, "ic95": [lo, hi], "classe": cl})
+            classes.append(cl)
+    val = [c for c in classes if c != "INSUFICIENTE"]
+    if not val:
+        st4 = "INSUFICIENTE"
+    elif any(c == "TEMS_MENOR" for c in val):
+        st4 = "NAO_ATENDIDO"
+    elif all(c == "TEMS_MAIOR" for c in val):
+        st4 = "ATENDIDO"
+    else:
+        st4 = "ATENDIDO_COM_EMPATE"
+    out["P4"] = {"status": st4, "detalhe": rows4, "nota": "EMPATE = IC95 bootstrap sobre sementes inclui 0; com poucas sementes o IC e largo (pouco poder)"}
+    if not val:
+        clau = "INDETERMINADA"
+    elif r_seguro and p1_ok and all(c in ("EMPATE", "TEMS_MENOR") for c in val):
+        clau = "ACIONADA"
+    elif r_seguro and p1_ok and any(c in ("EMPATE", "TEMS_MENOR") for c in val):
+        clau = "PARCIAL"
+    else:
+        clau = "NAO_ACIONADA"
+    out["clausula_de_falsificacao"] = {"estado": clau, "regra": "R_SINT e TEMS seguros (P1) e vazao sem TEMS_MAIOR => resultado reportado como empate/derrota do TEMS"}
+    pn = base[base["ctrl"].isin(TEMS_CTRLS) & base["bloco"].isin(["nominal", "burst", "quant", "pert", "ood"])]
+    rows5 = []
+    for k, g in pn.groupby(["bloco", "cenario", "sensor", "quant"]):
+        p = g.pivot_table(index="seed", columns="ctrl", values="tops_frac_last")
+        if "TEMS_PINN" in p.columns and "TEMS_RC3" in p.columns:
+            d = (p["TEMS_PINN"] - p["TEMS_RC3"]).dropna().values
+            if len(d) >= 3:
+                sd_rc3 = float(p["TEMS_RC3"].std(ddof=1))
+                lo, hi = _boot_ic(d)
+                m = float(np.mean(d))
+                rows5.append({"bloco": k[0], "cenario": k[1], "sensor": k[2], "quant": k[3], "n": int(len(d)), "dif_media": m, "desvio_RC3_entre_sementes": sd_rc3, "ic95": [lo, hi],
+                              "atribuivel_a_PINN": bool(abs(m) > max(sd_rc3, 1e-6) and (lo > 0 or hi < 0))})
+    n_at = sum(1 for r in rows5 if r["atribuivel_a_PINN"])
+    if lat is None:
+        lt = df[df["ctrl"].isin(TEMS_CTRLS)].groupby("ctrl")["decision_ms_mean"].median()
+        lat_txt = {k: {"mediana_ms_campanha_paralela": float(v)} for k, v in lt.items()}
+    else:
+        lat_txt = lat
+    out["P5"] = {"status": "INSUFICIENTE" if not rows5 else ("ATRIBUIVEL_EM_ALGUNS_GRUPOS" if n_at else "NAO_ATRIBUIVEL"), "grupos_avaliados": len(rows5), "grupos_atribuiveis": n_at,
+                 "detalhe": rows5, "latencia_decisao_ms": lat_txt, "regra": "|dif media| > max(desvio entre sementes do RC3, 1e-6) e IC95 sem o zero; senao o argumento da PINN e a latencia"}
+    inf = df[df["n_infeasible"] > 0]
+    inst = []
+    for _, r in inf.iterrows():
+        ts = r["infeasible_t_s"] if isinstance(r["infeasible_t_s"], list) else []
+        for t in ts:
+            inst.append({"bloco": r["bloco"], "cenario": r["cenario"], "ctrl": r["ctrl"], "sensor": r["sensor"], "seed": int(r["seed"]), "t_s": float(t)})
+    out["limitacoes_n_infeasible"] = {"por_ctrl": {k: int(v) for k, v in df.groupby("ctrl")["n_infeasible"].sum().items()}, "execucoes_com_infeasible": int(len(inf)), "instantes_amostra": inst[:200],
+                                      "nota": "decisao inviavel = pico previsto com f_min acima do limite (T_j medido ja acima do limite, por ruido do sensor ou por R_int real maior que o do modelo); o controlador manda f_min por 1 passo"}
+    z = df[df["ctrl"] != "S0"].copy()
+    z["dEti"] = pd.to_numeric(z["dE_over_ti_last3"], errors="coerce")
+    z = z[z["dEti"].notna()]
+    out["PUE_periodico_fracao_por_ctrl(limiar 1e-3)"] = {k: float(v) for k, v in (z["dEti"] < 1e-3).groupby(z["ctrl"]).mean().items()}
+    return out
 
 
 def gerar_resumo(out, imprimir=True):
@@ -217,10 +359,26 @@ def gerar_resumo(out, imprimir=True):
         t = json.load(open(p, encoding="utf-8"))["traces"]
         return "%d series (grandes: nao impressas): %s" % (len(t), sorted({(x["cenario"], x["ctrl"]) for x in t}))
 
+    def veredito():
+        lat_d = None
+        pl = os.path.join(out, "latencia_isolada.json")
+        if os.path.exists(pl):
+            lat_d = {r["ctrl"]: {"media_ms": r["decision_ms_mean"], "p99_ms": r["decision_ms_p99"]} for r in json.load(open(pl, encoding="utf-8"))["resultados"]}
+        v = calcula_veredito(linhas, lat_d)
+        with open(os.path.join(out, "m5_veredito_P1_P5.json"), "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(v, fh, ensure_ascii=False, default=_nat)
+        c = {}
+        for k, x in v.items():
+            if isinstance(x, dict):
+                c[k] = {kk: (vv[:12] if isinstance(vv, list) else vv) for kk, vv in x.items()}
+            else:
+                c[k] = x
+        return json.dumps(c, ensure_ascii=False, default=_nat, indent=1)
+
     for nome, fn in (("CABECALHO", cabecalho), ("PYTEST", pytest_txt), ("SINTONIA DO R (sem a grade completa)", sintonia), ("TEMPOS", tempos), ("AGREGADO (CSV)", agregado),
-                     ("DIFERENCA PAREADA DE VAZAO (CSV)", pareado), ("DECISOES INVIAVEIS (diagnostico)", inviaveis), ("LATENCIA ISOLADA", lat), ("SERIES TEMPORAIS", traces)):
+                     ("DIFERENCA PAREADA DE VAZAO (CSV)", pareado), ("DECISOES INVIAVEIS (diagnostico)", inviaveis), ("LATENCIA ISOLADA", lat), ("SERIES TEMPORAIS", traces), ("VEREDITO P1-P5 (listas cortadas em 12 itens; completo em m5_veredito_P1_P5.json)", veredito)):
         sec(nome, fn)
-    txt.append("\nNOTA: veredito P1-P5 NAO calculado (o texto dos criterios nao foi fornecido). Os numeros acima sao a entrada dele.")
+    txt.append("\nNOTA: veredito P1-P5 calculado por calcula_veredito (regras no docstring da funcao); arquivo m5_veredito_P1_P5.json.")
     s = "\n".join(txt)
     p = os.path.join(out, "m5_resumo_para_colar.txt")
     with open(p, "w", encoding="utf-8", newline="\n") as fh:
@@ -255,7 +413,7 @@ def main(argv=None):
         latencia(out, a.ckpt)
         return 0
     rtune = os.path.join(out, "sintonia_reativo.json")
-    cfg = {"seeds": [0, 1, 2, 3, 4], "seeds_burst": list(range(20)), "norb": a.norb or 6, "ckpt": a.ckpt, "rtune": rtune, "chunk": a.chunk, "burst_per_orbit": a.burst_per_orbit,
+    cfg = {"seeds": [0, 1, 2, 3, 4], "seeds_burst": list(range(5)), "norb": a.norb or 6, "ckpt": a.ckpt, "rtune": rtune, "chunk": a.chunk, "burst_per_orbit": a.burst_per_orbit,
            "sensores": ["calibrado", "sem_calibracao"], "quants": ["trunc", "round"], "mt": [0, 0.5, 1, 2, 3], "pert": PERT}
     sint = ["--sensors", "calibrado", "sem_calibracao", "--quants", "none", "trunc", "round", "--seeds-cal", "100", "101", "102", "--norb", str(a.norb_sint)]
     if a.quick:

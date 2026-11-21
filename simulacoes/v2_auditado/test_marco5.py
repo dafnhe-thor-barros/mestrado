@@ -221,5 +221,50 @@ def test_sintonia_escolhe_maior_vazao_viavel_e_avisa_borda():
     assert escolhe([dict(x, viavel=False) for x in L])[0] is None
 
 
+# ---- veredito P1-P5: testes com dados SINTETICOS (resultados conferidos no sandbox, na funcao copiada; este arquivo ainda nao rodou)
+def _lin(bloco, cen, ctrl, sensor, seed, tj, tops, soc=0.7, tjl=None, mt=None, quant="none", dt=60.0, inf=0, inft=None, due=5e-4):
+    return {"bloco": bloco, "cenario": cen, "ctrl": ctrl, "sensor": sensor, "seed": seed, "tj_max_C": tj, "tj_max_last_C": tj if tjl is None else tjl, "tops_frac_last": tops,
+            "soc_min": soc, "mtotal": mt, "quant": quant, "dt_ctrl": dt, "n_infeasible": inf, "infeasible_t_s": inft or [], "dE_over_ti_last3": due, "decision_ms_mean": 10.0}
+
+
+def _sintetico(quant_tj=78.0, soc=0.7, rs_tops=0.8847, pert_tj=82.0):
+    L, rc3 = [], [0.880, 0.881, 0.879, 0.8805, 0.8795]
+    for sd in range(5):
+        L.append(_lin("nominal", "nominal", "R_SINT", "sem_calibracao", sd, 79.5, rs_tops, soc=soc, tjl=79.5))
+        L.append(_lin("nominal", "nominal", "TEMS_RC3", "sem_calibracao", sd, 78.2, rc3[sd], soc=soc, inf=1 if sd == 0 else 0, inft=[12780.0] if sd == 0 else []))
+        L.append(_lin("nominal", "nominal", "TEMS_PINN", "sem_calibracao", sd, 78.2, rc3[sd] - 0.003, soc=soc))
+        L.append(_lin("quant", "nominal", "TEMS_RC3", "sem_calibracao", sd, quant_tj if sd == 4 else 78.0, 0.88, quant="trunc"))
+        L.append(_lin("quant", "nominal", "R_SINT", "sem_calibracao", sd, 79.0, 0.88, quant="trunc"))
+        for m, tj, tp in ((0.0, 80.2, 0.890), (1.0, 79.3, 0.885), (2.0, 78.4, 0.880)):
+            L.append(_lin("pareto", "nominal", "TEMS_RC3", "sem_calibracao", sd, tj - 0.1, tp, tjl=tj, mt=m))
+        L.append(_lin("pert", "r_int_alto", "S1", "sem_calibracao", sd, 114.0, 0.85))
+        L.append(_lin("pert", "c_mod_mais30", "S1", "sem_calibracao", sd, 70.0, 0.85))
+        for ct in ("TEMS_RC3", "TEMS_PINN", "R_SINT"):
+            L.append(_lin("pert", "r_int_alto", ct, "sem_calibracao", sd, pert_tj, 0.74))
+            L.append(_lin("pert", "c_mod_mais30", ct, "sem_calibracao", sd, 78.0, 0.88))
+    return L
+
+
+def test_veredito_caso_a_p1_p3_ok_p2_violado_e_instante_registrado():
+    from rodar_campanha_marco5 import calcula_veredito
+    v = calcula_veredito(_sintetico())
+    assert v["P1"]["status"] == "ATENDIDO" and v["P1"]["R_SINT_sem_violacao"] is True
+    assert v["P2"]["status"] == "NAO_ATENDIDO" and v["P2"]["cenarios_em_que_S1_viola"] == ["r_int_alto"]
+    assert v["P3"]["status"] == "ATENDIDO"
+    assert v["P4"]["status"] == "ATENDIDO" and [r["classe"] for r in v["P4"]["detalhe"] if r["ctrl"] == "TEMS_RC3"] == ["TEMS_MAIOR"]
+    assert v["clausula_de_falsificacao"]["estado"] == "NAO_ACIONADA"
+    assert v["limitacoes_n_infeasible"]["por_ctrl"]["TEMS_RC3"] == 1 and v["limitacoes_n_infeasible"]["instantes_amostra"][0]["t_s"] == 12780.0
+
+
+def test_veredito_caso_b_violacoes_de_p1_p3_e_vazao_menor_em_p4():
+    from rodar_campanha_marco5 import calcula_veredito
+    v = calcula_veredito(_sintetico(quant_tj=80.3, soc=0.69, rs_tops=0.9, pert_tj=78.0))
+    assert v["P1"]["status"] == "NAO_ATENDIDO" and len(v["P1"]["grupos_tems_com_violacao"]) == 1
+    assert v["P2"]["status"] == "ATENDIDO"
+    assert v["P3"]["status"] == "NAO_ATENDIDO"
+    assert v["P4"]["status"] == "NAO_ATENDIDO" and [r["classe"] for r in v["P4"]["detalhe"] if r["ctrl"] == "TEMS_RC3"] == ["TEMS_MENOR"]
+    assert v["clausula_de_falsificacao"]["estado"] == "NAO_ACIONADA"
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
