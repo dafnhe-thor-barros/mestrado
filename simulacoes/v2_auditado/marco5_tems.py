@@ -345,6 +345,7 @@ class Controller:
         self.win, self.f_prev_applied, self.dtip = [], None, DTIP_PRIOR
         self.pending, self.pred_err = None, []
         self.pred_err_t, self.infeasible_t = [], []
+        self.infeasible_diag = []
         self.n_dec = self.n_infeasible = self.n_fallback = 0
         self.decision_ms = []
 
@@ -450,9 +451,13 @@ class Controller:
 
         def hp(f1, f2):
             return self.horizon(pr, state, t, f1, f2, tj_c)
-        if hp(f_lo, f_lo)[0] > limit:
+        pk_lo = hp(f_lo, f_lo)[0]
+        if pk_lo > limit:
             self.n_infeasible += 1
             self.infeasible_t.append(float(t))
+            self.infeasible_diag.append({"t_s": float(t), "tau_orbita_s": float(t % self.p["t_orb"]), "tj_medido_C": float(tj_c), "tj_real_C": float(y_true[0] - T0K),
+                                         "tr_medido_C": float(tr_k - T0K), "dtip_est_K": float(dtip), "pico_previsto_fmin_C": float(pk_lo - T0K), "limite_C": float(limit - T0K),
+                                         "m_total_K": float(m_tot), "f_hi_MHz": float(f_hi), "dist_dominio": float(d), "preditor": pr.name})
             return f_lo
         f1 = bisect_max(lambda f: hp(f, f)[0] <= limit, f_lo, f_hi)
         if self.boost and f1 < f_hi:
@@ -574,7 +579,7 @@ def summarize(c, rec, ecap, T, t_end, ctrl, soc0, max_res, mean_flow):
             "energy_resid_rel": float(max_res / max(mean_flow, 1e-300)), "pred_err_rms_K": float(np.sqrt(np.mean(pe ** 2))), "pred_err_max_K": float(np.max(np.abs(pe))),
             "pred_err_min_signed_K": float(np.min(pe)), "pred_err_max_signed_K": float(np.max(pe)),
             "pred_err_rms_last_K": (float(np.sqrt(np.mean(pe_ult ** 2))) if len(pe_ult) else None), "pred_err_min_last_K": (float(pe_ult.min()) if len(pe_ult) else None),
-            "pred_err_t_worst_s": (float(ctrl.pred_err_t[int(np.argmax(np.abs(pe)))]) if ctrl.pred_err_t else None), "infeasible_t_s": list(ctrl.infeasible_t),
+            "pred_err_t_worst_s": (float(ctrl.pred_err_t[int(np.argmax(np.abs(pe)))]) if ctrl.pred_err_t else None), "infeasible_t_s": list(ctrl.infeasible_t), "infeasible_diag": list(ctrl.infeasible_diag),
             "dE_over_ti_last": rel1, "pue_last3": pue3, "dE_bess_last3_Wh": de3, "dE_over_ti_last3": rel3,
             "n_dec": ctrl.n_dec, "n_infeasible": ctrl.n_infeasible, "n_fallback": ctrl.n_fallback,
             "decision_ms_mean": float(np.mean(ctrl.decision_ms)) if ctrl.decision_ms else 0.0,

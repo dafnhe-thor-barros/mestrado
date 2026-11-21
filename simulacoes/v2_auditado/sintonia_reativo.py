@@ -86,7 +86,7 @@ def sintoniza(sensores, quants, seeds_cal, norb, grade, jobs=1):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Sintonia justa do reativo (sementes de calibracao disjuntas das de teste)")
     ap.add_argument("--sensors", nargs="+", default=["ideal", "calibrado", "sem_calibracao"], choices=sorted(SENSOR_MARGEM_K))
-    ap.add_argument("--quants", nargs="+", default=["none"], choices=["none", "floor", "round"])
+    ap.add_argument("--quants", nargs="+", default=["none"], choices=["none", "floor", "trunc", "round"])
     ap.add_argument("--seeds-cal", nargs="+", type=int, default=list(SEEDS_CAL_DEFAULT))
     ap.add_argument("--norb", type=int, default=3)
     ap.add_argument("--jobs", type=int, default=1)

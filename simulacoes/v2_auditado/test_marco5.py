@@ -1,6 +1,6 @@
 """test_marco5.py -- testes do Marco 5 (contrato + malha fechada TEMS, DVFS-only).
 Uso:  python -m pytest test_marco5.py -q        (ou: python test_marco5.py)
-Os 11 primeiros testes usam so numpy/scipy. Os 2 ultimos (API da PINN e hash dos checkpoints) exigem torch + modelo_pinn.py / os .pt e sao PULADOS se ausentes.
+Os 12 primeiros testes usam so numpy/scipy (+ pytest). Os 2 ultimos (API da PINN e hash dos checkpoints) exigem torch + modelo_pinn.py / os .pt e sao PULADOS se ausentes.
 Ordem de grandeza: ~30 s no total (a malha fechada com TEMS e o que pesa).
 """
 import os
@@ -12,6 +12,11 @@ from modelo_termico import bus_heat, ia_p, _merge
 from contrato_parametros import (PROJETO_1P0, LEGADO_2B_0P90, CHECKPOINTS_SHA256, contract_hash, verify_checkpoint, sensor_cfg, sha256_file)
 from marco5_tems import (A_PL_PROJETO, RC3, SolverPred, Sensors, RC3 as _RC3, CONTROLADORES, battery_for, sun_cap, bus_step, env_q_abs, plant_par,
                          q_rest_model, make_pred, run_closed_loop, scenario_cfg)
+
+
+import json
+from marco5_tems import run_scenario, valida_sintonia, carrega_sintonia, chave_sintonia, ultima_orbita
+from sintonia_reativo import escolhe
 
 
 def _short(ctrl, scen="nominal", seed=0, sensor="ideal", t_end=None, n_orb=1, m_total=None):
@@ -156,6 +161,64 @@ def test_checkpoints_do_repositorio_batem_com_o_contrato():
             assert sha256_file(p) == h.upper(), nome
     if not achou:
         pytest.skip("nenhum .pt em %s (defina CKPT_DIR)" % pasta)
+
+
+# ---- testes novos (R_SINT, sintonia, quantizacao, pue_last3, dt_ctrl, series) -- ESCRITOS SEM TER SIDO EXECUTADOS
+def test_valida_e_carrega_sintonia(tmp_path):
+    t = {"contrato_sha256": contract_hash(PROJETO_1P0), "seeds_cal": [100, 101],
+         "sensores": {"sem_calibracao|none": {"viavel": True, "kp": 20.0, "ki": 0.5, "margem": 2.0}, "calibrado|trunc": {"viavel": False}}}
+    ok = {"r_kp": 20.0, "r_ki": 0.5, "r_margin": 2.0}
+    assert valida_sintonia(t, "p", [0, 1], "sem_calibracao", "none") == ok
+    for args in (([0, 100], "sem_calibracao", "none"), ([0], "calibrado", "trunc"), ([0], "ideal", "none")):
+        with pytest.raises(RuntimeError):
+            valida_sintonia(t, "p", *args)
+    with pytest.raises(RuntimeError):
+        valida_sintonia(dict(t, contrato_sha256="0" * 64), "p", [0], "sem_calibracao", "none")
+    p = tmp_path / "s.json"
+    p.write_text(json.dumps(t), encoding="utf-8")
+    assert carrega_sintonia(str(p), [0, 1], "sem_calibracao", "none") == ok
+    assert chave_sintonia("calibrado", "trunc") == "calibrado|trunc"
+
+
+def test_quantizacao_round_e_trunc():
+    k = 273.15 + 79.6
+    r = Sensors(sensor_cfg("ideal", quant_mode="round"), 0).read(k, 300.0)[0]
+    f = Sensors(sensor_cfg("ideal", quant_mode="trunc"), 0).read(k, 300.0)[0]
+    assert abs(r - (273.15 + 80.0)) < 1e-9 and abs(f - (273.15 + 79.0)) < 1e-9
+
+
+def test_pue_last3_exige_janela_com_aquecimento():
+    a, b = run_scenario("nominal", "S1", 0, n_orb=4), run_scenario("nominal", "S1", 0, n_orb=3)
+    assert b["pue_last3"] is None and b["dE_over_ti_last3"] is None
+    assert a["pue_last3"] > 1.0 and a["dE_over_ti_last3"] < 1e-3
+
+
+def test_dt_ctrl_300_e_series_da_ultima_orbita():
+    c = dict(PROJETO_1P0, nome="PROJETO_1P0_dt300", dt_ctrl=300.0)
+    cfg = scenario_cfg("nominal", 0, c, 1)
+    cfg.update({"t_end": 1500.0, "ctrl": "R", "series": True})
+    r = run_closed_loop(cfg)
+    assert r["n_dec"] == 5 and r["n_infeasible"] == 0 and r["infeasible_t_s"] == []
+    u = ultima_orbita(r["series"], 1500.0)
+    assert sorted(u) == ["f_MHz", "soc", "t_s", "tj_C", "tr_C"] and len({len(v) for v in u.values()}) == 1
+    assert abs(u["t_s"][-1] - 1500.0) < 1e-6
+
+
+def test_r_sint_com_os_mesmos_ganhos_reproduz_r():
+    ov = {"r_kp": 20.0, "r_ki": 0.5, "r_margin": 2.0, "t_end": 1200.0}
+    a = run_scenario("nominal", "R", 0, n_orb=1, sensor="calibrado", cfg_over=ov)
+    b = run_scenario("nominal", "R_SINT", 0, n_orb=1, sensor="calibrado", cfg_over=ov)
+    assert _sem_tempo(a) == _sem_tempo(b)
+
+
+def test_sintonia_escolhe_maior_vazao_viavel_e_avisa_borda():
+    L = [dict(kp=20.0, ki=0.5, margem=m, viavel=v, tops_last_medio=tp, tj_max_pior_C=tj)
+         for m, v, tp, tj in ((0.0, False, 0.90, 80.2), (2.0, True, 0.87, 79.0), (3.0, True, 0.85, 78.0))]
+    b, av = escolhe(L)
+    assert b["margem"] == 2.0 and av == []
+    b2, av2 = escolhe([dict(x, viavel=(x["margem"] == 3.0)) for x in L])
+    assert b2["margem"] == 3.0 and len(av2) == 1
+    assert escolhe([dict(x, viavel=False) for x in L])[0] is None
 
 
 if __name__ == "__main__":
