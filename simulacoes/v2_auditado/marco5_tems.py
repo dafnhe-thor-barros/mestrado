@@ -344,6 +344,7 @@ class Controller:
         self.f_r, self.e_prev = c["f_max"], None
         self.win, self.f_prev_applied, self.dtip = [], None, DTIP_PRIOR
         self.pending, self.pred_err = None, []
+        self.pred_err_t, self.infeasible_t = [], []
         self.n_dec = self.n_infeasible = self.n_fallback = 0
         self.decision_ms = []
 
@@ -373,7 +374,8 @@ class Controller:
         tj_k, tr_k = self.win[-1][1], self.win[-1][2]
         tj_c = tj_k - T0K
         if self.pending is not None:
-            self.pred_err.append(self.pending - float(y_true[0]))
+            self.pred_err.append(self.pending - float(y_true[0]))   # > 0: superestimou T_j (lado seguro); < 0: subestimou
+            self.pred_err_t.append(float(t))
             self.pending = None
         cap = self.power_cap(t, E)
         f_cap = ia_f_for_power(cap / n, tj_c)[0] if cap < 1e11 else c["f_max"]
@@ -450,6 +452,7 @@ class Controller:
             return self.horizon(pr, state, t, f1, f2, tj_c)
         if hp(f_lo, f_lo)[0] > limit:
             self.n_infeasible += 1
+            self.infeasible_t.append(float(t))
             return f_lo
         f1 = bisect_max(lambda f: hp(f, f)[0] <= limit, f_lo, f_hi)
         if self.boost and f1 < f_hi:
@@ -546,6 +549,22 @@ def summarize(c, rec, ecap, T, t_end, ctrl, soc0, max_res, mean_flow):
     pv_wh = float(np.sum(np.array(rec["pv_used"])[last] * h[last]) / 3600.0)
     de = float((soc[-1] - s0) * ecap)
     pe = np.array(ctrl.pred_err) if ctrl.pred_err else np.zeros(1)
+    pet = np.array(ctrl.pred_err_t) if ctrl.pred_err_t else np.zeros(0)
+    pe_ult = pe[pet > t_end - T + 1e-9] if (len(pet) and len(pet) == len(ctrl.pred_err)) else np.zeros(0)   # erro de predicao so na ULTIMA orbita (fora do transitorio de partida)
+    def janela(k):
+        """PUE e variacao de energia do BESS nas k ultimas orbitas. Exige t_end >= (k+1) T: a janela precisa deixar >= 1 orbita de aquecimento ANTES dela,
+        senao o transitorio de partida (SoC 0,95 -> ~0,84) entra na conta e o criterio nao mede regime."""
+        if t_end < (k + 1) * T - 1e-6:
+            return None, None, None
+        m = t > t_end - k * T + 1e-9
+        j0 = int(np.argmax(m))
+        sa = soc[j0 - 1] if j0 > 0 else soc0
+        ti = float(np.sum(np.array(rec["p_ti"])[m] * h[m]) / 3600.0)
+        pv = float(np.sum(np.array(rec["pv_used"])[m] * h[m]) / 3600.0)
+        d = float((soc[-1] - sa) * ecap)
+        return (pv / ti if ti > 0 else None), d, (abs(d) / ti if ti > 0 else None)
+    pue3, de3, rel3 = janela(3)
+    rel1 = abs(de) / ti_wh if ti_wh > 0 else None
     return {"tj_max_C": float(tj.max()), "tj_max_last_C": float(tj[last].max()), "t_above_80_s": float(np.sum(h[tj > lim])), "t_above_85_s": float(np.sum(h[tj > 85.0])),
             "viol_int_Ks": float(np.sum(np.maximum(tj - lim, 0.0) * h)),
             "soc_min": float(soc.min()), "soc_max": float(soc.max()), "soc_min_last": float(soc[last].min()),
@@ -553,6 +572,10 @@ def summarize(c, rec, ecap, T, t_end, ctrl, soc0, max_res, mean_flow):
             "tops_frac_mean": float(np.sum(f * h) / np.sum(h) / c["f_max"]), "tops_frac_last": float(np.sum(f[last] * h[last]) / np.sum(h[last]) / c["f_max"]),
             "pue_last": (pv_wh / ti_wh) if ti_wh > 0 else None, "dE_bess_last_Wh": de, "pue_periodico": bool(abs(de) / ecap < 1e-3),
             "energy_resid_rel": float(max_res / max(mean_flow, 1e-300)), "pred_err_rms_K": float(np.sqrt(np.mean(pe ** 2))), "pred_err_max_K": float(np.max(np.abs(pe))),
+            "pred_err_min_signed_K": float(np.min(pe)), "pred_err_max_signed_K": float(np.max(pe)),
+            "pred_err_rms_last_K": (float(np.sqrt(np.mean(pe_ult ** 2))) if len(pe_ult) else None), "pred_err_min_last_K": (float(pe_ult.min()) if len(pe_ult) else None),
+            "pred_err_t_worst_s": (float(ctrl.pred_err_t[int(np.argmax(np.abs(pe)))]) if ctrl.pred_err_t else None), "infeasible_t_s": list(ctrl.infeasible_t),
+            "dE_over_ti_last": rel1, "pue_last3": pue3, "dE_bess_last3_Wh": de3, "dE_over_ti_last3": rel3,
             "n_dec": ctrl.n_dec, "n_infeasible": ctrl.n_infeasible, "n_fallback": ctrl.n_fallback,
             "decision_ms_mean": float(np.mean(ctrl.decision_ms)) if ctrl.decision_ms else 0.0,
             "decision_ms_p99": float(np.percentile(ctrl.decision_ms, 99)) if ctrl.decision_ms else 0.0,
@@ -574,7 +597,7 @@ def make_pred(kind, c, extra_true, a_pl, ckpt=None):
     raise ValueError("preditor desconhecido: %s" % kind)
 
 
-CONTROLADORES = {"S0": ("S0", None), "S1": ("S1", None), "R": ("R", None), "TEMS_PINN": ("TEMS", "PINN"), "TEMS_RC3": ("TEMS", "RC3"),
+CONTROLADORES = {"S0": ("S0", None), "S1": ("S1", None), "R": ("R", None), "R_SINT": ("R", None), "TEMS_PINN": ("TEMS", "PINN"), "TEMS_RC3": ("TEMS", "RC3"),
                  "TEMS_RC3R": ("TEMS", "RC3R"), "TEMS_SOLVER": ("TEMS", "SOLVER")}
 
 
@@ -594,11 +617,11 @@ PERTURBACOES = {"r_int_alto": {"r_int": 0.12}, "r_int_muito_alto": {"r_int": 0.1
                 "eps_baixo": {"alpha": 0.36, "eps": 0.80}, "combinada": {"r_int": 0.12, "c_mod": 650.0, "alpha": 0.36, "eps": 0.80}}   # niveis [HIPOTESE DECLARADA]
 
 
-def scenario_cfg(nome, seed, c, n_orb, sensor="ideal", **sens_over):
+def scenario_cfg(nome, seed, c, n_orb, sensor="ideal", burst_per_orbit=4, **sens_over):
     t_end = n_orb * T_ORB
     cfg = {"contrato": c, "n_orb": n_orb, "seed": seed, "sensors": sensor_cfg(sensor, **sens_over), "m_sensor": SENSOR_MARGEM_K[sensor]}
     if nome == "burst":
-        cfg["demand"], cfg["event_times"] = make_demand(c, seed, t_end)
+        cfg["demand"], cfg["event_times"] = make_demand(c, seed, t_end, burst_per_orbit)
     elif nome in PERTURBACOES:
         cfg["plant_par"] = PERTURBACOES[nome]
     elif nome == "ood":
@@ -608,15 +631,54 @@ def scenario_cfg(nome, seed, c, n_orb, sensor="ideal", **sens_over):
     return cfg
 
 
-def run_scenario(nome, ctrl_label, seed, c=PROJETO_1P0, n_orb=3, sensor="ideal", ckpt=None, m_total=None, blocks_boost=False, **sens_over):
-    cfg = scenario_cfg(nome, seed, c, n_orb, sensor, **sens_over)
+def run_scenario(nome, ctrl_label, seed, c=PROJETO_1P0, n_orb=3, sensor="ideal", ckpt=None, m_total=None, blocks_boost=False, cfg_over=None, burst_per_orbit=4, series=False, **sens_over):
+    """cfg_over: sobrescreve chaves do cfg (ex.: {"r_kp":..., "r_ki":..., "r_margin":...} para o reativo)."""
+    cfg = scenario_cfg(nome, seed, c, n_orb, sensor, burst_per_orbit=burst_per_orbit, **sens_over)
+    if series:
+        cfg["series"] = True
     kind, pk = CONTROLADORES[ctrl_label]
     cfg["ctrl"], cfg["boost"], cfg["m_total"] = kind, blocks_boost, m_total
+    if cfg_over:
+        cfg.update(cfg_over)
     if pk:
         cfg["pred"] = make_pred(pk, c, cfg.get("plant_par") if pk == "SOLVER" else None, cfg.get("a_pl", A_PL_PROJETO), ckpt)
         if pk == "PINN":
             cfg["fallback"] = make_pred("RC3", c, None, A_PL_PROJETO)
     return run_closed_loop(cfg)
+
+
+def ultima_orbita(s, t_end):
+    """Series da ULTIMA orbita (para as figuras do Capitulo 4): t_s, tj_C, tr_C, f_MHz, soc."""
+    t = np.array(s["t"])
+    m = t > t_end - T_ORB + 1e-9
+    return {"t_s": t[m].tolist(), "tj_C": (np.array(s["tj"])[m] - T0K).tolist(), "tr_C": (np.array(s["tr"])[m] - T0K).tolist(),
+            "f_MHz": np.array(s["f"])[m].tolist(), "soc": np.array(s["soc"])[m].tolist()}
+
+
+def chave_sintonia(sensor, quant="none"):
+    """Chave da sintonia do reativo: o R e sintonizado POR (sensor, quantizacao), porque a margem otima depende de ambos."""
+    return "%s|%s" % (sensor, quant)
+
+
+def carrega_sintonia(path, seeds_teste, sensor, quant="none"):
+    """Le o JSON da sintonia do reativo e valida (ver valida_sintonia)."""
+    with open(path, encoding="utf-8") as fh:
+        t = json.load(fh)
+    return valida_sintonia(t, path, seeds_teste, sensor, quant)
+
+
+def valida_sintonia(t, path, seeds_teste, sensor, quant="none"):
+    """RECUSA: contrato diferente, (sensor, quant) ausente/inviavel, ou sementes de teste que coincidam com as de calibracao."""
+    if t.get("contrato_sha256") != contract_hash(PROJETO_1P0):
+        raise RuntimeError("sintonia do R feita com outro contrato (hash diferente): refazer sintonia_reativo.py")
+    comum = set(int(s) for s in seeds_teste) & set(int(s) for s in t["seeds_cal"])
+    if comum:
+        raise RuntimeError("sementes de teste coincidem com as de calibracao do R: %s" % sorted(comum))
+    k = chave_sintonia(sensor, quant)
+    s = t.get("sensores", {}).get(k)
+    if s is None or not s.get("viavel"):
+        raise RuntimeError("sem sintonia viavel do R para '%s' em %s" % (k, path))
+    return {"r_kp": s["kp"], "r_ki": s["ki"], "r_margin": s["margem"]}
 
 
 def main(argv=None):
@@ -627,20 +689,42 @@ def main(argv=None):
     ap.add_argument("--sensor", default="sem_calibracao", choices=sorted(SENSOR_MARGEM_K))
     ap.add_argument("--norb", type=int, default=3)
     ap.add_argument("--ckpt", default=None)
+    ap.add_argument("--quant", default="none", choices=["none", "floor", "trunc", "round"], help="quantizacao inteira (1 C) da leitura de T_j (NVML); trunc = floor")
+    ap.add_argument("--rtune", default=None, help="JSON de sintonia_reativo.py (obrigatorio para o controlador R_SINT)")
+    ap.add_argument("--mtotal", "--m_t", dest="mtotal", type=float, default=None, help="margem TOTAL de T_j [K] do TEMS (substitui m_pred + m_sensor); usado na varredura Pareto do cenario 6")
+    ap.add_argument("--dt_ctrl", type=float, default=60.0, choices=[60.0, 300.0], help="periodo de decisao [s]; 300 e uma VARIANTE do contrato (hash diferente)")
+    ap.add_argument("--burst_per_orbit", type=int, default=4, help="rajadas de 300 s por orbita no cenario burst")
+    ap.add_argument("--save_traces", default=None, help="JSON com as series da ULTIMA orbita (t_s, tj_C, tr_C, f_MHz, soc)")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
-    res = []
+    c_run = PROJETO_1P0 if a.dt_ctrl == 60.0 else dict(PROJETO_1P0, nome="PROJETO_1P0_dt%d" % int(a.dt_ctrl), dt_ctrl=a.dt_ctrl)
+    if "R_SINT" in a.ctrls and a.dt_ctrl != 60.0:
+        raise SystemExit("R_SINT so tem sintonia para dt_ctrl = 60 s")
+    over = None
+    if "R_SINT" in a.ctrls:
+        if not a.rtune:
+            raise SystemExit("R_SINT exige --rtune sintonia_R.json (gerado por sintonia_reativo.py)")
+        over = carrega_sintonia(a.rtune, a.seeds, a.sensor, a.quant)
+    qkw = {} if a.quant == "none" else {"quant_mode": a.quant}
+    res, traces = [], []
     for sc in a.scenarios:
         for ct in a.ctrls:
             for sd in a.seeds:
-                r = run_scenario(sc, ct, sd, n_orb=a.norb, sensor=a.sensor, ckpt=a.ckpt)
-                res.append(dict(cenario=sc, ctrl=ct, seed=sd, sensor=a.sensor, **r))
-    payload = {"contrato": PROJETO_1P0["nome"], "contrato_sha256": contract_hash(PROJETO_1P0),
-               "ckpt_sha256": sha256_file(a.ckpt) if a.ckpt else None, "resultados": res}
+                r = run_scenario(sc, ct, sd, c=c_run, n_orb=a.norb, sensor=a.sensor, ckpt=a.ckpt, m_total=a.mtotal, cfg_over=over if ct == "R_SINT" else None,
+                                 burst_per_orbit=a.burst_per_orbit, series=bool(a.save_traces), **qkw)
+                if a.save_traces:
+                    traces.append(dict(cenario=sc, ctrl=ct, seed=sd, sensor=a.sensor, quant=a.quant, **ultima_orbita(r.pop("series"), a.norb * T_ORB)))
+                res.append(dict(cenario=sc, ctrl=ct, seed=sd, sensor=a.sensor, quant=a.quant, mtotal=a.mtotal, dt_ctrl=a.dt_ctrl, burst_per_orbit=a.burst_per_orbit, **r))
+    payload = {"contrato": c_run["nome"], "contrato_sha256": contract_hash(c_run),
+               "ckpt_sha256": sha256_file(a.ckpt) if a.ckpt else None,
+               "rtune_sha256": sha256_file(a.rtune) if a.rtune else None, "rtune_usado": over, "resultados": res}
     txt = json.dumps(_r(payload), ensure_ascii=False)
     if a.out:
         with open(a.out, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(txt)
+    if a.save_traces:
+        with open(a.save_traces, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(_r({"contrato": c_run["nome"], "contrato_sha256": contract_hash(c_run), "traces": traces}), fh, ensure_ascii=False)
     print(txt)
     return payload
 
