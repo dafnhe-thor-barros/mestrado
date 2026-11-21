@@ -1,0 +1,14 @@
+{
+ "norb": 6,
+ "norb_sint": 3,
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "burst_per_orbit": 12,
+ "quick": false,
+ "ckpt": "v2c.pt"
+}

@@ -1,4 +1,7 @@
-"""sintonia_reativo.py -- Marco 5: sintonia JUSTA do controlador reativo (R) em sementes DISJUNTAS das de teste.
+"""sintonia_reativo.py (v7, base: v4 commitado; so a GRADE mudou) -- Marco 5: sintonia JUSTA do controlador reativo (R) em sementes DISJUNTAS das de teste.
+ESTADO: ESCRITO SEM TER SIDO EXECUTADO. Ao commitar, salve com o nome canonico sintonia_reativo.py.
+Mudanca v7: grade estendida kp {2,5,20,60,120}, ki {0,1;0,5;1,5;3,0}, margem {0;0,5;1;1,5;2;3;4} K (140 pontos por sensor x quant; o piloto tinha 54).
+Motivo: no piloto e na sintonia de 6 orbitas o melhor ponto caiu na BORDA da grade em quase todos os casos. Margens negativas NAO entram (decisao do usuario).
 Criterio (declarado ANTES de ver resultados; [HIPOTESE DECLARADA]): para cada (sensor, quantizacao), escolher (kp, ki, margem) que MAXIMIZA a vazao media
 da ultima orbita (tops_frac_last, media sobre cenarios x sementes de calibracao) SUJEITO a: nenhum run de calibracao com T_j > 80 C (viol_int_Ks == 0, estrito)
 e nenhum run abaixo do piso de SoC. O R recebe a mesma exigencia de seguranca do TEMS (zero tempo acima de 80 C) e a margem e escolhida POR sensor.
@@ -16,7 +19,7 @@ from marco5_tems import run_scenario, chave_sintonia
 
 SEEDS_CAL_DEFAULT = (100, 101, 102)
 CENARIOS_CAL = ("nominal", "burst")
-GRADE = {"kp": (5.0, 20.0, 60.0), "ki": (0.1, 0.5, 1.5), "margem": (0.0, 0.5, 1.0, 1.5, 2.0, 3.0)}
+GRADE = {"kp": (2.0, 5.0, 20.0, 60.0, 120.0), "ki": (0.1, 0.5, 1.5, 3.0), "margem": (0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0)}
 GRADE_QUICK = {"kp": (20.0,), "ki": (0.5,), "margem": (0.0, 1.0, 2.0, 3.0)}
 CAMPOS = ("viol_int_Ks", "t_above_80_s", "t_soc_below_min_s", "soc_min", "tops_frac_last", "tj_max_C", "tj_max_last_C", "dE_bess_last_Wh", "energy_resid_rel")
 
