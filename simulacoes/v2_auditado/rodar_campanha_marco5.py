@@ -1,4 +1,7 @@
-"""rodar_campanha_marco5.py (v7, base: v5 commitado) -- orquestrador da campanha do Marco 5 (Colab ou local).
+"""rodar_campanha_marco5.py (v8 = v7 + correcao do --resumo; nenhuma simulacao muda) -- orquestrador da campanha do Marco 5 (Colab ou local).
+v8: no --resumo, valores ausentes em quant/mtotal/dt_ctrl podiam virar NaN (pandas novo) e o groupby descartava essas linhas
+(HIPOTESE, nao confirmada: AGREGADO e PAREADA so com o bloco pareto). Agora ausentes viram texto ('none', 'nan', '60.0'),
+os groupby usam dropna=False e o AGREGADO imprime '# cobertura: X de Y execucoes' para a falha nao passar despercebida.
 ESTADO: ESCRITO SEM TER SIDO EXECUTADO. Rode antes: pytest test_marco5.py test_orquestrador_v7.py, depois --dry-run e --quick.
 Ao commitar, salve este arquivo com o nome canonico rodar_campanha_marco5.py (sem o sufixo _v7); o test_orquestrador_v7.py importa por esse nome.
 
@@ -370,6 +373,16 @@ def calcula_veredito(linhas, lat=None, tol_soc=1e-6, diverg=None):
     return out
 
 
+def _texto_chave(x, padrao):
+    """Valor de chave de agrupamento como texto; ausente (None/NaN/NA) vira 'padrao'."""
+    try:
+        if x is None or x != x:
+            return padrao
+    except Exception:
+        return padrao
+    return str(x)
+
+
 def gerar_resumo(out, imprimir=True):
     """Consolida tudo em UM TXT (m5_resumo_para_colar.txt) para voce colar na conversa."""
     import pandas as pd
@@ -404,10 +417,10 @@ def gerar_resumo(out, imprimir=True):
             div.append(d)
     df = pd.DataFrame(linhas)
     if not df.empty:
-        for c in ("quant", "mtotal", "dt_ctrl"):
+        for c, pad in (("quant", "none"), ("mtotal", "nan"), ("dt_ctrl", "60.0")):
             if c not in df:
                 df[c] = None
-            df[c] = df[c].astype(str)
+            df[c] = [_texto_chave(x, pad) for x in df[c]]
         for c in ("pred_err_rms_last_K", "dE_over_ti_last3", "n_infeasible", "n_fallback", "decision_ms_mean", "infeasible_diag"):
             if c not in df:
                 df[c] = None
@@ -461,14 +474,14 @@ def gerar_resumo(out, imprimir=True):
     def agregado():
         if df.empty:
             return "sem resultados"
-        g = df.groupby(KEYS + ["ctrl"]).agg(n=("seed", "count"), tj_last_pior=("tj_max_last_C", "max"), runs_viol=("viol_int_Ks", lambda x: int((x > 0).sum())),
+        g = df.groupby(KEYS + ["ctrl"], dropna=False).agg(n=("seed", "count"), tj_last_pior=("tj_max_last_C", "max"), runs_viol=("viol_int_Ks", lambda x: int((x > 0).sum())),
                                             t80_total=("t_above_80_s", "sum"), tops=("tops_frac_last", "mean"), soc_min=("soc_min", "min"), infeas=("n_infeasible", "sum"),
                                             fallback=("n_fallback", "sum"), frac_pue_ok=("pue_ok", "mean"), frac_pue_semabs=("pue_ok_semabs", "mean"), pred_last=("pred_last", "mean"), lat_ms=("decision_ms_mean", "mean")).reset_index()
-        return g.round(4).to_csv(index=False)
+        return "# cobertura: %d de %d execucoes\n" % (int(g["n"].sum()), len(df)) + g.round(4).to_csv(index=False)
 
     def pareado():
         rows = []
-        for k, g in df.groupby(KEYS):
+        for k, g in df.groupby(KEYS, dropna=False):
             p = g.pivot_table(index="seed", columns="ctrl", values="tops_frac_last")
             for a, b in PARES:
                 if a in p and b in p:
