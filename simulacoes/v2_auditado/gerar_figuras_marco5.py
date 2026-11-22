@@ -103,6 +103,88 @@ def main():
     plt.close(fig)
     print("Saved:", out, os.path.getsize(out), "bytes")
 
+    # ---- Figura 4.3: Sintese quantitativa 2x2 (P2, Latencia, Convergencia SoC, PUE 3 vs 9) ----
+    with open(os.path.join(DIR, "m5_n20_consolidado", "m5_veredito_P1_P5_juntas.json"), encoding="utf-8") as f:
+        ver = json.load(f)
+    with open(os.path.join(DIR, "conv_curto", "conv_TEMS_RC3_sem_calibracao_s10_soc020_n20.json"), encoding="utf-8") as f:
+        c20 = json.load(f)
+    with open(os.path.join(DIR, "conv_curto", "conv_TEMS_RC3_sem_calibracao_s10_soc095_n20.json"), encoding="utf-8") as f:
+        c95 = json.load(f)
+
+    fig2, axes2 = plt.subplots(2, 2, figsize=(11.0, 7.6))
+    ax_p2, ax_lat = axes2[0]
+    ax_conv, ax_pue = axes2[1]
+
+    # (a) P2: pior Tj por cenario
+    cens = ["eps_baixo", "r_int_alto", "r_int_muito_alto", "combinada"]
+    cen_labels = [r"\texttt{eps\_baixo}", r"\texttt{r\_int\_alto}", r"\texttt{r\_int\_muito\_alto}", r"\texttt{combinada}"]
+    p2_map = {(d["cenario"], d["ctrl"]): d["tj_pior_C"] for d in ver["P2"]["detalhe"]}
+    x = np.arange(len(cens))
+    w = 0.25
+    ax_p2.bar(x - w, [p2_map[(c, "TEMS_RC3")] for c in cens], w, color="#1f77b4", label="TEMS_RC3")
+    ax_p2.bar(x,     [p2_map[(c, "TEMS_PINN")] for c in cens], w, color="#ff7f0e", label="TEMS_PINN")
+    ax_p2.bar(x + w, [p2_map[(c, "R_SINT")] for c in cens], w, color="#d62728", label="R_SINT (PI)")
+    ax_p2.axhline(80.0, color="black", ls="--", lw=1.1, label=r"Limite $80^\circ\mathrm{C}$")
+    ax_p2.set_xticks(x)
+    ax_p2.set_xticklabels(["eps_baixo", "r_int_alto", "r_int_muito_alto", "combinada"], fontsize=8.5)
+    ax_p2.set_ylim(75, 90)
+    ax_p2.set_ylabel(r"Pior $T_j$ em 10 sementes ($^\circ\mathrm{C}$)")
+    ax_p2.set_title("(a) Critério P2: pior $T_j$ sob perturbações (20 órbitas)")
+    ax_p2.legend(loc="upper left", frameon=True, ncol=2)
+
+    # (b) Latencia isolada (m5_n20)
+    cats = ["TEMS_RC3", "TEMS_PINN"]
+    means = [50.873, 7.683]
+    p99s = [67.238, 16.354]
+    xl = np.arange(len(cats))
+    wl = 0.32
+    b1 = ax_lat.bar(xl - wl/2, means, wl, color="#1f77b4", label="Média (ms)")
+    b2 = ax_lat.bar(xl + wl/2, p99s,  wl, color="#aec7e8", edgecolor="#1f77b4", label=r"$p_{99}$ (ms)")
+    for bars in (b1, b2):
+        for bar in bars:
+            h = bar.get_height()
+            ax_lat.text(bar.get_x() + bar.get_width()/2, h + 1.2, f"{h:.2f}", ha="center", va="bottom", fontsize=8.5)
+    ax_lat.set_xticks(xl)
+    ax_lat.set_xticklabels(cats)
+    ax_lat.set_ylim(0, 78)
+    ax_lat.set_ylabel("Tempo de decisão completa (ms)")
+    ax_lat.set_title(r"(b) Latência isolada em \texttt{i5-8500T} (PINN $6{,}62\times$ mais rápida)")
+    ax_lat.legend(loc="upper right", frameon=True)
+
+    # (c) Convergencia orbital (soc_end por orbita, 20 orbitas)
+    orbs20 = np.arange(1, len(c20["por_orbita"]) + 1)
+    soc20 = [o["soc_end"] for o in c20["por_orbita"]]
+    soc95 = [o["soc_end"] for o in c95["por_orbita"]]
+    ax_conv.plot(orbs20, soc20, "o-", color="#1f77b4", lw=1.6, ms=4.5, label=r"$SoC_0 = 0{,}20$")
+    ax_conv.plot(orbs20, soc95, "s--", color="#ff7f0e", lw=1.6, ms=4.5, label=r"$SoC_0 = 0{,}95$")
+    ax_conv.axvline(4, color="gray", ls=":", lw=1.1, label="Convergência (órbita 4)")
+    ax_conv.set_xlabel("Órbita")
+    ax_conv.set_ylabel(r"$SoC$ ao final da órbita (—)")
+    ax_conv.set_title("(c) Convergência de $SoC_0$ e batimento de fase (~4,4 órbitas)")
+    ax_conv.set_xticks(range(2, 21, 2))
+    ax_conv.legend(loc="lower right", frameon=True)
+
+    # (d) PUE periodico: janela 3 vs janela 9
+    ctrls_pue = ["R_SINT", "TEMS_RC3", "TEMS_PINN", "TEMS_SOLVER", "S1"]
+    j3 = [50.00, 43.10, 42.58, 0.00, 86.11]
+    j9 = [100.0, 100.0, 99.03, 100.0, 86.11]
+    xp = np.arange(len(ctrls_pue))
+    wp = 0.34
+    ax_pue.bar(xp - wp/2, j3, wp, color="#9edae5", edgecolor="#17becf", label="Janela 3 órbitas")
+    ax_pue.bar(xp + wp/2, j9, wp, color="#2ca02c", label="Janela 9 órbitas (emenda)")
+    ax_pue.set_xticks(xp)
+    ax_pue.set_xticklabels(ctrls_pue, fontsize=8.0)
+    ax_pue.set_ylim(0, 115)
+    ax_pue.set_ylabel("Execuções com PUE periódico (%)")
+    ax_pue.set_title(r"(d) Periodicidade do PUE ($|\Delta E|/E_{TI} < 10^{-3}$, 876 exec.)")
+    ax_pue.legend(loc="lower right", frameon=True)
+
+    fig2.tight_layout()
+    out2 = os.path.join(FIG_DIR, "fig_4_3_marco5_sintese_quantitativa.png")
+    fig2.savefig(out2, dpi=300)
+    plt.close(fig2)
+    print("Saved:", out2, os.path.getsize(out2), "bytes")
+
 
 if __name__ == "__main__":
     main()
