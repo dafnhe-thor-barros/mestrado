@@ -1,0 +1,17 @@
+cenario,ctrl,margem,n,tj_max_pior_C,n_viol_80C,tops_last_medio,pred_err_rms_last_medio_K,n_infeasible_total,status
+nominal,TEMS_RC3,regra,3,78.297,0,0.8772,0.778,4,ok
+nominal,TEMS_RC3,m0,3,80.340,3,0.8828,0.781,0,ok
+nominal,TEMS_SOLVER,regra,3,77.779,0,0.8781,0.027,0,ok
+nominal,TEMS_SOLVER,m0,3,79.969,0,0.8825,0.008,0,ok
+r_int_alto,TEMS_RC3,regra,3,82.575,3,0.7387,9.457,358,ok
+r_int_alto,TEMS_RC3,m0,3,84.328,3,0.7517,9.644,320,ok
+r_int_alto,TEMS_SOLVER,regra,3,77.686,0,0.7936,0.101,0,ok
+r_int_alto,TEMS_SOLVER,m0,3,79.840,0,0.8009,0.090,0,ok
+r_int_muito_alto,TEMS_RC3,regra,3,87.108,3,0.6524,16.598,564,ok
+r_int_muito_alto,TEMS_RC3,m0,3,89.056,3,0.6576,16.820,536,ok
+r_int_muito_alto,TEMS_SOLVER,regra,3,77.355,0,0.7172,0.132,0,ok
+r_int_muito_alto,TEMS_SOLVER,m0,3,79.615,0,0.7242,0.125,0,ok
+combinada,TEMS_RC3,regra,3,85.090,3,0.6857,8.683,469,ok
+combinada,TEMS_RC3,m0,3,86.536,3,0.6981,8.866,439,ok
+combinada,TEMS_SOLVER,regra,3,77.168,0,0.7424,0.139,0,ok
+combinada,TEMS_SOLVER,m0,3,79.376,0,0.7501,0.131,0,ok
