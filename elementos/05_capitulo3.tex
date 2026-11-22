@@ -147,11 +147,11 @@ Para viabilizar o controle preditivo em tempo real sem executar o solucionador d
 A arquitetura (\texttt{modelo\_pinn.py}, versão 2) emprega duas redes neurais totalmente conectadas paralelas com ativação tangente hiperbólica ($\tanh$, 4 camadas ocultas de 64 neurônios cada, totalizando $26.178$ parâmetros): $\hat{T}(\xi, \tau; \mathbf{p})$ para o campo adimensional da aleta ($\xi = x/L \in [0,1]$, $\tau = t/W \in [0,1]$) e $\hat{T}_j(\tau; \mathbf{p})$ para a junção, condicionadas ao vetor físico de seis entradas $\mathbf{p} = (f,\; q_{abs},\; Q_{rest},\; T_{j,0},\; T_{raiz,0},\; \Delta_{ponta})$, onde $\Delta_{ponta} = T_{raiz,0} - T_{ponta,0} \in [0,\; 15]\text{ K}$ parametriza o perfil quadrático inicial da aleta $T_0(\xi) = (T_{raiz,0} - \Delta_{ponta}) + \Delta_{ponta}(1 - \xi)^2$ (cuja divergência máxima frente ao perfil exato do solver em regime periódico foi medida em $\le 0{,}03\text{ K}$).
 
 A condição inicial em $\tau = 0$ é imposta de forma exata por construção (\textit{hard initial condition}):
-\begin{equation}
-    \hat{T}(\xi, \tau; \mathbf{p}) = T_0(\xi; \mathbf{p}) + \tau\,\Delta T_{esc}\,\mathcal{N}_{aleta}(\xi, \tau, \tilde{\mathbf{p}}), \qquad
-    \hat{T}_j(\tau; \mathbf{p}) = T_{j,0} + \tau\,\Delta T_{esc}\,\mathcal{N}_{mod}(\tau, \tilde{\mathbf{p}}),
+\begin{align}
+    \hat{T}(\xi, \tau; \mathbf{p}) &= T_0(\xi; \mathbf{p}) + \tau\,\Delta T_{esc}\,\mathcal{N}_{aleta}(\xi, \tau, \tilde{\mathbf{p}}), \nonumber \\
+    \hat{T}_j(\tau; \mathbf{p}) &= T_{j,0} + \tau\,\Delta T_{esc}\,\mathcal{N}_{mod}(\tau, \tilde{\mathbf{p}}),
     \label{eq:pinn_hard_ic}
-\end{equation}
+\end{align}
 zerando identicamente o resíduo inicial ($\mathcal{L}_{ic} \equiv 0$). O treinamento é estritamente \textbf{baseado em física pura} (sem termo de dados supervisionados do solver, $w_{data} = 0$), minimizando os resíduos das Eqs.~(\ref{eq:edp_aleta})--(\ref{eq:edo_modulo}) normalizados em \textbf{kelvin equivalente} (dividindo a EDP por $h_{rad} = 4(2\varepsilon\sigma)T_{ref}^3$, o contorno da raiz por $s/R_{int}$ e multiplicando a EDO do módulo por $R_{int}$):
 \begin{equation}
     \mathcal{L}_{fis}(\theta) = \mathcal{L}_{pde}(\theta) + \mathcal{L}_{bc}(\theta) + \mathcal{L}_{mod}(\theta),

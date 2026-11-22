@@ -25,12 +25,13 @@ A suíte automatizada da PINN versão 2 (\texttt{modelo\_pinn.py}, PyTorch puro,
 
 \begin{table}[htbp]
 \centering
-\small
+\scriptsize
+\setlength{\tabcolsep}{4pt}
 \caption{Evolução das ablações de treinamento da PINN pura (zero dados do solver) avaliadas nos $10$ casos dentro do domínio de treino v2.}
 \label{tab:pinn_ablacoes}
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}Xcccccc}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}Xccccc}
 \toprule
-\textbf{Modelo / Execução} & \textbf{Pior erro ($^\circ$C)} & \textbf{Mediana ($^\circ$C)} & \textbf{Casos $\le 0{,}5^\circ$C} & \textbf{Pior subest. pico ($^\circ$C)} & \textbf{RMS $L_{pde}$ / $L_{bc}$ (K)} \\
+\textbf{Modelo / Execução} & \textbf{Pior ($^\circ$C)} & \textbf{Med. ($^\circ$C)} & \textbf{$\le 0{,}5^\circ$C} & \textbf{Subest. ($^\circ$C)} & \textbf{RMS $L_{pde}/L_{bc}$ (K)} \\
 \midrule
 Base (v1, 6k Adam) & $9{,}95$* & $\approx 4{,}0$* & $0/23$* & $-9{,}95$* & — \\
 E1 (\texttt{--hard\_ic}, 6k) & $2{,}97$* & $1{,}81$* & $1/23$* & $-2{,}68$* & — \\
@@ -154,12 +155,13 @@ Os principais resultados por critério são detalhados a seguir:
 
 \begin{table}[htbp]
 \centering
-\small
+\footnotesize
+\setlength{\tabcolsep}{4pt}
 \caption{Desempenho térmico no critério P2 (10 sementes, 20 órbitas) nos cenários em que \texttt{S1} falha.}
 \label{tab:marco5_p2}
 \begin{tabular}{lccc}
 \toprule
-\textbf{Cenário de perturbação} & \textbf{TEMS\_RC3} (viol. / pior $T_j$) & \textbf{TEMS\_PINN} (viol. / pior $T_j$) & \textbf{R\_SINT} (viol. / pior $T_j$) \\
+\textbf{Cenário} & \textbf{TEMS\_RC3} (viol. / pior $T_j$) & \textbf{TEMS\_PINN} (viol. / pior $T_j$) & \textbf{R\_SINT} (viol. / pior $T_j$) \\
 \midrule
 \texttt{eps\_baixo} ($\varepsilon: 0{,}90 \to 0{,}80$) & $0/10$ ($79{,}62^\circ\text{C}$) & $0/10$ ($79{,}43^\circ\text{C}$) & $10/10$ ($81{,}70^\circ\text{C}$) \\
 \texttt{r\_int\_alto} ($R_{int}: +50\%$) & $10/10$ ($83{,}11^\circ\text{C}$) & $10/10$ ($83{,}11^\circ\text{C}$) & $10/10$ ($82{,}43^\circ\text{C}$) \\
