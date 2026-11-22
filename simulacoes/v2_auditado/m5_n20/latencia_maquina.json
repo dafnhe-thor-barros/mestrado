@@ -1,0 +1,1 @@
+{"maquina_declarada": "i5-8500T, Debian, 6 nucleos", "platform": "Linux-6.12.115+deb13.1-amd64-x86_64-with-glibc2.41", "processor": "", "cpu_count": 6, "python": "3.13.5", "loadavg_1min_antes": 0.12255859375, "returncode": 0, "quando": "2026-11-22 04:23:24"}
