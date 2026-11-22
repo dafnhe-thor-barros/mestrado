@@ -37,8 +37,8 @@ Célula BESS Saft VES~16 & $3{,}6$; $4{,}5$; $0{,}115$; $140$ & V; Ah; kg; Wh/kg
 Banco BESS ($19\text{P}108\text{S}$, $SoC$) & $2.052$ cél.; $236{,}0$; $[0{,}70,\; 0{,}95]$ & —; kg; — & Calculado (\texttt{modelo\_bess.py}); EOL $20\%$ (hip.) \\
 Eficiências BESS ($\eta_{ch}$, $\eta_{dis}$) & $0{,}995$; $0{,}97$ & — & Hipóteses de projeto \\
 Módulos IA (NVIDIA A100 SXM4) & $100 \times 400$; $624$ & W; TOPS & Fonte primária: Datasheet A100 \cite{nvidia_a100_datasheet} \\
-Curva DVFS $V(f)$ e fuga ($\beta_T$, $\alpha_{leak}$) & $[300,\; 1.410]$; $0{,}025$; $0{,}15$ & MHz; K$^{-1}$; — & Hipóteses de projeto calibradas em $400\text{ W}$ \\
-Planta térmica ($R_{int}$, $C_{mod}$, $C_{fluid}$) & $0{,}08$; $600$; $60.000$ & K/W; J/K; J/K & Hipóteses de projeto (\texttt{modelo\_termico.py}) \\
+Curva DVFS $V(f)$ e fuga ($\beta_T$, $\alpha_{leak}$) & $[300,\; 1.410]$; $0{,}02$; $0{,}20$ & MHz; K$^{-1}$; — & Hipóteses de projeto calibradas em $400\text{ W}$ \\
+Planta térmica ($R_{int}$, $C_{mod}$, $C_{fluid}$) & $0{,}08$; $500$; $50.000$ & K/W; J/K; J/K & Hipóteses de projeto (\texttt{modelo\_termico.py}) \\
 Revestimento Z-93 EOL (30 anos LEO) & $\alpha_s = 0{,}36$; $\varepsilon = 0{,}90$ & — & Resumo oficial NASA NTRS \cite{hasegawa1992z93} \\
 Área de projeto do radiador ($A_{pl}$ / $A_{emit}$) & $49{,}90$ / $99{,}80$ & m$^2$ & Calculado para $38{,}18\text{ kW}$ ($T_j \le 80^\circ\text{C}$) \\
 Sensores ($T_{raiz}$ RTD; $T_j$ diodo) & $\sigma=0{,}05$ ($\pm 0{,}25$); $\sigma=0{,}5$ ($\pm 0{,}5$/$1{,}5$) & K & IEC 60751 Classe A / Hipóteses declaradas \\

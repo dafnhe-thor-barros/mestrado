@@ -103,7 +103,7 @@ com:
     P_{dyn}(V, f) &= u \,(1 - \alpha_{fix} - \alpha_{leak}) \, P_{TDP} \left(\frac{V}{V_{nom}}\right)^2 \left(\frac{f}{f_{nom}}\right), \\
     P_{leak}(V, T_j) &= \alpha_{leak}\, P_{TDP} \left(\frac{V}{V_{nom}}\right)^{k_v} \exp\!\Big[\beta_T (T_j - T_{ref})\Big],
 \end{align}
-onde $P_{TDP} = 400\text{ W}$, $f_{nom} = 1.410\text{ MHz}$ (\textit{GPU Boost Clock} da arquitetura A100), $u = 1{,}0$ (utilização plena), e os parâmetros da lei $V(f)$ e de fuga ($V_{\min} = 0{,}70\text{ V}$, $V_{nom} = 1{,}00\text{ V}$, $f_v = 0{,}50\,f_{nom}$, $\alpha_{fix} = 0{,}12$, $\alpha_{leak} = 0{,}15$, $k_v = 1{,}5$, $\beta_T = 0{,}025\text{ K}^{-1}$, $T_{ref} = 80^\circ\text{C}$) são adotados como hipóteses de projeto calibradas para fechar exatamente $P_{mod}(1.410\text{ MHz}, 80^\circ\text{C}) = 400{,}0\text{ W}$. A Figura~\ref{fig:ia_dvfs_fuga} evidencia o ganho cúbico aproximado do DVFS e o peso crescente da fuga térmica em $T_j = 80^\circ\text{C}$.
+onde $P_{TDP} = 400\text{ W}$, $f_{nom} = 1.410\text{ MHz}$ (\textit{GPU Boost Clock} da arquitetura A100), $u = 1{,}0$ (utilização plena), e os parâmetros da lei $V(f)$ e de fuga ($V_{\min} = 0{,}65\text{ V}$, $V_{nom} = 0{,}80\text{ V}$, $f_v = 0{,}40\,f_{nom}$, $\alpha_{fix} = 0{,}20$, $\alpha_{leak} = 0{,}20$, $k_v = 3{,}0$, $\beta_T = 0{,}02\text{ K}^{-1}$, $T_{ref} = 80^\circ\text{C}$) são adotados como hipóteses de projeto calibradas para fechar exatamente $P_{mod}(1.410\text{ MHz}, 80^\circ\text{C}) = 400{,}0\text{ W}$. A Figura~\ref{fig:ia_dvfs_fuga} evidencia o ganho superlinear do DVFS e o peso crescente da fuga térmica em $T_j = 80^\circ\text{C}$.
 
 \begin{figure}[htbp]
     \centering
@@ -116,7 +116,7 @@ onde $P_{TDP} = 400\text{ W}$, $f_{nom} = 1.410\text{ MHz}$ (\textit{GPU Boost C
 \subsection{Planta Térmica de Referência no Vácuo (EDP 1D + EDO)}
 \label{sec:planta_termica}
 
-A planta térmica de referência (\texttt{modelo\_termico.py}) acopla três subsistemas físicos em conservação estrita de energia: (i) o nó concentrado de junção dos módulos aceleradores ($T_j$, capacitância térmica $C_{mod} = 600\text{ J/K}$ e resistência térmica interna junção-coletor $R_{int} = 0{,}08\text{ K/W}$ por módulo — hipóteses de projeto); (ii) o nó do coletor/fluido térmico na raiz do radiador ($T_{raiz} = T(0,t)$, capacitância $C_{fluid} = 60.000\text{ J/K}$); e (iii) uma aleta metálica de radiador de liga de alumínio 6061-T6 ($k = 167\text{ W/(m}\cdot\text{K)}$, espessura $\delta = 2{,}0\text{ mm}$, meia-largura entre tubos $L = 0{,}15\text{ m}$, capacidade térmica superficial $c_a = 4.860\text{ J/(m}^2\cdot\text{K)}$) irradiando pelas duas faces para o espaço profundo ($T_s = 3{,}0\text{ K}$).
+A planta térmica de referência (\texttt{modelo\_termico.py}) acopla três subsistemas físicos em conservação estrita de energia: (i) o nó concentrado de junção dos módulos aceleradores ($T_j$, capacitância térmica $C_{mod} = 500\text{ J/K}$ e resistência térmica interna junção-coletor $R_{int} = 0{,}08\text{ K/W}$ por módulo — hipóteses de projeto); (ii) o nó do coletor/fluido térmico na raiz do radiador ($T_{raiz} = T(0,t)$, capacitância $C_{fluid} = 50.000\text{ J/K}$); e (iii) uma aleta metálica de radiador de liga de alumínio 6061-T6 ($k = 167\text{ W/(m}\cdot\text{K)}$, espessura $\delta = 2{,}0\text{ mm}$, meia-largura entre tubos $L = 0{,}075\text{ m}$, capacidade térmica superficial $c_a = 4.050\text{ J/(m}^2\cdot\text{K)}$) irradiando pelas duas faces para o espaço profundo ($T_s = 3{,}0\text{ K}$).
 
 Integrando a condição de contorno radiativa 3D na espessura da aleta fina (número de Biot transversal $\ll 1$), o campo unidimensional de temperatura $T(x,t)$ ($0 < x < L$) e a temperatura de junção $T_j(t)$ satisfazem o sistema EDP-EDO não linear:
 \begin{align}
@@ -165,12 +165,19 @@ Como a temperatura na ponta da aleta ($T_{ponta}$) não é instrumentada em voo 
 \subsection{Formulação do Controlador Preditivo TEMS/DVFS}
 \label{sec:formulacao_tems}
 
-O Sistema de Gerenciamento Térmico-Energético (TEMS) opera em horizonte deslizante sobre a janela $W = 300\text{ s}$, recebendo a cada ciclo de controle as medições de $T_j(t)$, $T_{raiz}(t)$ e $SoC(t)$, estimando $\hat{\Delta}_{ponta}(t)$ e selecionando a frequência de relógio $f(t) \in [300,\; 1.410]\text{ MHz}$ (ou alocação equivalente de módulos ativos) que maximiza o rendimento computacional útil $P_{TI}$ sujeito às restrições rígidas de integridade térmica e energética:
+O Sistema de Gerenciamento Térmico-Energético (TEMS) opera em horizonte deslizante sobre a janela $W = 300\text{ s}$. A cada ciclo de controle, recebe as leituras de $T_j(t)$ e $T_{raiz}(t)$ e o estado de energia $E(t)$ do BESS (admitido conhecido), estima $\hat{\Delta}_{ponta}(t)$ e seleciona a frequência de relógio comum $f(t) \in [f_{\min},\, f_{\max}] = [300,\; 1.410]\text{ MHz}$. Seja $f_{hi}(t) = \max\{f_{\min},\, \min\{f_{\max},\, f_{dem}(t),\, f_{cap}(t)\}\}$ o teto de frequência imposto pela demanda de carga — sendo $f_{dem}(t)$ a frequência demandada pela carga de trabalho (constante em $f_{\max}$, exceto no cenário de rajadas, em que alterna entre $f_{\max}$ e a frequência correspondente a $20\text{ kW}$ de potência de TI) — e pelo supervisor energético, em que $f_{cap}(t)$ é a frequência cuja potência elétrica por módulo iguala o teto de potência $P_{cap}(t, E)$. No eclipse, esse teto distribui a energia armazenada acima de $SoC_{min}\,E_{EOL}$ pelo tempo restante de eclipse, descontadas as perdas de conversão e a potência auxiliar; sob insolação, o teto é a potência computacional sustentável $P_{TI,sol,sust}$ do dimensionamento do BESS acima. A decisão do TEMS é
 \begin{equation}
-\begin{split}
-    &\max_{f \in [f_{\min},\, f_{nom}]} \; P_{TI}(f, \hat{T}_j) \\
-    &\text{sujeito a} \quad \max_{\tau \in (0, 1]} \hat{T}_j(\tau; f) \le T_{j,\max} - m_T, \qquad SoC_{min} \le SoC(t + \Delta t) \le SoC_{max},
-\end{split}
-    \label{eq:tems_otimizacao}
+f^{\star}(t) =
+\begin{cases}
+\max \mathcal{F}(t), & \text{se } \mathcal{F}(t) \neq \emptyset, \\[4pt]
+f_{\min}, & \text{caso contrário (decisão inviável),}
+\end{cases}
+\label{eq:tems_otimizacao}
 \end{equation}
-em que $T_{j,\max} = 80^\circ\text{C}$, $m_T > 0$ é a margem de segurança térmica (que acomoda o erro residual da PINN e o viés de sensoriamento), $SoC_{min} = 0{,}70$ e $SoC_{max} = 0{,}95$. A verificação comparativa da PINN e o desempenho em malha fechada do controlador TEMS frente aos cenários sem controle e de controle reativo são apresentados no Capítulo~4.
+em que $\mathcal{F}(t)$ é o conjunto de frequências admissíveis,
+\begin{equation}
+\mathcal{F}(t) = \Bigl\{ f \in [f_{\min},\, f_{hi}(t)] \;:\; \max_{\tau \in [t,\, t+W]} \hat{T}_j(\tau; f) \le T_{j,\max} - m_T \Bigr\}.
+\label{eq:tems_admissivel}
+\end{equation}
+Sob a hipótese de monotonicidade do pico previsto em $f$, $\mathcal{F}(t)$ é não vazio se e somente se $f_{\min} \in \mathcal{F}(t)$.
+Aqui $T_{j,\max} = 80^\circ\text{C}$ e $m_T \ge 0$ é a margem de segurança térmica, que acomoda o erro residual do preditor e o viés de sensoriamento. A trajetória prevista $\hat{T}_j(\tau; f)$ parte da leitura atual de $T_j$; por isso, uma leitura acima de $T_{j,\max} - m_T$ torna a decisão inviável qualquer que seja o preditor. Nas simulações, a vazão útil é medida pela frequência média normalizada $f/f_{\max}$, de modo que maximizar a vazão equivale a maximizar $f$; efeitos de gargalo de memória e outras não linearidades de desempenho não são modelados. A maior frequência é obtida por bisseção com 7 iterações (resolução da ordem de $9\text{ MHz}$), que supõe pico previsto monotônico em $f$ e devolve o limite inferior do intervalo final. O preditor pode ser o modelo concentrado RC ou a PINN. A verificação comparativa dos preditores e o desempenho em malha fechada do TEMS frente aos cenários sem controle, de política estática e de controle reativo são apresentados no Capítulo~4.
