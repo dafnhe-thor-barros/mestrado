@@ -1,0 +1,3 @@
+ctrl,sensor,seed,soc0,norb,conv_soc_end,conv_tops,conv_tj_max,conv_dE_over_ti,soc_end_final,soc_min_global,soc_max_global,n_infeasible,t_above_80_s,shed_Wh
+TEMS_RC3,sem_calibracao,10,0.20,20,20,None,19,20,0.8454,0.2004,0.9500,5,0.0,8519.0
+TEMS_RC3,sem_calibracao,10,0.95,20,20,None,19,20,0.8454,0.7000,0.9500,5,0.0,5.3

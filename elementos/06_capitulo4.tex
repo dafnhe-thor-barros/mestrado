@@ -104,8 +104,90 @@ Para descartar dependência de inicialização aleatória, executou-se uma campa
 \subsection{Controle Ativo TEMS/DVFS em Malha Fechada (Marco 5)}
 \label{sec:resultados_marco5}
 
-A integração em malha fechada encontra-se implementada e verificada em \texttt{contrato\_parametros.py}, \texttt{marco5\_tems.py} e \texttt{test\_marco5.py} (\texttt{14 passed in 10.12s} com PyTorch e verificação automática de \texttt{SHA256} do checkpoint congelado \texttt{v2c.pt}), adotando controle preditivo supervisório com \textit{move blocking} ($f$ comum em $[300,\; 1.410]\text{ MHz}$, período de controle $\Delta t_{ctrl} = 60\text{ s}$, horizonte $W = 300\text{ s}$ alinhado às quebras de eclipse), barreira de domínio OOD e supervisor energético comum de órbita completa.
+A integração em malha fechada encontra-se implementada e verificada em \texttt{contrato\_parametros.py}, \texttt{marco5\_tems.py}, \texttt{marco5\_orbitas.py} e \texttt{test\_marco5.py}, com verificação automática de integridade (\texttt{SHA256}) do checkpoint congelado \texttt{v2c.pt}. O controlador supervisório TEMS opera com única variável manipulada (frequência comum de relógio $f \in [300,\; 1.410]\text{ MHz}$), período de decisão $\Delta t_{ctrl} = 60\text{ s}$, horizonte preditivo $W = 300\text{ s}$, bisseção de 7 iterações, barreira OOD com \textit{fallback} para o modelo RC3 (exclusiva do preditor PINN) e supervisor energético de órbita completa.
 
-Os critérios pré-registrados de avaliação (P1 a P5) comparam cinco arquiteturas: \textbf{S0} (sem controle), \textbf{S1} (estático offline), \textbf{R} (reativo PI sintonizado em sementes de calibração disjuntas das de teste), \textbf{TEMS+RC3} (preditor físico concorrente), \textbf{TEMS+PINN} (proposta) e \textbf{Oráculo} (solver EDP). A verificação preliminar de integração em $3$ órbitas nominais (\texttt{m5\_nominal.json}, sensor sem calibração, semente $0$) já confirmou ausência de violações térmicas e de $SoC$ tanto para \texttt{TEMS\_PINN} ($T_{j,\max} = 78{,}33^\circ\text{C}$, $SoC_{\min} = 0{,}700$, vazão $0{,}875$, resíduo de energia $1{,}84 \times 10^{-12}$) quanto para \texttt{TEMS\_RC3} ($78{,}28^\circ\text{C}$, vazão $0{,}874$), com \textbf{decisão completa $4{,}2\times$ mais rápida na PINN} ($14{,}30\text{ ms}$ média / $34{,}56\text{ ms}$ p99 contra $59{,}63\text{ ms}$ / $142{,}53\text{ ms}$ do RC3), ao passo que \textbf{S0} colapsou ($86{,}66^\circ\text{C}$, $SoC = 0$).
+\subsubsection{Desenho da Campanha Experimental e Emendas Pós-Piloto}
 
-\textit{Nota de encerramento experimental:} os resultados definitivos da campanha completa do Marco~5 — abrangendo $6$ órbitas em regime periódico, sintonia justa do controlador reativo (\texttt{R\_SINT}) em sementes disjuntas, rajadas de carga, perturbações paramétricas ($\varepsilon$, $R_{int}$, $C_{mod}$), quantização NVML, fronteira de Pareto em $m_T \in \{0,\; 0{,}5,\; 1,\; 2,\; 3\}\text{ K}$ e cenários OOD — serão consolidados nesta seção imediatamente após a execução da suíte completa.
+A campanha definitiva em malha fechada consolidou \textbf{876 execuções} independentes em horizonte de \textbf{20 órbitas} ($T_{orb} = 5.926{,}38\text{ s}$; $\approx 32{,}9\text{ h}$ simuladas por execução), obtidas pela junção sem sobreposição de duas subcampanhas executadas sob idêntico contrato e hashes verificados (\texttt{m5\_n20\_s10\_14}, sementes 10 a 14, e \texttt{m5\_n20}, sementes 15 a 19; 438 execuções cada), utilizando \texttt{junta\_campanhas.py} com zero erros e zero avisos de compatibilidade. Uma campanha de referência de 6 órbitas (\texttt{m5\_final}, 438 execuções, sementes 10 a 14) foi mantida separadamente para análise de sensibilidade ao horizonte.
+
+Os critérios de avaliação (P1 a P5) foram definidos em código antes da execução da campanha final, comparando seis arquiteturas: operação sem controle (\textbf{S0}), política estática por fase orbital (\textbf{S1}), controlador reativo proporcional-integral sintonizado (\textbf{R\_SINT}), TEMS com preditor concentrado (\textbf{TEMS\_RC3}), TEMS com preditor neural informado por física (\textbf{TEMS\_PINN}) e um oráculo baseado no solucionador numérico da EDP (\textbf{TEMS\_SOLVER}, avaliado no cenário nominal). Em relação ao piloto inicial, cinco emendas metodológicas foram incorporadas e declaradas explicitamente: (i) contabilização de divergências numéricas do solucionador sob \texttt{S1} como violação de \texttt{S1} na definição de P2; (ii) separação entre a cláusula estrita de falsificação e a análise pós-hoc de sensibilidade em $0{,}25\text{ K}$; (iii) formalização do limiar de periodicidade energética ($|\Delta E|/E_{TI} < 10^{-3}$) e da emenda pós-hoc de janela de 9 órbitas; (iv) fixação da grade de sintonia de \texttt{R\_SINT} em sementes disjuntas das sementes de teste; e (v) expansão para 10 sementes de teste independentes (10 a 19) em 20 órbitas.
+
+\subsubsection{Síntese dos Critérios P1 a P5}
+
+A Tabela~\ref{tab:marco5_veredito} consolida os vereditos dos cinco critérios na campanha definitiva de 20 órbitas (876 execuções) lado a lado com a referência de 6 órbitas (\texttt{m5\_final}).
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Síntese dos critérios P1 a P5 na campanha consolidada (20 órbitas, 10 sementes, 876 execuções) e na referência de 6 órbitas (\texttt{m5\_final}, 438 execuções).}
+\label{tab:marco5_veredito}
+\begin{tabular}{p{2.3cm}p{3.8cm}p{3.9cm}p{3.5cm}}
+\toprule
+\textbf{Critério} & \textbf{Ref. 6 órbitas (438 exec.)} & \textbf{Consolidada 20 órb. (876 exec.)} & \textbf{Veredito consolidado} \\
+\midrule
+\textbf{P1} (Segurança térmica nominal, rajadas e quant.) & 0 violações em 120 exec. TEMS ($T_{j,\max} = 79{,}35^\circ\text{C}$); \texttt{R\_SINT} viola em 6 grupos ($80{,}08^\circ\text{C}$) & 0 violações em 240 exec. TEMS ($T_{j,\max} = 79{,}41^\circ\text{C}$); \texttt{R\_SINT} viola em 6 grupos ($80{,}23^\circ\text{C}$) & \textbf{ATENDIDO} \\
+\addlinespace
+\textbf{P2} (Robustez a perturbações) & 0/5 em \texttt{eps\_baixo}; 5/5 violações em \texttt{r\_int\_alto}, \texttt{r\_int\_muito\_alto} e \texttt{combinada} & 0/10 em \texttt{eps\_baixo}; 10/10 violações em \texttt{r\_int\_alto}, \texttt{r\_int\_muito\_alto} e \texttt{combinada} & \textbf{NÃO ATENDIDO} \\
+\addlinespace
+\textbf{P3} (Proteção de $SoC \ge 0{,}70$) & 0 violações em 401 exec. ($SoC_{\min} = 0{,}700$) & 0 violações em 802 exec. ($SoC_{\min} = 0{,}700$) & \textbf{ATENDIDO} \\
+\addlinespace
+\textbf{P4} (Vazão vs. \texttt{R\_SINT} na fronteira de Pareto) & \texttt{sem\_calibracao}: empate (5 pares); \texttt{calibrado}: insuficiente (1 par) & \texttt{sem\_calibracao}: empate (10 pares); \texttt{calibrado}: TEMS menor ($-0{,}00430$, 4 pares; 6 fora) & \textbf{NÃO ATENDIDO} \\
+\addlinespace
+\textbf{P5} (Equivalência PINN vs. RC3 e latência) & 1/19 grupos atribuível (\texttt{r\_int\_muito\_alto}, $-0{,}01079$); PINN $6{,}43\times$ mais rápida & 2/19 grupos atribuíveis (\texttt{eps\_baixo} $+0{,}00731$; \texttt{r\_int\_muito\_alto} $-0{,}00737$); PINN $6{,}62\times$ mais rápida & \textbf{ATRIBUÍVEL EM ALGUNS GRUPOS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Os principais resultados por critério são detalhados a seguir:
+
+\begin{itemize}
+    \item \textbf{P1 (Segurança Térmica sob Incerteza de Medição e Rajadas — ATENDIDO):} considerando a regra de margem do controlador ($m_T = m_{pred} + m_{sensor}$, com $m_{pred} = 0{,}72\text{ K}$ e $m_{sensor} \in \{0{,}5,\; 1{,}5\}\text{ K}$), nem \texttt{TEMS\_RC3} nem \texttt{TEMS\_PINN} violaram $80^\circ\text{C}$ em nenhuma das 240 execuções avaliadas nos blocos nominal, de rajadas e de quantização NVML (\texttt{round} e \texttt{trunc}), com pior temperatura de junção igual a $79{,}41^\circ\text{C}$. Por outro lado, o controlador reativo sintonizado \texttt{R\_SINT} violou o limite nos 6 grupos avaliados (nominal e quantização, com e sem calibração), atingindo até $80{,}23^\circ\text{C}$ (por exemplo, 7/10 sementes no nominal sem calibração e 10/10 sob quantização \texttt{trunc} calibrada). Na varredura de Pareto sem a margem da regra ($m_T = 0$), houve violações em ambos os preditores; com $m_T = 0{,}5\text{ K}$, houve violações na PINN.
+
+    \item \textbf{P2 (Robustez a Perturbações Paramétricas — NÃO ATENDIDO):} a Tabela~\ref{tab:marco5_p2} detalha os quatro cenários em que a política estática \texttt{S1} falhou (por violação térmica ou divergência numérica em \texttt{combinada} e \texttt{r\_int\_muito\_alto}, 10/10 sementes cada). Sob redução da emissividade do radiador (\texttt{eps\_baixo}, $\varepsilon$ de $0{,}90$ para $0{,}80$, mantendo $\alpha_s = 0{,}36$), ambos os preditores do TEMS mantiveram $T_j \le 80^\circ\text{C}$ em 10/10 sementes (pior $79{,}62^\circ\text{C}$ no RC3 e $79{,}43^\circ\text{C}$ na PINN), enquanto \texttt{R\_SINT} violou em 10/10 sementes ($81{,}70^\circ\text{C}$). Contudo, quando a resistência térmica interna $R_{int}$ aumentou ($+50\%$ em \texttt{r\_int\_alto}, $+100\%$ em \texttt{r\_int\_muito\_alto}) ou no cenário \texttt{combinada} (que altera $R_{int}$, $C_{mod}$ e $\varepsilon$, preservando $\alpha_s = 0{,}36$), tanto \texttt{TEMS\_RC3} quanto \texttt{TEMS\_PINN} violaram $80^\circ\text{C}$ em 10/10 sementes — atingindo picos mais altos que \texttt{R\_SINT} — porque o modelo interno do controlador não estima $R_{int}$ online. Nos cenários informativos de perturbação isolada de $C_{mod}$ ($\pm 30\%$ sobre $500\text{ J/K}$), \texttt{S1} não violou o limite, ficando fora do escopo de P2.
+
+    \item \textbf{P3 (Integridade Energética — ATENDIDO):} em todas as \textbf{802 execuções} com supervisor energético ativo (\texttt{R\_SINT}, \texttt{TEMS\_RC3}, \texttt{TEMS\_PINN} e \texttt{TEMS\_SOLVER}), o estado de carga permaneceu rigorosamente respeitado ($SoC_{\min} = 0{,}700$, zero violações).
+
+    \item \textbf{P4 (Vazão Computacional vs. \texttt{R\_SINT} — NÃO ATENDIDO):} a vantagem de vazão do TEMS sobre o controlador reativo sintonizado não foi demonstrada. No sensor sem calibração (10 pares válidos), tanto \texttt{TEMS\_RC3} ($\Delta = +0{,}00009$, IC95 $[-0{,}00100;\; +0{,}00070]$) quanto \texttt{TEMS\_PINN} ($\Delta = -0{,}00106$, IC95 $[-0{,}00243;\; +0{,}00012]$) ficaram em empate estatístico com \texttt{R\_SINT}. No sensor calibrado, 6 das 10 sementes de \texttt{R\_SINT} ficaram mais quentes que a curva de Pareto com $m_T = 0$ (fora do alcance de comparação); nos 4 pares comparáveis, ambos os preditores do TEMS apresentaram vazão inferior ($\Delta = -0{,}00430$, IC95 $[-0{,}00575;\; -0{,}00144]$). A cláusula estrita de falsificação não foi acionada, mas a cláusula pós-hoc de sensibilidade em $0{,}25\text{ K}$ foi acionada.
+
+    \item \textbf{P5 (Substituição do RC3 pela PINN e Ganho de Latência — ATRIBUÍVEL EM ALGUNS GRUPOS):} em 17 dos 19 grupos pareados entre \texttt{TEMS\_PINN} e \texttt{TEMS\_RC3}, não houve diferença de vazão atribuível à PINN. Diferenças atribuíveis ocorreram em apenas 2 grupos: sob \texttt{eps\_baixo} sem calibração, a PINN obteve vazão ligeiramente maior ($\Delta = +0{,}00731$); sob \texttt{r\_int\_muito\_alto} sem calibração, obteve vazão menor ($\Delta = -0{,}00737$). Em medições isoladas de latência de decisão em malha fechada (incluindo estimador de estado e bisseção de 7 iterações) em CPU de servidor (\texttt{Intel Core i5-8500T}, Debian, 6 núcleos, carga prévia de $0{,}12$), \texttt{TEMS\_RC3} apresentou tempo médio de \textbf{$50{,}87\text{ ms}$} ($p_{99} = 67{,}24\text{ ms}$), enquanto \texttt{TEMS\_PINN} registrou \textbf{$7{,}68\text{ ms}$} ($p_{99} = 16{,}35\text{ ms}$) — uma redução de \textbf{$6{,}62\times$} no tempo médio de decisão.
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Desempenho térmico no critério P2 (10 sementes, 20 órbitas) nos cenários em que \texttt{S1} falha.}
+\label{tab:marco5_p2}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Cenário de perturbação} & \textbf{TEMS\_RC3} (viol. / pior $T_j$) & \textbf{TEMS\_PINN} (viol. / pior $T_j$) & \textbf{R\_SINT} (viol. / pior $T_j$) \\
+\midrule
+\texttt{eps\_baixo} ($\varepsilon: 0{,}90 \to 0{,}80$) & $0/10$ ($79{,}62^\circ\text{C}$) & $0/10$ ($79{,}43^\circ\text{C}$) & $10/10$ ($81{,}70^\circ\text{C}$) \\
+\texttt{r\_int\_alto} ($R_{int}: +50\%$) & $10/10$ ($83{,}11^\circ\text{C}$) & $10/10$ ($83{,}11^\circ\text{C}$) & $10/10$ ($82{,}43^\circ\text{C}$) \\
+\texttt{r\_int\_muito\_alto} ($R_{int}: +100\%$) & $10/10$ ($87{,}59^\circ\text{C}$) & $10/10$ ($86{,}64^\circ\text{C}$) & $10/10$ ($82{,}82^\circ\text{C}$) \\
+\texttt{combinada} ($R_{int}, C_{mod}, \varepsilon$) & $10/10$ ($85{,}09^\circ\text{C}$) & $10/10$ ($85{,}09^\circ\text{C}$) & $10/10$ ($82{,}28^\circ\text{C}$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A Figura~\ref{fig:marco5_malha_fechada} ilustra as séries temporais da 20ª órbita (semente 15, sensor sem calibração) no cenário nominal — temperatura de junção $T_j(t)$, atuação DVFS $f(t)$ e estado de carga $SoC(t)$ — e na perturbação \texttt{r\_int\_alto} ($R_{int}$ $+50\%$), evidenciando o cumprimento rigoroso de $T_j \le 80^\circ\text{C}$ e $SoC \ge 0{,}70$ no regime nominal e a violação térmica sob erro paramétrico não estimado em $R_{int}$.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{figuras/fig_4_2_marco5_malha_fechada.png}
+    \caption{Comportamento dinâmico em malha fechada na 20ª órbita (semente 15, sensor sem calibração; faixa sombreada indica o eclipse): (a) temperatura de junção $T_j(t)$ no cenário nominal; (b) atuação DVFS $f(t)$ no cenário nominal; (c) estado de carga $SoC(t)$ no cenário nominal; (d) temperatura de junção $T_j(t)$ sob perturbação \texttt{r\_int\_alto} ($R_{int}$ $+50\%$).}
+    \label{fig:marco5_malha_fechada}
+\end{figure}
+
+\subsubsection{Convergência Orbital, Batimento de Fase e Periodicidade do PUE}
+
+Um teste dedicado de convergência orbital (20 órbitas, partindo de $SoC_0 = 0{,}20$ e $SoC_0 = 0{,}95$) mostrou que a memória da condição inicial desaparece completamente na 4ª órbita (ambas as trajetórias coincidem até a quarta casa decimal a partir da órbita 4). Contudo, como o período orbital ($T_{orb} = 5.926{,}38\text{ s}$) não é múltiplo inteiro do passo discreto de controle ($\Delta t_{ctrl} = 60\text{ s}$, razão $98{,}773$), ocorre um batimento de fase entre as bordas do eclipse e a grade de decisão com período de aproximadamente $4{,}4$ órbitas (correlação de Spearman de $-0{,}998$ entre a fase do fim do eclipse e o $SoC$ ao fim da órbita). Esse batimento explica por que o critério original de periodicidade em janela de 3 órbitas oscila conforme a órbita final (aprovação de $43{,}1\%$ no RC3 e $42{,}6\%$ na PINN em 20 órbitas). Sob a emenda pós-hoc de janela de \textbf{9 órbitas} (aproximadamente dois ciclos completos de batimento, $|\Delta E|/E_{TI} < 10^{-3}$), a periodicidade energética é confirmada em \textbf{190/190} execuções de \texttt{R\_SINT}, \textbf{290/290} de \texttt{TEMS\_RC3}, \textbf{307/310} de \texttt{TEMS\_PINN} e \textbf{12/12} de \texttt{TEMS\_SOLVER} (além de 62/72 em \texttt{S1}).
+
+\subsubsection{Limitações e Ameaças à Validade}
+
+Para transparência metodológica, registram-se explicitamente as seguintes limitações e ameaças à validade do estudo:
+\begin{enumerate}
+    \item \textbf{Resultados exclusivamente \textit{in silico}:} não houve validação experimental em câmara de termovácuo nem execução em computador de bordo (OBC) qualificado para voo; os tempos de decisão ($7{,}68\text{ ms}$ na PINN vs. $50{,}87\text{ ms}$ no RC3) referem-se à CPU de servidor \texttt{i5-8500T} em Python/PyTorch.
+    \item \textbf{Inventário de parâmetros não primários:} além das grandezas verificadas em normas e datasheets (Apêndice~A), o modelo adota: (i) \textit{hipóteses de projeto declaradas} ($C_{mod} = 500\text{ J/K}$, $C_{fluid} = 50.000\text{ J/K}$, $R_{int} = 0{,}08\text{ K/W}$, parâmetros da curva DVFS/fuga, eficiências de conversão e limiares OOD); (ii) \textit{parâmetros herdados} de versões anteriores do modelo ($L = 0{,}075\text{ m}$ e $c_a = 4.050\text{ J/(m}^2\cdot\text{K)}$, obtido de $4{,}5\text{ kg/m}^2 \times 900\text{ J/(kg}\cdot\text{K)}$, registrando-se a inconsistência geométrica com $\delta = 2{,}0\text{ mm}$, que corresponderia a $4.860\text{ J/(m}^2\cdot\text{K)}$ para densidade típica de $2.700\text{ kg/m}^3$); e (iii) \textit{valor de referência não verificado em fonte primária} ($k = 167\text{ W/(m}\cdot\text{K)}$).
+    \item \textbf{Decisões inviáveis e ausência de estimação online de $R_{int}$:} sob ruído/viés de sensor ou $R_{int}$ elevado, a leitura atual de $T_j$ pode ultrapassar $T_{j,\max} - m_T$, acionando decisões inviáveis ($19.567$ ocorrências no RC3 e $20.284$ na PINN ao longo das 876 execuções de 20 órbitas, com recuo para $f_{\min}$ por um passo). Como o preditor não atualiza $R_{int}$ em tempo real, perturbações severas na resistência interna degradam a proteção térmica (P2).
+    \item \textbf{Proxy de vazão e bateria idealizada:} a vazão útil é aproximada pela frequência normalizada $f/f_{\max}$ (sem modelar gargalos de memória), e o BESS é representado por balanço energético químico em $[0{,}70,\; 0{,}95]$, sem curva eletroquímica de tensão terminal.
+\end{enumerate}

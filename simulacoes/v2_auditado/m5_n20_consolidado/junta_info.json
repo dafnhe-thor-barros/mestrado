@@ -1,0 +1,166 @@
+{
+ "pastas": [
+  "m5_n20_s10_14",
+  "m5_n20"
+ ],
+ "refs": [
+  "m5_final"
+ ],
+ "janela_pue_orbitas": 9,
+ "forca": false,
+ "erros": [],
+ "avisos": [],
+ "juntou": true,
+ "por_pasta": {
+  "m5_n20_s10_14": {
+   "cfg": {
+    "norb": 20,
+    "norb_sint": 6,
+    "seeds": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "burst_per_orbit": 12,
+    "quick": false,
+    "ckpt": "v2c.pt",
+    "worker": "marco5_orbitas.py",
+    "janela_pue": 9
+   },
+   "fonte": "parts",
+   "n_exec": 438,
+   "por_bloco": {
+    "nominal": 48,
+    "burst": 40,
+    "quant": 120,
+    "pert": 110,
+    "pareto": 100,
+    "ood": 20
+   },
+   "sementes": [
+    10,
+    11,
+    12,
+    13,
+    14
+   ],
+   "hashes": {
+    "contrato": [
+     "5DA4C993644C727DA881CAEFE16D3B0A682683EB3431C40130730C1957912D5C",
+     "945F0042BF864925B4CE917C520115C5EC65A39D5A2445CBFFFECBDC1FA97F55"
+    ],
+    "ckpt": [
+     "05E32E16C6C0C7FB7F7486E418AEF4BCE7370C5F3D865726D00B4C2E7C29FF98"
+    ],
+    "rtune": [
+     "F640A8581916E8FDE9D5690EADF1235754C0040C08D97820D3D6ACD02DBA9A8D"
+    ]
+   },
+   "n_divergiu": 11
+  },
+  "m5_n20": {
+   "cfg": {
+    "norb": 20,
+    "norb_sint": 6,
+    "seeds": [
+     15,
+     16,
+     17,
+     18,
+     19
+    ],
+    "burst_per_orbit": 12,
+    "quick": false,
+    "ckpt": "v2c.pt",
+    "worker": "marco5_orbitas.py",
+    "janela_pue": 9
+   },
+   "fonte": "parts",
+   "n_exec": 438,
+   "por_bloco": {
+    "nominal": 48,
+    "burst": 40,
+    "quant": 120,
+    "pert": 110,
+    "pareto": 100,
+    "ood": 20
+   },
+   "sementes": [
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "hashes": {
+    "contrato": [
+     "5DA4C993644C727DA881CAEFE16D3B0A682683EB3431C40130730C1957912D5C",
+     "945F0042BF864925B4CE917C520115C5EC65A39D5A2445CBFFFECBDC1FA97F55"
+    ],
+    "ckpt": [
+     "05E32E16C6C0C7FB7F7486E418AEF4BCE7370C5F3D865726D00B4C2E7C29FF98"
+    ],
+    "rtune": [
+     "F640A8581916E8FDE9D5690EADF1235754C0040C08D97820D3D6ACD02DBA9A8D"
+    ]
+   },
+   "n_divergiu": 11
+  },
+  "m5_final(ref)": {
+   "cfg": {
+    "norb": 6,
+    "norb_sint": 6,
+    "seeds": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "burst_per_orbit": 12,
+    "quick": false,
+    "ckpt": "v2c.pt"
+   },
+   "fonte": "parts",
+   "n_exec": 438,
+   "por_bloco": {
+    "nominal": 48,
+    "burst": 40,
+    "quant": 120,
+    "pert": 110,
+    "pareto": 100,
+    "ood": 20
+   },
+   "sementes": [
+    10,
+    11,
+    12,
+    13,
+    14
+   ],
+   "hashes": {
+    "contrato": [
+     "5DA4C993644C727DA881CAEFE16D3B0A682683EB3431C40130730C1957912D5C",
+     "945F0042BF864925B4CE917C520115C5EC65A39D5A2445CBFFFECBDC1FA97F55"
+    ],
+    "ckpt": [
+     "05E32E16C6C0C7FB7F7486E418AEF4BCE7370C5F3D865726D00B4C2E7C29FF98"
+    ],
+    "rtune": [
+     "F640A8581916E8FDE9D5690EADF1235754C0040C08D97820D3D6ACD02DBA9A8D"
+    ]
+   },
+   "n_divergiu": 11
+  }
+ },
+ "sha256_codigos_desta_maquina_LF": {
+  "marco5_tems.py": "D725BA7BC9822C1FEB96C5CC0B35E54841CBB078799EC485747E40BEB6A2A146",
+  "marco5_orbitas.py": "F48397070405D8355052015D15943CCF538200FAD9A4720A6268470BC53B27EE",
+  "rodar_campanha_marco5.py": "D2AA71A44A386C681D9ED8936BDA3007C3A9ACCBB7185F4FD966E440B65650D4",
+  "rodar_campanha_longa.py": "BB841A1737BB10D87BBAFA94CB9CF5F17DD46CDA90380472664DE41E662A7254",
+  "janela_pue.py": "2EFEC01A9A70349115BBA74141BE3A0351519BD5FE6A3C3C6BF0982CE8112BE6",
+  "junta_campanhas.py": "C117842EDBBEB5E2DEEAB62E588EECFAEBE6984B9307DCA5A2419D73E530E102"
+ }
+}

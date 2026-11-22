@@ -1,0 +1,56 @@
+chave,m5_n20_s10_14,m5_n20,m5_final(ref),JUNTAS
+n_execucoes,438,438,438,876
+P1_status,ATENDIDO,ATENDIDO,ATENDIDO,ATENDIDO
+P1_pior_tj_tems_C,79.34503,79.40926,79.34503,79.40926
+P1_R_SINT_pior_tj_C,80.12201,80.22574,80.08068,80.22574
+P1_R_SINT_grupos_com_violacao,6,6,6,6
+P2_status,NAO_ATENDIDO,NAO_ATENDIDO,NAO_ATENDIDO,NAO_ATENDIDO
+P2_S1_viola(com_divergencia),combinada;eps_baixo;r_int_alto;r_int_muito_alto,combinada;eps_baixo;r_int_alto;r_int_muito_alto,combinada;eps_baixo;r_int_alto;r_int_muito_alto,combinada;eps_baixo;r_int_alto;r_int_muito_alto
+P2_S1_divergiu,combinada:5;r_int_muito_alto:5,combinada:5;r_int_muito_alto:5,combinada:5;r_int_muito_alto:5,combinada:10;r_int_muito_alto:10
+P2_combinada_TEMS_RC3,5/5 tj_pior=85.090,5/5 tj_pior=84.773,5/5 tj_pior=85.090,10/10 tj_pior=85.090
+P2_combinada_TEMS_PINN,5/5 tj_pior=85.090,5/5 tj_pior=84.773,5/5 tj_pior=85.090,10/10 tj_pior=85.090
+P2_combinada_R_SINT,5/5 tj_pior=82.284,5/5 tj_pior=82.248,5/5 tj_pior=82.284,10/10 tj_pior=82.284
+P2_eps_baixo_TEMS_RC3,0/5 tj_pior=79.577,0/5 tj_pior=79.623,0/5 tj_pior=79.577,0/10 tj_pior=79.623
+P2_eps_baixo_TEMS_PINN,0/5 tj_pior=79.433,0/5 tj_pior=79.395,0/5 tj_pior=79.346,0/10 tj_pior=79.433
+P2_eps_baixo_R_SINT,5/5 tj_pior=81.701,5/5 tj_pior=81.578,5/5 tj_pior=81.701,10/10 tj_pior=81.701
+P2_r_int_alto_TEMS_RC3,5/5 tj_pior=82.834,5/5 tj_pior=83.108,5/5 tj_pior=82.834,10/10 tj_pior=83.108
+P2_r_int_alto_TEMS_PINN,5/5 tj_pior=82.834,5/5 tj_pior=83.108,5/5 tj_pior=82.834,10/10 tj_pior=83.108
+P2_r_int_alto_R_SINT,5/5 tj_pior=82.430,5/5 tj_pior=82.429,5/5 tj_pior=82.350,10/10 tj_pior=82.430
+P2_r_int_muito_alto_TEMS_RC3,5/5 tj_pior=87.316,5/5 tj_pior=87.594,5/5 tj_pior=87.186,10/10 tj_pior=87.594
+P2_r_int_muito_alto_TEMS_PINN,5/5 tj_pior=86.636,5/5 tj_pior=86.402,5/5 tj_pior=86.636,10/10 tj_pior=86.636
+P2_r_int_muito_alto_R_SINT,5/5 tj_pior=82.825,5/5 tj_pior=82.787,5/5 tj_pior=82.782,10/10 tj_pior=82.825
+P3_status,ATENDIDO,ATENDIDO,ATENDIDO,ATENDIDO
+P3_soc_min_pior,0.7,0.7,0.7,0.7
+P3_execucoes,401,401,401,802
+P4_status,NAO_ATENDIDO,ATENDIDO_COM_EMPATE,ATENDIDO_COM_EMPATE,NAO_ATENDIDO
+P4_calibrado_TEMS_RC3,INSUFICIENTE dif=-0.00284 n_pares=2 fora=3,INSUFICIENTE dif=-0.00575 n_pares=2 fora=3,INSUFICIENTE dif=-0.00573 n_pares=1 fora=4,TEMS_MENOR dif=-0.00430 n_pares=4 fora=6
+P4_calibrado_TEMS_PINN,INSUFICIENTE dif=-0.00284 n_pares=2 fora=3,INSUFICIENTE dif=-0.00575 n_pares=2 fora=3,INSUFICIENTE dif=-0.00573 n_pares=1 fora=4,TEMS_MENOR dif=-0.00430 n_pares=4 fora=6
+P4_sem_calibracao_TEMS_RC3,EMPATE dif=-0.00051 n_pares=5 fora=0,TEMS_MAIOR dif=0.00068 n_pares=5 fora=0,EMPATE dif=-0.00051 n_pares=5 fora=0,EMPATE dif=0.00009 n_pares=10 fora=0
+P4_sem_calibracao_TEMS_PINN,TEMS_MENOR dif=-0.00218 n_pares=5 fora=0,EMPATE dif=0.00005 n_pares=5 fora=0,EMPATE dif=-0.00044 n_pares=5 fora=0,EMPATE dif=-0.00106 n_pares=10 fora=0
+clausula_estrita,NAO_ACIONADA,NAO_ACIONADA,NAO_ACIONADA,NAO_ACIONADA
+clausula_sens_0p25K_posthoc,ACIONADA,PARCIAL,ACIONADA,ACIONADA
+P5_status,ATRIBUIVEL_EM_ALGUNS_GRUPOS,ATRIBUIVEL_EM_ALGUNS_GRUPOS,ATRIBUIVEL_EM_ALGUNS_GRUPOS,ATRIBUIVEL_EM_ALGUNS_GRUPOS
+P5_atribuiveis/avaliados,2/19,5/19,1/19,2/19
+P5_grupos_atribuiveis,pert/eps_baixo/sem_calibracao/none dif=0.00422;pert/r_int_muito_alto/sem_calibracao/none dif=-0.00682,pert/eps_baixo/sem_calibracao/none dif=0.01041;pert/r_int_muito_alto/sem_calibracao/none dif=-0.00792;quant/nominal/calibrado/trunc dif=-0.00254;quant/nominal/sem_calibracao/round dif=-0.00363;quant/nominal/sem_calibracao/trunc dif=0.00040,pert/r_int_muito_alto/sem_calibracao/none dif=-0.01079,pert/eps_baixo/sem_calibracao/none dif=0.00731;pert/r_int_muito_alto/sem_calibracao/none dif=-0.00737
+P5_grupos_com_ressalva_periodicidade,10,10,4,10
+lat_TEMS_RC3_media_ms,50.87302,50.87302,50.87302,50.87302
+lat_TEMS_RC3_p99_ms,67.2384,67.2384,67.2384,67.2384
+lat_TEMS_PINN_media_ms,7.683322,7.683322,7.683322,7.683322
+lat_TEMS_PINN_p99_ms,16.35377,16.35377,16.35377,16.35377
+infeasible_R_SINT,0,0,0,0
+infeasible_S0,0,0,0,0
+infeasible_S1,0,0,0,0
+infeasible_TEMS_PINN,10150,10134,3004,20284
+infeasible_TEMS_RC3,9781,9786,2898,19567
+infeasible_TEMS_SOLVER,1,3,0,4
+PUE_janela3_R_SINT,0.5368,0.4632,1.0000,0.5000
+PUE_janela3_S1,0.8611,0.8611,0.7222,0.8611
+PUE_janela3_TEMS_PINN,0.4452,0.4065,0.8645,0.4258
+PUE_janela3_TEMS_RC3,0.4552,0.4069,0.9655,0.4310
+PUE_janela3_TEMS_SOLVER,0.0000,0.0000,1.0000,0.0000
+PUE_janela9_R_SINT,95/95,95/95,-,190/190
+PUE_janela9_S0,1/1,1/1,-,2/2
+PUE_janela9_S1,31/36,31/36,-,62/72
+PUE_janela9_TEMS_PINN,154/155,153/155,-,307/310
+PUE_janela9_TEMS_RC3,145/145,145/145,-,290/290
+PUE_janela9_TEMS_SOLVER,6/6,6/6,-,12/12
