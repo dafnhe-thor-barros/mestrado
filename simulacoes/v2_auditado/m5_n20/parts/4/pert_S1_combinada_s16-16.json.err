@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/home/thor/mestrado/simulacoes/v2_auditado/marco5_orbitas.py", line 38, in <module>
+    m.main()
+    ~~~~~~^^
+  File "/home/thor/mestrado/simulacoes/v2_auditado/marco5_tems.py", line 718, in main
+    r = run_scenario(sc, ct, sd, c=c_run, n_orb=a.norb, sensor=a.sensor, ckpt=a.ckpt, m_total=a.mtotal, cfg_over=over if ct == "R_SINT" else None,
+                     burst_per_orbit=a.burst_per_orbit, series=bool(a.save_traces), **qkw)
+  File "/home/thor/mestrado/simulacoes/v2_auditado/marco5_orbitas.py", line 25, in run_scenario_orb
+    r = _orig(*args, **kw)
+  File "/home/thor/mestrado/simulacoes/v2_auditado/marco5_tems.py", line 652, in run_scenario
+    return run_closed_loop(cfg)
+  File "/home/thor/mestrado/simulacoes/v2_auditado/marco5_tems.py", line 532, in run_closed_loop
+    y, res, fabs, its = advance(pl, y, ta, tb, d, 0.5, i == 0)
+                        ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/thor/mestrado/simulacoes/v2_auditado/marco5_tems.py", line 483, in advance
+    y1, it = pl.step(y, sa, sb, th)
+             ~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/thor/mestrado/simulacoes/v2_auditado/modelo_termico.py", line 293, in step
+    raise RuntimeError("Newton nao convergiu em %d iteracoes" % itmax)
+RuntimeError: Newton nao convergiu em 60 iteracoes

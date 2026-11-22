@@ -1,0 +1,1237 @@
+
+##### CABECALHO #####
+{
+ "partes_por_bloco": {
+  "nominal": 27,
+  "burst": 10,
+  "quant": 20,
+  "pert": 110,
+  "pareto": 50,
+  "ood": 20
+ },
+ "execucoes": 438,
+ "contratos(2 esperados: 60s e 300s)": [
+  "5DA4C993644C727DA881CAEFE16D3B0A682683EB3431C40130730C1957912D5C",
+  "945F0042BF864925B4CE917C520115C5EC65A39D5A2445CBFFFECBDC1FA97F55"
+ ],
+ "ckpt": [
+  "05E32E16C6C0C7FB7F7486E418AEF4BCE7370C5F3D865726D00B4C2E7C29FF98"
+ ],
+ "rtune": [
+  "F640A8581916E8FDE9D5690EADF1235754C0040C08D97820D3D6ACD02DBA9A8D"
+ ],
+ "sha256_arquivos": {
+  "marco5_tems.py": "D725BA7BC9822C1FEB96C5CC0B35E54841CBB078799EC485747E40BEB6A2A146",
+  "sintonia_reativo.py": "B335513C0CC926CA105AD8EC85630ED22980E173ADE44847A2BFAB14B56BDD9E",
+  "rodar_campanha_marco5.py": "D2AA71A44A386C681D9ED8936BDA3007C3A9ACCBB7185F4FD966E440B65650D4",
+  "contrato_parametros.py": "1C8C06DD885449F822DF2112FC77D6C1A8E9EC189DBFF3B14472BA3F2A8393A9",
+  "test_marco5.py": "3A41BEA07839FBE17B160A617A1D2AE28664CD0157A552FFFDEC902D7AD274FD",
+  "test_orquestrador_v7.py": "48B7EC481F67C8A6CDCB9C673419F81E8DC85FD52FDC2C7C5D0A6664CD2E5941"
+ },
+ "LIM_PUE(|dE|)": 0.001,
+ "config_da_campanha": {
+  "norb": 20,
+  "norb_sint": 6,
+  "seeds": [
+   15,
+   16,
+   17,
+   18,
+   19
+  ],
+  "burst_per_orbit": 12,
+  "quick": false,
+  "ckpt": "v2c.pt",
+  "worker": "marco5_orbitas.py",
+  "janela_pue": 9
+ }
+}
+
+##### PYTEST #####
+pytest.txt ausente (rode a celula de testes com tee, ou copie a saida do pytest)
+
+##### SINTONIA DO R (sem a grade completa) #####
+{"seeds_cal": [100, 101, 102], "norb": 6, "grade": {"kp": [2.0, 5.0, 20.0, 60.0, 120.0], "ki": [0.1, 0.5, 1.5, 3.0], "margem": [0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0]}, "sensores": {"calibrado|none": {"sensor": "calibrado", "quant": "none", "viavel": true, "avisos": ["melhor kp=2 esta na BORDA da grade (2.0, 120.0): o otimo pode estar fora", "melhor margem=0 esta na BORDA da grade (0.0, 4.0): o otimo pode estar fora"], "margem_sensor_TEMS_K": 0.5, "kp": 2.0, "ki": 0.5, "margem": 0.0, "tops_last_medio": 0.697183364150194, "tj_max_pior_C": 79.91114875412165}, "calibrado|trunc": {"sensor": "calibrado", "quant": "trunc", "viavel": true, "avisos": [], "margem_sensor_TEMS_K": 0.5, "kp": 60.0, "ki": 1.5, "margem": 0.5, "tops_last_medio": 0.6973106121991858, "tj_max_pior_C": 79.96539454495712}, "calibrado|round": {"sensor": "calibrado", "quant": "round", "viavel": true, "avisos": ["melhor kp=2 esta na BORDA da grade (2.0, 120.0): o otimo pode estar fora", "melhor margem=0 esta na BORDA da grade (0.0, 4.0): o otimo pode estar fora"], "margem_sensor_TEMS_K": 0.5, "kp": 2.0, "ki": 0.5, "margem": 0.0, "tops_last_medio": 0.6971862884815446, "tj_max_pior_C": 79.94717479773965}, "sem_calibracao|none": {"sensor": "sem_calibracao", "quant": "none", "viavel": true, "avisos": [], "margem_sensor_TEMS_K": 1.5, "kp": 20.0, "ki": 0.5, "margem": 2.0, "tops_last_medio": 0.6972889780157735, "tj_max_pior_C": 79.9851590111794}, "sem_calibracao|trunc": {"sensor": "sem_calibracao", "quant": "trunc", "viavel": true, "avisos": [], "margem_sensor_TEMS_K": 1.5, "kp": 60.0, "ki": 1.5, "margem": 2.0, "tops_last_medio": 0.6972051242087867, "tj_max_pior_C": 79.9207512828716}, "sem_calibracao|round": {"sensor": "sem_calibracao", "quant": "round", "viavel": true, "avisos": [], "margem_sensor_TEMS_K": 1.5, "kp": 20.0, "ki": 0.5, "margem": 2.0, "tops_last_medio": 0.6970850548626578, "tj_max_pior_C": 79.85384571930712}}}
+
+##### TEMPOS #####
+bloco,partes_executadas,tempo_total_min,maior_parte_min,erros,divergiu
+1,27,32.9,2.6,0,0
+2,10,24.7,2.5,0,0
+3,20,95.1,5.0,0,0
+4,120,75.2,2.1,0,10
+5,50,113.7,2.5,0,0
+6,20,13.4,2.0,0,0
+7,6,4.9,2.6,0,1
+
+##### DIVERGENCIAS (Newton nao convergiu) #####
+bloco,parte,cenarios,ctrls,seeds
+pert,pert_S1_combinada_s15-15.json,combinada,S1,15
+pert,pert_S1_combinada_s16-16.json,combinada,S1,16
+pert,pert_S1_combinada_s17-17.json,combinada,S1,17
+pert,pert_S1_combinada_s18-18.json,combinada,S1,18
+pert,pert_S1_combinada_s19-19.json,combinada,S1,19
+pert,pert_S1_r_int_muito_alto_s15-15.json,r_int_muito_alto,S1,15
+pert,pert_S1_r_int_muito_alto_s16-16.json,r_int_muito_alto,S1,16
+pert,pert_S1_r_int_muito_alto_s17-17.json,r_int_muito_alto,S1,17
+pert,pert_S1_r_int_muito_alto_s18-18.json,r_int_muito_alto,S1,18
+pert,pert_S1_r_int_muito_alto_s19-19.json,r_int_muito_alto,S1,19
+traces,traces_r_int_alto_S0.json,r_int_alto,S0,15
+
+##### AGREGADO (CSV) #####
+# cobertura: 438 de 438 execucoes
+bloco,cenario,sensor,quant,mtotal,dt_ctrl,ctrl,n,tj_last_pior,runs_viol,t80_total,tops,soc_min,infeas,fallback,frac_pue_ok,frac_pue_semabs,pred_last,lat_ms
+burst,burst,calibrado,none,nan,60.0,R_SINT,5,69.4087,0,0.0,0.6765,0.7,0,0,1.0,1.0,,0.0278
+burst,burst,calibrado,none,nan,60.0,S1,5,64.4002,0,0.0,0.6472,0.7436,0,0,1.0,1.0,,0.0
+burst,burst,calibrado,none,nan,60.0,TEMS_PINN,5,69.4087,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.663,6.7509
+burst,burst,calibrado,none,nan,60.0,TEMS_RC3,5,69.4087,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6699,49.6428
+burst,burst,sem_calibracao,none,nan,60.0,R_SINT,5,69.4661,0,0.0,0.6765,0.7,0,0,1.0,1.0,,0.0281
+burst,burst,sem_calibracao,none,nan,60.0,S1,5,64.4002,0,0.0,0.6472,0.7436,0,0,1.0,1.0,,0.0
+burst,burst,sem_calibracao,none,nan,60.0,TEMS_PINN,5,69.4661,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6482,6.6045
+burst,burst,sem_calibracao,none,nan,60.0,TEMS_RC3,5,69.4661,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6764,49.6802
+nominal,nominal,calibrado,none,nan,300.0,TEMS_PINN,5,79.4146,0,0.0,0.819,0.7,91,0,0.0,0.0,0.436,12.4313
+nominal,nominal,calibrado,none,nan,60.0,R_SINT,5,79.891,1,65.0,0.8832,0.7,0,0,0.0,0.0,,0.0912
+nominal,nominal,calibrado,none,nan,60.0,TEMS_PINN,5,79.1588,0,0.0,0.8763,0.7,154,0,0.6,0.6,0.4026,7.2997
+nominal,nominal,calibrado,none,nan,60.0,TEMS_RC3,5,78.8511,0,0.0,0.8744,0.7,125,0,0.4,0.4,0.4148,50.7131
+nominal,nominal,calibrado,none,nan,60.0,TEMS_SOLVER,3,78.781,0,0.0,0.8797,0.7,2,0,0.0,0.0,0.0262,25.0906
+nominal,nominal,sem_calibracao,none,nan,300.0,TEMS_PINN,5,78.4686,0,0.0,0.8468,0.7,11,0,0.0,0.0,0.562,12.7955
+nominal,nominal,sem_calibracao,none,nan,60.0,R_SINT,5,80.0239,4,315.0,0.8831,0.7,0,0,0.0,0.0,,0.0924
+nominal,nominal,sem_calibracao,none,nan,60.0,S0,1,85.9553,1,68382.58,0.9002,-0.0,0,0,1.0,1.0,,0.0
+nominal,nominal,sem_calibracao,none,nan,60.0,S1,1,78.4899,0,0.0,0.8483,0.7417,0,0,1.0,1.0,,0.0
+nominal,nominal,sem_calibracao,none,nan,60.0,TEMS_PINN,5,78.3458,0,0.0,0.8801,0.7,32,0,0.0,0.0,0.7027,8.8613
+nominal,nominal,sem_calibracao,none,nan,60.0,TEMS_RC3,5,78.3206,0,0.0,0.8796,0.7,21,0,0.0,0.0,0.7662,54.764
+nominal,nominal,sem_calibracao,none,nan,60.0,TEMS_SOLVER,3,77.7766,0,0.0,0.8797,0.7,1,0,0.0,0.0,0.0284,30.7724
+ood,ood,sem_calibracao,none,nan,60.0,R_SINT,5,80.0239,4,315.0,0.8831,0.7,0,0,0.0,0.0,,0.0955
+ood,ood,sem_calibracao,none,nan,60.0,S1,5,78.4899,0,0.0,0.8483,0.7417,0,0,1.0,1.0,,0.0
+ood,ood,sem_calibracao,none,nan,60.0,TEMS_PINN,5,78.3458,0,0.0,0.8801,0.7,32,5,0.0,0.0,0.7027,9.3638
+ood,ood,sem_calibracao,none,nan,60.0,TEMS_RC3,5,78.3206,0,0.0,0.8796,0.7,21,0,0.0,0.0,0.7662,55.5563
+pareto,nominal,calibrado,none,0.0,60.0,TEMS_PINN,5,79.891,1,45.0,0.8775,0.7,62,0,0.0,0.0,0.4036,6.8484
+pareto,nominal,calibrado,none,0.0,60.0,TEMS_RC3,5,79.891,1,45.0,0.8775,0.7,62,0,0.0,0.0,0.4085,49.0807
+pareto,nominal,calibrado,none,0.5,60.0,TEMS_PINN,5,79.856,1,45.0,0.8775,0.7,98,0,0.0,0.0,0.4036,6.7944
+pareto,nominal,calibrado,none,0.5,60.0,TEMS_RC3,5,79.5236,0,0.0,0.8773,0.7,91,0,0.0,0.0,0.4108,50.6313
+pareto,nominal,calibrado,none,1.0,60.0,TEMS_PINN,5,79.3821,0,0.0,0.8767,0.7,133,0,0.2,0.2,0.4013,7.0589
+pareto,nominal,calibrado,none,1.0,60.0,TEMS_RC3,5,79.0747,0,0.0,0.8747,0.7,112,0,0.2,0.2,0.4129,51.1051
+pareto,nominal,calibrado,none,2.0,60.0,TEMS_PINN,5,78.2823,0,0.0,0.8732,0.7,185,0,0.4,0.4,0.3943,7.9446
+pareto,nominal,calibrado,none,2.0,60.0,TEMS_RC3,5,78.3006,0,0.0,0.8712,0.7,166,0,0.6,0.6,0.4164,52.7912
+pareto,nominal,calibrado,none,3.0,60.0,TEMS_PINN,5,77.2771,0,0.0,0.8676,0.7,216,0,0.4,0.4,0.3754,8.8512
+pareto,nominal,calibrado,none,3.0,60.0,TEMS_RC3,5,77.1991,0,0.0,0.8681,0.7,188,0,0.2,0.2,0.4166,55.0772
+pareto,nominal,sem_calibracao,none,0.0,60.0,TEMS_PINN,5,80.2558,5,57840.0,0.8845,0.7,4,0,0.0,0.0,0.7314,6.708
+pareto,nominal,sem_calibracao,none,0.0,60.0,TEMS_RC3,5,80.1655,5,56855.0,0.8845,0.7,4,0,0.0,0.0,0.7706,49.5104
+pareto,nominal,sem_calibracao,none,0.5,60.0,TEMS_PINN,5,80.1442,5,21910.0,0.8832,0.7,21,0,0.0,0.0,0.7295,6.9011
+pareto,nominal,sem_calibracao,none,0.5,60.0,TEMS_RC3,5,79.8784,0,0.0,0.884,0.7,6,0,0.0,0.0,0.7698,51.802
+pareto,nominal,sem_calibracao,none,1.0,60.0,TEMS_PINN,5,79.5936,0,0.0,0.8827,0.7,25,0,0.0,0.0,0.7247,8.041
+pareto,nominal,sem_calibracao,none,1.0,60.0,TEMS_RC3,5,79.3992,0,0.0,0.8833,0.7,9,0,0.0,0.0,0.7688,52.8665
+pareto,nominal,sem_calibracao,none,2.0,60.0,TEMS_PINN,5,78.5385,0,0.0,0.8817,0.7,25,0,0.0,0.0,0.7077,9.1613
+pareto,nominal,sem_calibracao,none,2.0,60.0,TEMS_RC3,5,78.5112,0,0.0,0.8814,0.7,17,0,0.0,0.0,0.7657,55.4746
+pareto,nominal,sem_calibracao,none,3.0,60.0,TEMS_PINN,5,77.534,0,0.0,0.8777,0.7,24,0,0.0,0.0,0.6851,10.2178
+pareto,nominal,sem_calibracao,none,3.0,60.0,TEMS_RC3,5,77.4988,0,0.0,0.8774,0.7,19,0,0.0,0.0,0.763,57.591
+pert,c_mod_mais30,sem_calibracao,none,nan,60.0,R_SINT,5,79.9853,3,115.0,0.8832,0.7,0,0,0.0,0.0,,0.0935
+pert,c_mod_mais30,sem_calibracao,none,nan,60.0,S1,5,78.119,0,0.0,0.8483,0.7408,0,0,1.0,1.0,,0.0
+pert,c_mod_mais30,sem_calibracao,none,nan,60.0,TEMS_PINN,5,78.3375,0,0.0,0.8804,0.7,31,0,0.0,0.0,0.7852,9.3087
+pert,c_mod_mais30,sem_calibracao,none,nan,60.0,TEMS_RC3,5,78.2891,0,0.0,0.8809,0.7,20,0,0.0,0.0,0.8133,54.4843
+pert,c_mod_menos30,sem_calibracao,none,nan,60.0,R_SINT,5,80.0622,4,560.0,0.8831,0.7,0,0,0.0,0.0,,0.0956
+pert,c_mod_menos30,sem_calibracao,none,nan,60.0,S1,5,78.8021,0,0.0,0.8483,0.7426,0,0,1.0,1.0,,0.0
+pert,c_mod_menos30,sem_calibracao,none,nan,60.0,TEMS_PINN,5,78.3807,0,0.0,0.88,0.7,32,0,0.0,0.0,0.8331,9.4087
+pert,c_mod_menos30,sem_calibracao,none,nan,60.0,TEMS_RC3,5,78.3567,0,0.0,0.8796,0.7,23,0,0.0,0.0,0.9123,54.6605
+pert,combinada,sem_calibracao,none,nan,60.0,R_SINT,5,81.7886,5,79921.24,0.7548,0.7,0,0,1.0,1.0,,0.1044
+pert,combinada,sem_calibracao,none,nan,60.0,TEMS_PINN,5,84.7344,5,92647.47,0.6883,0.7,2611,0,1.0,1.0,9.0351,6.12
+pert,combinada,sem_calibracao,none,nan,60.0,TEMS_RC3,5,84.7344,5,92647.47,0.6883,0.7,2611,0,1.0,1.0,8.6971,47.7024
+pert,eps_baixo,sem_calibracao,none,nan,60.0,R_SINT,5,81.0755,5,55227.23,0.837,0.7,0,0,0.2,0.2,,0.0985
+pert,eps_baixo,sem_calibracao,none,nan,60.0,S1,5,93.1968,5,338811.8,0.8483,0.6421,0,0,0.0,0.0,,0.0
+pert,eps_baixo,sem_calibracao,none,nan,60.0,TEMS_PINN,5,79.3136,0,0.0,0.8156,0.7,670,0,0.8,0.8,1.149,10.6069
+pert,eps_baixo,sem_calibracao,none,nan,60.0,TEMS_RC3,5,79.2944,0,0.0,0.8052,0.7,812,0,0.6,0.6,1.3502,57.0295
+pert,r_int_alto,sem_calibracao,none,nan,60.0,R_SINT,5,81.4564,5,78784.51,0.8039,0.7,0,0,0.4,0.4,,0.1003
+pert,r_int_alto,sem_calibracao,none,nan,60.0,S1,5,114.1436,5,393776.05,0.8259,-0.0,0,0,1.0,1.0,,0.0
+pert,r_int_alto,sem_calibracao,none,nan,60.0,TEMS_PINN,5,82.3064,5,33598.944,0.737,0.7,1995,0,1.0,1.0,9.8871,6.3466
+pert,r_int_alto,sem_calibracao,none,nan,60.0,TEMS_RC3,5,82.3064,5,33598.944,0.737,0.7,1995,0,1.0,1.0,9.4341,48.1712
+pert,r_int_muito_alto,sem_calibracao,none,nan,60.0,R_SINT,5,81.8664,5,97277.04,0.7283,0.7,0,0,1.0,1.0,,0.1055
+pert,r_int_muito_alto,sem_calibracao,none,nan,60.0,TEMS_PINN,5,86.1617,5,55519.35,0.6423,0.7,3243,1361,1.0,1.0,17.0872,12.1543
+pert,r_int_muito_alto,sem_calibracao,none,nan,60.0,TEMS_RC3,5,86.9426,5,87691.17,0.6502,0.7,3146,0,1.0,1.0,16.5363,47.9687
+quant,burst,calibrado,round,nan,60.0,R_SINT,5,69.3854,0,0.0,0.6765,0.7,0,0,1.0,1.0,,0.0286
+quant,burst,calibrado,round,nan,60.0,TEMS_PINN,5,69.3854,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6626,6.7385
+quant,burst,calibrado,round,nan,60.0,TEMS_RC3,5,69.3854,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6701,49.6318
+quant,burst,calibrado,trunc,nan,60.0,R_SINT,5,69.4658,0,0.0,0.6765,0.7,0,0,1.0,1.0,,0.0278
+quant,burst,calibrado,trunc,nan,60.0,TEMS_PINN,5,69.4658,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6494,6.7807
+quant,burst,calibrado,trunc,nan,60.0,TEMS_RC3,5,69.4658,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6648,49.5508
+quant,burst,sem_calibracao,round,nan,60.0,R_SINT,5,69.4661,0,0.0,0.6765,0.7,0,0,1.0,1.0,,0.0283
+quant,burst,sem_calibracao,round,nan,60.0,TEMS_PINN,5,69.4661,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6467,6.586
+quant,burst,sem_calibracao,round,nan,60.0,TEMS_RC3,5,69.4661,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6751,49.9952
+quant,burst,sem_calibracao,trunc,nan,60.0,R_SINT,5,69.4664,0,0.0,0.6765,0.7,0,0,1.0,1.0,,0.0283
+quant,burst,sem_calibracao,trunc,nan,60.0,TEMS_PINN,5,69.4664,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.6674,6.7132
+quant,burst,sem_calibracao,trunc,nan,60.0,TEMS_RC3,5,69.4664,0,0.0,0.6765,0.7,0,0,1.0,1.0,1.7132,50.1716
+quant,nominal,calibrado,round,nan,60.0,R_SINT,5,79.8798,1,60.0,0.8832,0.7,0,0,0.0,0.0,,0.0926
+quant,nominal,calibrado,round,nan,60.0,TEMS_PINN,5,79.0828,0,0.0,0.8724,0.7,192,0,0.4,0.4,0.4146,7.0991
+quant,nominal,calibrado,round,nan,60.0,TEMS_RC3,5,78.9083,0,0.0,0.8743,0.7,163,0,0.6,0.6,0.429,50.463
+quant,nominal,calibrado,trunc,nan,60.0,R_SINT,5,79.9704,5,410.0,0.8831,0.7,0,0,0.0,0.0,,0.0894
+quant,nominal,calibrado,trunc,nan,60.0,TEMS_PINN,5,79.2069,0,0.0,0.8734,0.7,140,0,0.6,0.6,0.5594,7.5092
+quant,nominal,calibrado,trunc,nan,60.0,TEMS_RC3,5,79.1127,0,0.0,0.876,0.7,110,0,0.2,0.2,0.6043,51.4263
+quant,nominal,sem_calibracao,round,nan,60.0,R_SINT,5,79.7731,1,150.0,0.8828,0.7,0,0,0.0,0.0,,0.0928
+quant,nominal,sem_calibracao,round,nan,60.0,TEMS_PINN,5,78.2877,0,0.0,0.875,0.7,90,0,0.2,0.2,0.7125,8.9709
+quant,nominal,sem_calibracao,round,nan,60.0,TEMS_RC3,5,78.2702,0,0.0,0.8786,0.7,54,0,0.0,0.0,0.7793,54.894
+quant,nominal,sem_calibracao,trunc,nan,60.0,R_SINT,5,80.0117,4,270.0,0.8828,0.7,0,0,0.2,0.2,,0.0918
+quant,nominal,sem_calibracao,trunc,nan,60.0,TEMS_PINN,5,78.4202,0,0.0,0.8815,0.7,17,0,0.0,0.0,0.8636,9.5208
+quant,nominal,sem_calibracao,trunc,nan,60.0,TEMS_RC3,5,78.3583,0,0.0,0.8811,0.7,11,0,0.0,0.0,0.9652,55.7812
+
+
+##### DIFERENCA PAREADA DE VAZAO (CSV) #####
+bloco,cenario,sensor,quant,mtotal,dt_ctrl,a,b,n,dif,ep,frac_a_maior,frac_iguais
+burst,burst,calibrado,none,nan,60.0,TEMS_PINN,R_SINT,5,0.0,0.0,0.0,1.0
+burst,burst,calibrado,none,nan,60.0,TEMS_RC3,R_SINT,5,0.0,0.0,0.0,1.0
+burst,burst,calibrado,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+burst,burst,calibrado,none,nan,60.0,R_SINT,S1,5,0.02928,0.00123,1.0,0.0
+burst,burst,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,0.0,0.0,0.0,1.0
+burst,burst,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,0.0,0.0,0.0,1.0
+burst,burst,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+burst,burst,sem_calibracao,none,nan,60.0,R_SINT,S1,5,0.02932,0.00122,1.0,0.0
+nominal,nominal,calibrado,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.00692,0.00088,0.0,0.0
+nominal,nominal,calibrado,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.00886,0.00135,0.0,0.0
+nominal,nominal,calibrado,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.00194,0.00193,0.6,0.0
+nominal,nominal,calibrado,none,nan,60.0,TEMS_SOLVER,TEMS_RC3,3,0.00675,0.00185,1.0,0.0
+nominal,nominal,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.00306,0.00118,0.0,0.0
+nominal,nominal,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.00351,0.00119,0.0,0.0
+nominal,nominal,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.00045,3e-05,1.0,0.0
+nominal,nominal,sem_calibracao,none,nan,60.0,TEMS_SOLVER,TEMS_RC3,3,0.00089,0.00198,0.33333,0.0
+ood,ood,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.00306,0.00118,0.0,0.0
+ood,ood,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.00351,0.00119,0.0,0.0
+ood,ood,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.00045,3e-05,1.0,0.0
+ood,ood,sem_calibracao,none,nan,60.0,R_SINT,S1,5,0.03483,0.0001,1.0,0.0
+pareto,nominal,calibrado,none,0.0,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+pareto,nominal,calibrado,none,0.5,60.0,TEMS_PINN,TEMS_RC3,5,0.00014,3e-05,1.0,0.0
+pareto,nominal,calibrado,none,1.0,60.0,TEMS_PINN,TEMS_RC3,5,0.002,0.00188,0.8,0.0
+pareto,nominal,calibrado,none,2.0,60.0,TEMS_PINN,TEMS_RC3,5,0.002,0.00187,0.6,0.0
+pareto,nominal,calibrado,none,3.0,60.0,TEMS_PINN,TEMS_RC3,5,-0.00053,0.00251,0.6,0.0
+pareto,nominal,sem_calibracao,none,0.0,60.0,TEMS_PINN,TEMS_RC3,5,1e-05,1e-05,0.2,0.8
+pareto,nominal,sem_calibracao,none,0.5,60.0,TEMS_PINN,TEMS_RC3,5,-0.00074,0.00118,0.8,0.0
+pareto,nominal,sem_calibracao,none,1.0,60.0,TEMS_PINN,TEMS_RC3,5,-0.00059,0.00105,0.8,0.0
+pareto,nominal,sem_calibracao,none,2.0,60.0,TEMS_PINN,TEMS_RC3,5,0.00038,4e-05,1.0,0.0
+pareto,nominal,sem_calibracao,none,3.0,60.0,TEMS_PINN,TEMS_RC3,5,0.0003,2e-05,1.0,0.0
+pert,c_mod_mais30,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.00278,0.00094,0.0,0.0
+pert,c_mod_mais30,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.0023,9e-05,0.0,0.0
+pert,c_mod_mais30,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,-0.00048,0.00093,0.8,0.0
+pert,c_mod_mais30,sem_calibracao,none,nan,60.0,R_SINT,S1,5,0.03489,0.0001,1.0,0.0
+pert,c_mod_menos30,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.00311,0.00119,0.0,0.0
+pert,c_mod_menos30,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.00354,0.00119,0.0,0.0
+pert,c_mod_menos30,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.00043,1e-05,1.0,0.0
+pert,c_mod_menos30,sem_calibracao,none,nan,60.0,R_SINT,S1,5,0.03479,0.00011,1.0,0.0
+pert,combinada,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.06648,0.00093,0.0,0.0
+pert,combinada,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.06648,0.00093,0.0,0.0
+pert,combinada,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+pert,eps_baixo,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.0214,0.00262,0.0,0.0
+pert,eps_baixo,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.03181,0.00174,0.0,0.0
+pert,eps_baixo,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.01041,0.00341,0.8,0.0
+pert,eps_baixo,sem_calibracao,none,nan,60.0,R_SINT,S1,5,-0.01128,6e-05,0.0,0.0
+pert,r_int_alto,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.06691,0.00103,0.0,0.0
+pert,r_int_alto,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.06691,0.00103,0.0,0.0
+pert,r_int_alto,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+pert,r_int_alto,sem_calibracao,none,nan,60.0,R_SINT,S1,5,-0.02201,5e-05,0.0,0.0
+pert,r_int_muito_alto,sem_calibracao,none,nan,60.0,TEMS_PINN,R_SINT,5,-0.08594,0.0011,0.0,0.0
+pert,r_int_muito_alto,sem_calibracao,none,nan,60.0,TEMS_RC3,R_SINT,5,-0.07802,0.00047,0.0,0.0
+pert,r_int_muito_alto,sem_calibracao,none,nan,60.0,TEMS_PINN,TEMS_RC3,5,-0.00792,0.00137,0.0,0.0
+quant,burst,calibrado,round,nan,60.0,TEMS_PINN,R_SINT,5,0.0,0.0,0.0,1.0
+quant,burst,calibrado,round,nan,60.0,TEMS_RC3,R_SINT,5,0.0,0.0,0.0,1.0
+quant,burst,calibrado,round,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+quant,burst,calibrado,trunc,nan,60.0,TEMS_PINN,R_SINT,5,0.0,0.0,0.0,1.0
+quant,burst,calibrado,trunc,nan,60.0,TEMS_RC3,R_SINT,5,0.0,0.0,0.0,1.0
+quant,burst,calibrado,trunc,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+quant,burst,sem_calibracao,round,nan,60.0,TEMS_PINN,R_SINT,5,0.0,0.0,0.0,1.0
+quant,burst,sem_calibracao,round,nan,60.0,TEMS_RC3,R_SINT,5,0.0,0.0,0.0,1.0
+quant,burst,sem_calibracao,round,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+quant,burst,sem_calibracao,trunc,nan,60.0,TEMS_PINN,R_SINT,5,0.0,0.0,0.0,1.0
+quant,burst,sem_calibracao,trunc,nan,60.0,TEMS_RC3,R_SINT,5,0.0,0.0,0.0,1.0
+quant,burst,sem_calibracao,trunc,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0,0.0,0.0,1.0
+quant,nominal,calibrado,round,nan,60.0,TEMS_PINN,R_SINT,5,-0.01085,0.00116,0.0,0.0
+quant,nominal,calibrado,round,nan,60.0,TEMS_RC3,R_SINT,5,-0.00892,0.00162,0.0,0.0
+quant,nominal,calibrado,round,nan,60.0,TEMS_PINN,TEMS_RC3,5,-0.00193,0.00219,0.4,0.0
+quant,nominal,calibrado,trunc,nan,60.0,TEMS_PINN,R_SINT,5,-0.00964,0.00111,0.0,0.0
+quant,nominal,calibrado,trunc,nan,60.0,TEMS_RC3,R_SINT,5,-0.0071,0.00097,0.0,0.0
+quant,nominal,calibrado,trunc,nan,60.0,TEMS_PINN,TEMS_RC3,5,-0.00254,0.00131,0.4,0.0
+quant,nominal,sem_calibracao,round,nan,60.0,TEMS_PINN,R_SINT,5,-0.00787,0.00196,0.0,0.0
+quant,nominal,sem_calibracao,round,nan,60.0,TEMS_RC3,R_SINT,5,-0.00424,0.00134,0.0,0.0
+quant,nominal,sem_calibracao,round,nan,60.0,TEMS_PINN,TEMS_RC3,5,-0.00363,0.00201,0.4,0.0
+quant,nominal,sem_calibracao,trunc,nan,60.0,TEMS_PINN,R_SINT,5,-0.00121,0.00028,0.0,0.0
+quant,nominal,sem_calibracao,trunc,nan,60.0,TEMS_RC3,R_SINT,5,-0.00161,0.00027,0.0,0.0
+quant,nominal,sem_calibracao,trunc,nan,60.0,TEMS_PINN,TEMS_RC3,5,0.0004,2e-05,1.0,0.0
+
+
+##### DECISOES INVIAVEIS (diagnostico) #####
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 15, "t_s": 6420.0, "tau_orbita_s": 493.6209, "tj_medido_C": 78.94801, "tj_real_C": 78.95158, "tr_medido_C": 48.38799, "dtip_est_K": 7.465993, "pico_previsto_fmin_C": 78.94801, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.794, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 15, "t_s": 12120.0, "tau_orbita_s": 267.2419, "tj_medido_C": 78.85699, "tj_real_C": 78.75854, "tr_medido_C": 48.23736, "dtip_est_K": 7.480471, "pico_previsto_fmin_C": 78.85699, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.226, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 15, "t_s": 13140.0, "tau_orbita_s": 1287.242, "tj_medido_C": 78.88992, "tj_real_C": 78.22387, "tr_medido_C": 47.46496, "dtip_est_K": 7.635717, "pico_previsto_fmin_C": 78.88992, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.07, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 15, "t_s": 17820.0, "tau_orbita_s": 40.86279, "tj_medido_C": 78.85314, "tj_real_C": 78.37896, "tr_medido_C": 48.0128, "dtip_est_K": 7.508976, "pico_previsto_fmin_C": 78.85314, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.244, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 15, "t_s": 18840.0, "tau_orbita_s": 1060.863, "tj_medido_C": 78.7982, "tj_real_C": 78.61211, "tr_medido_C": 47.86375, "dtip_est_K": 7.620332, "pico_previsto_fmin_C": 78.7982, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.505, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 15, "t_s": 6420.0, "tau_orbita_s": 493.6209, "tj_medido_C": 79.12659, "tj_real_C": 79.13016, "tr_medido_C": 48.53242, "dtip_est_K": 7.306549, "pico_previsto_fmin_C": 79.12659, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.944, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 15, "t_s": 11640.0, "tau_orbita_s": 5713.621, "tj_medido_C": 78.9123, "tj_real_C": 78.48515, "tr_medido_C": 47.8615, "dtip_est_K": 7.36618, "pico_previsto_fmin_C": 78.91232, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.964, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 15, "t_s": 12540.0, "tau_orbita_s": 687.2419, "tj_medido_C": 79.06238, "tj_real_C": 78.96851, "tr_medido_C": 48.0892, "dtip_est_K": 7.395142, "pico_previsto_fmin_C": 79.06238, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.25, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 15, "t_s": 17820.0, "tau_orbita_s": 40.86279, "tj_medido_C": 79.31187, "tj_real_C": 78.83769, "tr_medido_C": 48.27521, "dtip_est_K": 7.38913, "pico_previsto_fmin_C": 79.31187, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.06, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 15, "t_s": 18780.0, "tau_orbita_s": 1000.863, "tj_medido_C": 78.78334, "tj_real_C": 78.6709, "tr_medido_C": 47.9479, "dtip_est_K": 7.438263, "pico_previsto_fmin_C": 78.78335, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.575, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 16, "t_s": 6480.0, "tau_orbita_s": 553.6209, "tj_medido_C": 79.90574, "tj_real_C": 78.76907, "tr_medido_C": 48.28709, "dtip_est_K": 7.55585, "pico_previsto_fmin_C": 79.90574, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1354.207, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 16, "t_s": 12120.0, "tau_orbita_s": 267.2419, "tj_medido_C": 79.0671, "tj_real_C": 78.77431, "tr_medido_C": 48.34305, "dtip_est_K": 7.49768, "pico_previsto_fmin_C": 79.0671, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.228, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 16, "t_s": 13440.0, "tau_orbita_s": 1587.242, "tj_medido_C": 79.21041, "tj_real_C": 78.14962, "tr_medido_C": 47.21248, "dtip_est_K": 7.577924, "pico_previsto_fmin_C": 79.21041, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.545, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 16, "t_s": 17880.0, "tau_orbita_s": 100.8628, "tj_medido_C": 79.00775, "tj_real_C": 78.5701, "tr_medido_C": 48.22615, "dtip_est_K": 7.488064, "pico_previsto_fmin_C": 79.00775, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.51, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 16, "t_s": 18780.0, "tau_orbita_s": 1000.863, "tj_medido_C": 78.87878, "tj_real_C": 78.49271, "tr_medido_C": 47.71554, "dtip_est_K": 7.593835, "pico_previsto_fmin_C": 78.87878, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.123, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 16, "t_s": 6060.0, "tau_orbita_s": 133.6209, "tj_medido_C": 78.96414, "tj_real_C": 79.06103, "tr_medido_C": 48.38052, "dtip_est_K": 7.354309, "pico_previsto_fmin_C": 78.96414, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.717, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 16, "t_s": 12120.0, "tau_orbita_s": 267.2419, "tj_medido_C": 79.22186, "tj_real_C": 78.92907, "tr_medido_C": 48.4855, "dtip_est_K": 7.338745, "pico_previsto_fmin_C": 79.22186, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.49, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 16, "t_s": 13440.0, "tau_orbita_s": 1587.242, "tj_medido_C": 79.22064, "tj_real_C": 78.15985, "tr_medido_C": 47.22192, "dtip_est_K": 7.401611, "pico_previsto_fmin_C": 79.22064, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.496, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 16, "t_s": 17880.0, "tau_orbita_s": 100.8628, "tj_medido_C": 79.44399, "tj_real_C": 79.00634, "tr_medido_C": 48.46657, "dtip_est_K": 7.362793, "pico_previsto_fmin_C": 79.44399, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1356.428, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 16, "t_s": 18780.0, "tau_orbita_s": 1000.863, "tj_medido_C": 78.92401, "tj_real_C": 78.53794, "tr_medido_C": 47.75733, "dtip_est_K": 7.418152, "pico_previsto_fmin_C": 78.92401, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.908, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 17, "t_s": 6420.0, "tau_orbita_s": 493.6209, "tj_medido_C": 78.80379, "tj_real_C": 78.74662, "tr_medido_C": 48.25326, "dtip_est_K": 7.487948, "pico_previsto_fmin_C": 78.80379, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.478, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 17, "t_s": 12180.0, "tau_orbita_s": 327.2419, "tj_medido_C": 79.05829, "tj_real_C": 78.75447, "tr_medido_C": 48.2588, "dtip_est_K": 7.489939, "pico_previsto_fmin_C": 79.05829, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.27, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 17, "t_s": 18240.0, "tau_orbita_s": 460.8628, "tj_medido_C": 79.05921, "tj_real_C": 78.73805, "tr_medido_C": 48.26669, "dtip_est_K": 7.514938, "pico_previsto_fmin_C": 79.05921, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.265, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 17, "t_s": 24480.0, "tau_orbita_s": 774.4837, "tj_medido_C": 78.91574, "tj_real_C": 78.90048, "tr_medido_C": 48.21997, "dtip_est_K": 7.564801, "pico_previsto_fmin_C": 78.91574, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.947, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 17, "t_s": 30060.0, "tau_orbita_s": 428.1046, "tj_medido_C": 79.40769, "tj_real_C": 78.68521, "tr_medido_C": 48.2292, "dtip_est_K": 7.507905, "pico_previsto_fmin_C": 79.40769, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1356.602, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 17, "t_s": 6060.0, "tau_orbita_s": 133.6209, "tj_medido_C": 78.94875, "tj_real_C": 78.97207, "tr_medido_C": 48.46202, "dtip_est_K": 7.384857, "pico_previsto_fmin_C": 78.94875, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.791, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 17, "t_s": 7020.0, "tau_orbita_s": 1093.621, "tj_medido_C": 78.81231, "tj_real_C": 78.63688, "tr_medido_C": 47.68498, "dtip_est_K": 7.397491, "pico_previsto_fmin_C": 78.81231, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.438, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 17, "t_s": 12180.0, "tau_orbita_s": 327.2419, "tj_medido_C": 79.42776, "tj_real_C": 79.12394, "tr_medido_C": 48.46013, "dtip_est_K": 7.356964, "pico_previsto_fmin_C": 79.42776, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1356.506, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 17, "t_s": 18240.0, "tau_orbita_s": 460.8628, "tj_medido_C": 79.34372, "tj_real_C": 79.02256, "tr_medido_C": 48.50627, "dtip_est_K": 7.363037, "pico_previsto_fmin_C": 79.34372, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1356.908, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 17, "t_s": 23460.0, "tau_orbita_s": 5680.863, "tj_medido_C": 78.88645, "tj_real_C": 78.4687, "tr_medido_C": 47.85259, "dtip_est_K": 7.341003, "pico_previsto_fmin_C": 78.88645, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.086, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 18, "t_s": 6180.0, "tau_orbita_s": 253.6209, "tj_medido_C": 78.82295, "tj_real_C": 78.72304, "tr_medido_C": 48.36093, "dtip_est_K": 7.492143, "pico_previsto_fmin_C": 78.82295, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.388, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 18, "t_s": 12000.0, "tau_orbita_s": 147.2419, "tj_medido_C": 78.9249, "tj_real_C": 78.5854, "tr_medido_C": 48.15383, "dtip_est_K": 7.493196, "pico_previsto_fmin_C": 78.9249, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.904, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 18, "t_s": 12840.0, "tau_orbita_s": 987.2419, "tj_medido_C": 78.81174, "tj_real_C": 78.5001, "tr_medido_C": 47.67133, "dtip_est_K": 7.584248, "pico_previsto_fmin_C": 78.81174, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.441, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 18, "t_s": 18000.0, "tau_orbita_s": 220.8628, "tj_medido_C": 78.83668, "tj_real_C": 78.60195, "tr_medido_C": 48.22336, "dtip_est_K": 7.507897, "pico_previsto_fmin_C": 78.83668, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.323, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 18, "t_s": 23700.0, "tau_orbita_s": 5920.863, "tj_medido_C": 79.1354, "tj_real_C": 78.48067, "tr_medido_C": 48.04046, "dtip_est_K": 7.478437, "pico_previsto_fmin_C": 79.1354, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.902, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 18, "t_s": 6180.0, "tau_orbita_s": 253.6209, "tj_medido_C": 79.06685, "tj_real_C": 78.96693, "tr_medido_C": 48.582, "dtip_est_K": 7.337036, "pico_previsto_fmin_C": 79.06686, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.229, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 18, "t_s": 11820.0, "tau_orbita_s": 5893.621, "tj_medido_C": 78.85525, "tj_real_C": 78.80643, "tr_medido_C": 48.19674, "dtip_est_K": 7.365509, "pico_previsto_fmin_C": 78.85525, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.234, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 18, "t_s": 12600.0, "tau_orbita_s": 747.2419, "tj_medido_C": 78.87747, "tj_real_C": 78.65347, "tr_medido_C": 47.82324, "dtip_est_K": 7.393616, "pico_previsto_fmin_C": 78.87747, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1359.129, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 18, "t_s": 17880.0, "tau_orbita_s": 100.8628, "tj_medido_C": 79.09348, "tj_real_C": 79.00375, "tr_medido_C": 48.32745, "dtip_est_K": 7.375183, "pico_previsto_fmin_C": 79.09348, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.102, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 18, "t_s": 23520.0, "tau_orbita_s": 5740.863, "tj_medido_C": 78.9062, "tj_real_C": 78.58295, "tr_medido_C": 47.99644, "dtip_est_K": 7.347961, "pico_previsto_fmin_C": 78.90621, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.993, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 19, "t_s": 6540.0, "tau_orbita_s": 613.6209, "tj_medido_C": 79.4862, "tj_real_C": 78.90437, "tr_medido_C": 48.27831, "dtip_est_K": 7.54857, "pico_previsto_fmin_C": 79.4862, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1356.226, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 19, "t_s": 7440.0, "tau_orbita_s": 1513.621, "tj_medido_C": 78.93642, "tj_real_C": 77.55341, "tr_medido_C": 46.79458, "dtip_est_K": 7.611212, "pico_previsto_fmin_C": 78.93642, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.849, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 19, "t_s": 12600.0, "tau_orbita_s": 747.2419, "tj_medido_C": 79.22804, "tj_real_C": 78.93067, "tr_medido_C": 48.32207, "dtip_est_K": 7.559176, "pico_previsto_fmin_C": 79.22804, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.46, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 19, "t_s": 18540.0, "tau_orbita_s": 760.8628, "tj_medido_C": 78.98228, "tj_real_C": 78.93854, "tr_medido_C": 48.2612, "dtip_est_K": 7.550203, "pico_previsto_fmin_C": 78.98228, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.631, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "calibrado", "seed": 19, "t_s": 24120.0, "tau_orbita_s": 414.4837, "tj_medido_C": 78.97165, "tj_real_C": 78.70529, "tr_medido_C": 48.24496, "dtip_est_K": 7.497103, "pico_previsto_fmin_C": 78.97165, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.682, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 19, "t_s": 6060.0, "tau_orbita_s": 133.6209, "tj_medido_C": 79.18979, "tj_real_C": 79.03004, "tr_medido_C": 48.43288, "dtip_est_K": 7.362854, "pico_previsto_fmin_C": 79.18979, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.643, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 19, "t_s": 7440.0, "tau_orbita_s": 1513.621, "tj_medido_C": 79.58195, "tj_real_C": 78.19894, "tr_medido_C": 47.39145, "dtip_est_K": 7.457062, "pico_previsto_fmin_C": 79.58196, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1355.766, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 19, "t_s": 11940.0, "tau_orbita_s": 87.24186, "tj_medido_C": 79.21529, "tj_real_C": 79.02743, "tr_medido_C": 48.40146, "dtip_est_K": 7.371948, "pico_previsto_fmin_C": 79.2153, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1357.521, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 19, "t_s": 13080.0, "tau_orbita_s": 1227.242, "tj_medido_C": 79.38484, "tj_real_C": 78.58867, "tr_medido_C": 47.66633, "dtip_est_K": 7.432983, "pico_previsto_fmin_C": 79.38485, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1356.711, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "calibrado", "seed": 19, "t_s": 17940.0, "tau_orbita_s": 160.8628, "tj_medido_C": 79.06892, "tj_real_C": 79.00672, "tr_medido_C": 48.42258, "dtip_est_K": 7.3862, "pico_previsto_fmin_C": 79.06892, "limite_C": 78.78, "m_total_K": 1.22, "f_hi_MHz": 1358.219, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "sem_calibracao", "seed": 15, "t_s": 13140.0, "tau_orbita_s": 1287.242, "tj_medido_C": 77.78931, "tj_real_C": 78.12326, "tr_medido_C": 47.4434, "dtip_est_K": 7.571706, "pico_previsto_fmin_C": 77.78931, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1364.247, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "sem_calibracao", "seed": 15, "t_s": 24900.0, "tau_orbita_s": 1194.484, "tj_medido_C": 77.9167, "tj_real_C": 78.0993, "tr_medido_C": 47.45136, "dtip_est_K": 7.553518, "pico_previsto_fmin_C": 77.9167, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1363.653, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "sem_calibracao", "seed": 15, "t_s": 30660.0, "tau_orbita_s": 1028.105, "tj_medido_C": 77.95824, "tj_real_C": 78.15593, "tr_medido_C": 47.50091, "dtip_est_K": 7.498282, "pico_previsto_fmin_C": 77.95824, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1363.459, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "sem_calibracao", "seed": 15, "t_s": 55140.0, "tau_orbita_s": 1802.588, "tj_medido_C": 77.81666, "tj_real_C": 78.03362, "tr_medido_C": 47.04084, "dtip_est_K": 7.582688, "pico_previsto_fmin_C": 77.81666, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1364.12, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_RC3", "sensor": "sem_calibracao", "seed": 15, "t_s": 113940.0, "tau_orbita_s": 1338.798, "tj_medido_C": 77.781, "tj_real_C": 78.20447, "tr_medido_C": 47.38215, "dtip_est_K": 7.526693, "pico_previsto_fmin_C": 77.781, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1364.286, "dist_dominio": 0.0, "preditor": "RC3_euler"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "sem_calibracao", "seed": 15, "t_s": 13140.0, "tau_orbita_s": 1287.242, "tj_medido_C": 77.8085, "tj_real_C": 78.14245, "tr_medido_C": 47.46156, "dtip_est_K": 7.395691, "pico_previsto_fmin_C": 77.8085, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1364.158, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "sem_calibracao", "seed": 15, "t_s": 30660.0, "tau_orbita_s": 1028.105, "tj_medido_C": 78.0321, "tj_real_C": 78.22979, "tr_medido_C": 47.56889, "dtip_est_K": 7.325104, "pico_previsto_fmin_C": 78.0321, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1363.113, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "sem_calibracao", "seed": 15, "t_s": 55140.0, "tau_orbita_s": 1802.588, "tj_medido_C": 77.81409, "tj_real_C": 78.03105, "tr_medido_C": 47.03847, "dtip_est_K": 7.404175, "pico_previsto_fmin_C": 77.81409, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1364.131, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "sem_calibracao", "seed": 15, "t_s": 78240.0, "tau_orbita_s": 1197.072, "tj_medido_C": 77.79766, "tj_real_C": 78.18832, "tr_medido_C": 47.43714, "dtip_est_K": 7.354828, "pico_previsto_fmin_C": 77.79766, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1364.208, "dist_dominio": 0.0, "preditor": "PINN"}
+{"cenario": "nominal", "ctrl": "TEMS_PINN", "sensor": "sem_calibracao", "seed": 15, "t_s": 113940.0, "tau_orbita_s": 1338.798, "tj_medido_C": 77.82582, "tj_real_C": 78.24929, "tr_medido_C": 47.42341, "dtip_est_K": 7.350372, "pico_previsto_fmin_C": 77.82583, "limite_C": 77.78, "m_total_K": 2.22, "f_hi_MHz": 1364.077, "dist_dominio": 0.0, "preditor": "PINN"}
+
+##### LATENCIA ISOLADA #####
+latencia_isolada.json ausente (rode --latencia sozinho)
+
+##### SERIES TEMPORAIS #####
+9 series (grandes: nao impressas): [('nominal', 'R_SINT'), ('nominal', 'S0'), ('nominal', 'S1'), ('nominal', 'TEMS_PINN'), ('nominal', 'TEMS_RC3'), ('r_int_alto', 'R_SINT'), ('r_int_alto', 'S1'), ('r_int_alto', 'TEMS_PINN'), ('r_int_alto', 'TEMS_RC3')]
+
+##### VEREDITO P1-P5 (listas cortadas em 12 itens; completo em m5_veredito_P1_P5.json) #####
+{
+ "n_execucoes": 438,
+ "P1": {
+  "status": "ATENDIDO",
+  "grupos_tems": 24,
+  "execucoes_tems": 120,
+  "pior_tj_tems_C": 79.40926,
+  "grupos_tems_com_violacao": [],
+  "R_SINT_sem_violacao": false,
+  "R_SINT_pior_tj_C": 80.22574,
+  "R_SINT_grupos_com_violacao": [
+   {
+    "ctrl": "R_SINT",
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "sensor": "calibrado",
+    "quant": "none",
+    "n": 5,
+    "n_viol": 1,
+    "tj_pior": 80.0816
+   },
+   {
+    "ctrl": "R_SINT",
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "n_viol": 4,
+    "tj_pior": 80.1883
+   },
+   {
+    "ctrl": "R_SINT",
+    "bloco": "quant",
+    "cenario": "nominal",
+    "sensor": "calibrado",
+    "quant": "round",
+    "n": 5,
+    "n_viol": 1,
+    "tj_pior": 80.0723
+   },
+   {
+    "ctrl": "R_SINT",
+    "bloco": "quant",
+    "cenario": "nominal",
+    "sensor": "calibrado",
+    "quant": "trunc",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior": 80.1342
+   },
+   {
+    "ctrl": "R_SINT",
+    "bloco": "quant",
+    "cenario": "nominal",
+    "sensor": "sem_calibracao",
+    "quant": "round",
+    "n": 5,
+    "n_viol": 1,
+    "tj_pior": 80.2257
+   },
+   {
+    "ctrl": "R_SINT",
+    "bloco": "quant",
+    "cenario": "nominal",
+    "sensor": "sem_calibracao",
+    "quant": "trunc",
+    "n": 5,
+    "n_viol": 4,
+    "tj_pior": 80.1346
+   }
+  ]
+ },
+ "P2": {
+  "status": "NAO_ATENDIDO",
+  "cenarios_em_que_S1_viola": [
+   "combinada",
+   "eps_baixo",
+   "r_int_alto",
+   "r_int_muito_alto"
+  ],
+  "detalhe": [
+   {
+    "cenario": "combinada",
+    "ctrl": "TEMS_RC3",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 84.77251
+   },
+   {
+    "cenario": "combinada",
+    "ctrl": "TEMS_PINN",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 84.77251
+   },
+   {
+    "cenario": "combinada",
+    "ctrl": "R_SINT",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 82.24817
+   },
+   {
+    "cenario": "eps_baixo",
+    "ctrl": "TEMS_RC3",
+    "n": 5,
+    "n_viol": 0,
+    "tj_pior_C": 79.62337
+   },
+   {
+    "cenario": "eps_baixo",
+    "ctrl": "TEMS_PINN",
+    "n": 5,
+    "n_viol": 0,
+    "tj_pior_C": 79.39489
+   },
+   {
+    "cenario": "eps_baixo",
+    "ctrl": "R_SINT",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 81.57849
+   },
+   {
+    "cenario": "r_int_alto",
+    "ctrl": "TEMS_RC3",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 83.10816
+   },
+   {
+    "cenario": "r_int_alto",
+    "ctrl": "TEMS_PINN",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 83.10816
+   },
+   {
+    "cenario": "r_int_alto",
+    "ctrl": "R_SINT",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 82.42872
+   },
+   {
+    "cenario": "r_int_muito_alto",
+    "ctrl": "TEMS_RC3",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 87.59372
+   },
+   {
+    "cenario": "r_int_muito_alto",
+    "ctrl": "TEMS_PINN",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 86.4019
+   },
+   {
+    "cenario": "r_int_muito_alto",
+    "ctrl": "R_SINT",
+    "n": 5,
+    "n_viol": 5,
+    "tj_pior_C": 82.78693
+   }
+  ],
+  "S1_viola_por_T_j": [
+   "eps_baixo",
+   "r_int_alto"
+  ],
+  "S1_divergiu_por_cenario": {
+   "combinada": [
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "r_int_muito_alto": [
+    15,
+    16,
+    17,
+    18,
+    19
+   ]
+  },
+  "leitura_sem_divergencia": {
+   "status": "NAO_ATENDIDO",
+   "cenarios_em_que_S1_viola": [
+    "eps_baixo",
+    "r_int_alto"
+   ],
+   "detalhe": [
+    {
+     "cenario": "eps_baixo",
+     "ctrl": "TEMS_RC3",
+     "n": 5,
+     "n_viol": 0,
+     "tj_pior_C": 79.62337
+    },
+    {
+     "cenario": "eps_baixo",
+     "ctrl": "TEMS_PINN",
+     "n": 5,
+     "n_viol": 0,
+     "tj_pior_C": 79.39489
+    },
+    {
+     "cenario": "eps_baixo",
+     "ctrl": "R_SINT",
+     "n": 5,
+     "n_viol": 5,
+     "tj_pior_C": 81.57849
+    },
+    {
+     "cenario": "r_int_alto",
+     "ctrl": "TEMS_RC3",
+     "n": 5,
+     "n_viol": 5,
+     "tj_pior_C": 83.10816
+    },
+    {
+     "cenario": "r_int_alto",
+     "ctrl": "TEMS_PINN",
+     "n": 5,
+     "n_viol": 5,
+     "tj_pior_C": 83.10816
+    },
+    {
+     "cenario": "r_int_alto",
+     "ctrl": "R_SINT",
+     "n": 5,
+     "n_viol": 5,
+     "tj_pior_C": 82.42872
+    }
+   ]
+  },
+  "nota": "status principal: S1 que divergiu conta como 'S1 viola' (decisao do usuario). Causa fisica da divergencia NAO confirmada (erro numerico 'Newton nao convergiu'). Se NAO_ATENDIDO: reportar honestamente (clausula do pre-registro)"
+ },
+ "P3": {
+  "status": "ATENDIDO",
+  "execucoes": 401,
+  "soc_min_pior": 0.7,
+  "violacoes_amostra": []
+ },
+ "P4": {
+  "status": "ATENDIDO_COM_EMPATE",
+  "detalhe": [
+   {
+    "sensor": "calibrado",
+    "ctrl": "TEMS_RC3",
+    "n_pares": 2,
+    "fora_do_alcance_do_pareto": 3,
+    "fora_R_SINT_mais_quente_que_m0": 3,
+    "fora_R_SINT_mais_frio_que_o_maior_m": 0,
+    "dif_media_vazao": -0.0057540500000000105,
+    "ic95": [
+     null,
+     null
+    ],
+    "classe": "INSUFICIENTE"
+   },
+   {
+    "sensor": "calibrado",
+    "ctrl": "TEMS_PINN",
+    "n_pares": 2,
+    "fora_do_alcance_do_pareto": 3,
+    "fora_R_SINT_mais_quente_que_m0": 3,
+    "fora_R_SINT_mais_frio_que_o_maior_m": 0,
+    "dif_media_vazao": -0.0057540500000000105,
+    "ic95": [
+     null,
+     null
+    ],
+    "classe": "INSUFICIENTE"
+   },
+   {
+    "sensor": "sem_calibracao",
+    "ctrl": "TEMS_RC3",
+    "n_pares": 5,
+    "fora_do_alcance_do_pareto": 0,
+    "fora_R_SINT_mais_quente_que_m0": 0,
+    "fora_R_SINT_mais_frio_que_o_maior_m": 0,
+    "dif_media_vazao": 0.0006802390463530594,
+    "ic95": [
+     0.000533727732453082,
+     0.0008384023231900351
+    ],
+    "classe": "TEMS_MAIOR"
+   },
+   {
+    "sensor": "sem_calibracao",
+    "ctrl": "TEMS_PINN",
+    "n_pares": 5,
+    "fora_do_alcance_do_pareto": 0,
+    "fora_R_SINT_mais_quente_que_m0": 0,
+    "fora_R_SINT_mais_frio_que_o_maior_m": 0,
+    "dif_media_vazao": 5.3197686035755255e-05,
+    "ic95": [
+     -0.0008652536782938868,
+     0.0007787348807477334
+    ],
+    "classe": "EMPATE"
+   }
+  ],
+  "nota": "EMPATE = IC95 bootstrap sobre sementes inclui 0; com poucas sementes o IC e largo (pouco poder)"
+ },
+ "clausula_de_falsificacao": {
+  "estado": "NAO_ACIONADA",
+  "regra": "ESTRITA: R_SINT sem nenhuma violacao de 80 C e TEMS seguro (P1) e vazao sem TEMS_MAIOR => resultado reportado como empate/derrota do TEMS",
+  "sensibilidade_tol_0p25K_posthoc": {
+   "estado": "PARCIAL",
+   "tolerancia_K": 0.25,
+   "R_SINT_pior_tj_C": 80.22574,
+   "nota": "analise SECUNDARIA; tolerancia definida DEPOIS de ver o piloto (pos-hoc); nao substitui a regra estrita"
+  }
+ },
+ "P5": {
+  "status": "ATRIBUIVEL_EM_ALGUNS_GRUPOS",
+  "grupos_avaliados": 19,
+  "grupos_atribuiveis": 5,
+  "detalhe": [
+   {
+    "bloco": "burst",
+    "cenario": "burst",
+    "sensor": "calibrado",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.0,
+    "desvio_RC3_entre_sementes": 0.030004889381315847,
+    "ic95": [
+     0.0,
+     0.0
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 1.0,
+    "pue_ok_PINN": 1.0,
+    "ressalva_periodicidade": false
+   },
+   {
+    "bloco": "burst",
+    "cenario": "burst",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.0,
+    "desvio_RC3_entre_sementes": 0.029985649064043933,
+    "ic95": [
+     0.0,
+     0.0
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 1.0,
+    "pue_ok_PINN": 1.0,
+    "ressalva_periodicidade": false
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "sensor": "calibrado",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.0019376999999999977,
+    "desvio_RC3_entre_sementes": 0.0030183148513698898,
+    "ic95": [
+     -0.0012890999999999985,
+     0.0055008999999999865
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 0.4,
+    "pue_ok_PINN": 0.6,
+    "ressalva_periodicidade": true
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.00044565999999999215,
+    "desvio_RC3_entre_sementes": 0.002628609460912742,
+    "ic95": [
+     0.0004030999999999896,
+     0.0004936399999999841
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 0.0,
+    "pue_ok_PINN": 0.0,
+    "ressalva_periodicidade": true
+   },
+   {
+    "bloco": "ood",
+    "cenario": "ood",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.00044565999999999215,
+    "desvio_RC3_entre_sementes": 0.002628609460912742,
+    "ic95": [
+     0.0004030999999999896,
+     0.0004936399999999841
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 0.0,
+    "pue_ok_PINN": 0.0,
+    "ressalva_periodicidade": true
+   },
+   {
+    "bloco": "pert",
+    "cenario": "c_mod_mais30",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": -0.00047959999999998005,
+    "desvio_RC3_entre_sementes": 5.368323760727719e-05,
+    "ic95": [
+     -0.0023483599999999825,
+     0.000478560000000039
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 0.0,
+    "pue_ok_PINN": 0.0,
+    "ressalva_periodicidade": true
+   },
+   {
+    "bloco": "pert",
+    "cenario": "c_mod_menos30",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.0004298799999999714,
+    "desvio_RC3_entre_sementes": 0.0026462300007746675,
+    "ic95": [
+     0.0004090799999999506,
+     0.00045421999999999406
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 0.0,
+    "pue_ok_PINN": 0.0,
+    "ressalva_periodicidade": true
+   },
+   {
+    "bloco": "pert",
+    "cenario": "combinada",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.0,
+    "desvio_RC3_entre_sementes": 0.0022107535328480137,
+    "ic95": [
+     0.0,
+     0.0
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 1.0,
+    "pue_ok_PINN": 1.0,
+    "ressalva_periodicidade": false
+   },
+   {
+    "bloco": "pert",
+    "cenario": "eps_baixo",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.010409380000000001,
+    "desvio_RC3_entre_sementes": 0.00390210933701247,
+    "ic95": [
+     0.003997879999999987,
+     0.015972220000000027
+    ],
+    "atribuivel_a_PINN": true,
+    "pue_ok_RC3": 0.6,
+    "pue_ok_PINN": 0.8,
+    "ressalva_periodicidade": true
+   },
+   {
+    "bloco": "pert",
+    "cenario": "r_int_alto",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": 0.0,
+    "desvio_RC3_entre_sementes": 0.0022267983222555095,
+    "ic95": [
+     0.0,
+     0.0
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 1.0,
+    "pue_ok_PINN": 1.0,
+    "ressalva_periodicidade": false
+   },
+   {
+    "bloco": "pert",
+    "cenario": "r_int_muito_alto",
+    "sensor": "sem_calibracao",
+    "quant": "none",
+    "n": 5,
+    "dif_media": -0.007921840000000024,
+    "desvio_RC3_entre_sementes": 0.0010799191645674406,
+    "ic95": [
+     -0.010375,
+     -0.005514080000000021
+    ],
+    "atribuivel_a_PINN": true,
+    "pue_ok_RC3": 1.0,
+    "pue_ok_PINN": 1.0,
+    "ressalva_periodicidade": false
+   },
+   {
+    "bloco": "quant",
+    "cenario": "burst",
+    "sensor": "calibrado",
+    "quant": "round",
+    "n": 5,
+    "dif_media": 0.0,
+    "desvio_RC3_entre_sementes": 0.030003759372701937,
+    "ic95": [
+     0.0,
+     0.0
+    ],
+    "atribuivel_a_PINN": false,
+    "pue_ok_RC3": 1.0,
+    "pue_ok_PINN": 1.0,
+    "ressalva_periodicidade": false
+   }
+  ],
+  "latencia_decisao_ms": {
+   "TEMS_PINN": {
+    "mediana_ms_campanha_paralela": 7.511887
+   },
+   "TEMS_RC3": {
+    "mediana_ms_campanha_paralela": 51.56917
+   }
+  },
+  "regra": "|dif media| > max(desvio entre sementes do RC3, 1e-6) e IC95 sem o zero; senao o argumento da PINN e a latencia. ressalva_periodicidade = algum controlador do grupo com fracao de PUE periodico < 1 (ou sem dado)"
+ },
+ "limitacoes_n_infeasible": {
+  "por_ctrl": {
+   "R_SINT": 0,
+   "S0": 0,
+   "S1": 0,
+   "TEMS_PINN": 10134,
+   "TEMS_RC3": 9786,
+   "TEMS_SOLVER": 3
+  },
+  "execucoes_com_infeasible": 240,
+  "instantes_amostra": [
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 6420.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 12120.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 13140.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 17820.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 18840.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 23820.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 24900.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 29700.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 30660.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 36000.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 41400.0
+   },
+   {
+    "bloco": "nominal",
+    "cenario": "nominal",
+    "ctrl": "TEMS_RC3",
+    "sensor": "calibrado",
+    "seed": 15,
+    "t_s": 42480.0
+   }
+  ],
+  "nota": "decisao inviavel = pico previsto com f_min acima do limite (a LEITURA de T_j ja passa do limite, por ruido/vies do sensor, mesmo com T_j real abaixo; ou R_int real maior que o do modelo); o controlador manda f_min por 1 passo"
+ },
+ "PUE_periodico_fracao_por_ctrl(|dE|<0.001)": {
+  "R_SINT": 0.4631578947368421,
+  "S1": 0.8611111111111112,
+  "TEMS_PINN": 0.4064516129032258,
+  "TEMS_RC3": 0.4068965517241379,
+  "TEMS_SOLVER": 0.0
+ },
+ "PUE_periodico_fracao_por_ctrl_SEM_abs(comparavel_com_piloto)": {
+  "R_SINT": 0.4631578947368421,
+  "S1": 0.8611111111111112,
+  "TEMS_PINN": 0.4064516129032258,
+  "TEMS_RC3": 0.4068965517241379,
+  "TEMS_SOLVER": 0.0
+ },
+ "divergencias_registradas": [
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_combinada_s15-15.json",
+   "cenarios": [
+    "combinada"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    15
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_combinada_s16-16.json",
+   "cenarios": [
+    "combinada"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    16
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_combinada_s17-17.json",
+   "cenarios": [
+    "combinada"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    17
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_combinada_s18-18.json",
+   "cenarios": [
+    "combinada"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    18
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_combinada_s19-19.json",
+   "cenarios": [
+    "combinada"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    19
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_r_int_muito_alto_s15-15.json",
+   "cenarios": [
+    "r_int_muito_alto"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    15
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_r_int_muito_alto_s16-16.json",
+   "cenarios": [
+    "r_int_muito_alto"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    16
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_r_int_muito_alto_s17-17.json",
+   "cenarios": [
+    "r_int_muito_alto"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    17
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_r_int_muito_alto_s18-18.json",
+   "cenarios": [
+    "r_int_muito_alto"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    18
+   ]
+  },
+  {
+   "bloco": "pert",
+   "parte": "pert_S1_r_int_muito_alto_s19-19.json",
+   "cenarios": [
+    "r_int_muito_alto"
+   ],
+   "ctrls": [
+    "S1"
+   ],
+   "seeds": [
+    19
+   ]
+  },
+  {
+   "bloco": "traces",
+   "parte": "traces_r_int_alto_S0.json",
+   "cenarios": [
+    "r_int_alto"
+   ],
+   "ctrls": [
+    "S0"
+   ],
+   "seeds": [
+    15
+   ]
+  }
+ ]
+}
+
+NOTA: veredito P1-P5 calculado por calcula_veredito (regras no docstring da funcao); arquivo m5_veredito_P1_P5.json.
+
+##### PUE PERIODICO, JANELA DE 9 ORBITAS (EMENDA POS-HOC; |dE|/E_TI < 0.001; exige n >= 10 orbitas) #####
+execucoes lidas: 438. 'frac_passa_no_n_final' = fracao das execucoes que passam com a simulacao terminando na ultima orbita;
+'frac_media_dos_n_que_passam' = media, por execucao, da fracao dos n = 10..N em que a janela passaria. O criterio antigo (janela 3) segue acima.
+--- por controlador
+chave,n_exec,sem_listas_por_orbita,orbitas_insuficientes,frac_passa_no_n_final,frac_media_dos_n_que_passam,pior_valor_relativo
+R_SINT,95,0,0,1.0000,0.9990,1.03e-03
+S0,1,0,0,1.0000,0.8182,1.94e-02
+S1,36,0,0,0.8611,0.8106,3.62e-02
+TEMS_PINN,155,0,0,0.9871,0.9848,3.15e-03
+TEMS_RC3,145,0,0,1.0000,0.9944,1.61e-03
+TEMS_SOLVER,6,0,0,1.0000,1.0000,8.59e-04
+--- por grupo (cenario|sensor|quant|mtotal|dt_ctrl|ctrl)
+chave,n_exec,sem_listas_por_orbita,orbitas_insuficientes,frac_passa_no_n_final,frac_media_dos_n_que_passam,pior_valor_relativo
+burst|calibrado|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|none|nan|60.0|S1,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|round|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|round|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|round|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|trunc|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|trunc|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,0.00e+00
+burst|calibrado|trunc|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|none|nan|60.0|S1,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|round|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|round|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|round|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|trunc|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|trunc|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,0.00e+00
+burst|sem_calibracao|trunc|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,0.00e+00
+c_mod_mais30|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,8.92e-04
+c_mod_mais30|sem_calibracao|none|nan|60.0|S1,5,0,0,1.0000,1.0000,2.44e-05
+c_mod_mais30|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.71e-04
+c_mod_mais30|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.62e-04
+c_mod_menos30|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,8.93e-04
+c_mod_menos30|sem_calibracao|none|nan|60.0|S1,5,0,0,1.0000,1.0000,1.45e-05
+c_mod_menos30|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.47e-04
+c_mod_menos30|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.63e-04
+combinada|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,0.00e+00
+combinada|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,0.00e+00
+combinada|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,0.00e+00
+eps_baixo|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,9.07e-04
+eps_baixo|sem_calibracao|none|nan|60.0|S1,5,0,0,0.0000,0.0000,2.35e-03
+eps_baixo|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,0.8000,0.9455,1.09e-03
+eps_baixo|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,0.9273,1.12e-03
+nominal|calibrado|none|0.0|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.86e-04
+nominal|calibrado|none|0.0|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.86e-04
+nominal|calibrado|none|0.5|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.88e-04
+nominal|calibrado|none|0.5|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.79e-04
+nominal|calibrado|none|1.0|60.0|TEMS_PINN,5,0,0,1.0000,0.9818,1.62e-03
+nominal|calibrado|none|1.0|60.0|TEMS_RC3,5,0,0,1.0000,0.9818,1.60e-03
+nominal|calibrado|none|2.0|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,9.14e-04
+nominal|calibrado|none|2.0|60.0|TEMS_RC3,5,0,0,1.0000,0.9818,1.60e-03
+nominal|calibrado|none|3.0|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,9.16e-04
+nominal|calibrado|none|3.0|60.0|TEMS_RC3,5,0,0,1.0000,0.9818,1.58e-03
+nominal|calibrado|none|nan|300.0|TEMS_PINN,5,0,0,0.8000,0.7091,3.15e-03
+nominal|calibrado|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,8.83e-04
+nominal|calibrado|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,0.9818,1.62e-03
+nominal|calibrado|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.56e-04
+nominal|calibrado|none|nan|60.0|TEMS_SOLVER,3,0,0,1.0000,1.0000,8.51e-04
+nominal|calibrado|round|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,8.88e-04
+nominal|calibrado|round|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,9.02e-04
+nominal|calibrado|round|nan|60.0|TEMS_RC3,5,0,0,1.0000,0.9636,1.61e-03
+nominal|calibrado|trunc|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,9.19e-04
+nominal|calibrado|trunc|nan|60.0|TEMS_PINN,5,0,0,1.0000,0.9818,1.61e-03
+nominal|calibrado|trunc|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.71e-04
+nominal|sem_calibracao|none|0.0|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.86e-04
+nominal|sem_calibracao|none|0.0|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.86e-04
+nominal|sem_calibracao|none|0.5|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.88e-04
+nominal|sem_calibracao|none|0.5|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.69e-04
+nominal|sem_calibracao|none|1.0|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.80e-04
+nominal|sem_calibracao|none|1.0|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.54e-04
+nominal|sem_calibracao|none|2.0|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.65e-04
+nominal|sem_calibracao|none|2.0|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.47e-04
+nominal|sem_calibracao|none|3.0|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.45e-04
+nominal|sem_calibracao|none|3.0|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.44e-04
+nominal|sem_calibracao|none|nan|300.0|TEMS_PINN,5,0,0,1.0000,0.9273,3.00e-03
+nominal|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,8.92e-04
+nominal|sem_calibracao|none|nan|60.0|S0,1,0,0,1.0000,0.8182,1.94e-02
+nominal|sem_calibracao|none|nan|60.0|S1,1,0,0,1.0000,1.0000,1.80e-05
+nominal|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.57e-04
+nominal|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.57e-04
+nominal|sem_calibracao|none|nan|60.0|TEMS_SOLVER,3,0,0,1.0000,1.0000,8.59e-04
+nominal|sem_calibracao|round|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,8.90e-04
+nominal|sem_calibracao|round|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.63e-04
+nominal|sem_calibracao|round|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.46e-04
+nominal|sem_calibracao|trunc|nan|60.0|R_SINT,5,0,0,1.0000,0.9818,1.03e-03
+nominal|sem_calibracao|trunc|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.50e-04
+nominal|sem_calibracao|trunc|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.79e-04
+ood|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,8.92e-04
+ood|sem_calibracao|none|nan|60.0|S1,5,0,0,1.0000,1.0000,2.09e-05
+ood|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,8.57e-04
+ood|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,8.57e-04
+r_int_alto|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,8.04e-04
+r_int_alto|sem_calibracao|none|nan|60.0|S1,5,0,0,1.0000,0.6364,3.62e-02
+r_int_alto|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,5.06e-04
+r_int_alto|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,5.06e-04
+r_int_muito_alto|sem_calibracao|none|nan|60.0|R_SINT,5,0,0,1.0000,1.0000,0.00e+00
+r_int_muito_alto|sem_calibracao|none|nan|60.0|TEMS_PINN,5,0,0,1.0000,1.0000,0.00e+00
+r_int_muito_alto|sem_calibracao|none|nan|60.0|TEMS_RC3,5,0,0,1.0000,1.0000,0.00e+00
