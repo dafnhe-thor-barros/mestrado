@@ -2,7 +2,7 @@
 v8: no --resumo, valores ausentes em quant/mtotal/dt_ctrl podiam virar NaN (pandas novo) e o groupby descartava essas linhas
 (HIPOTESE, nao confirmada: AGREGADO e PAREADA so com o bloco pareto). Agora ausentes viram texto ('none', 'nan', '60.0'),
 os groupby usam dropna=False e o AGREGADO imprime '# cobertura: X de Y execucoes' para a falha nao passar despercebida.
-ESTADO: ESCRITO SEM TER SIDO EXECUTADO. Rode antes: pytest test_marco5.py test_orquestrador_v7.py, depois --dry-run e --quick.
+ESTADO (auditoria 22/11/2026): corrigido P1 (divergencia simetrica), P3 (shed), P4 (censura), P5 (Bonferroni), cfg_id com hash do contrato+planta. Rode antes: pytest test_marco5.py test_orquestrador_v7.py test_correcoes_auditoria.py, depois --dry-run e --quick.
 Ao commitar, salve este arquivo com o nome canonico rodar_campanha_marco5.py (sem o sufixo _v7); o test_orquestrador_v7.py importa por esse nome.
 
 Mudancas do v7 em relacao ao v5 commitado:
@@ -162,8 +162,11 @@ def salva_tempos(out, novos):
 
 
 def confere_config(out, cfg_id, nova, ignora):
-    """O cache pula qualquer parte existente SEM olhar o numero de orbitas. Aqui: --nova exige pasta sem partes; senao recusa config diferente da gravada."""
+    """O cache pula qualquer parte existente SEM olhar o numero de orbitas. Aqui: --nova exige pasta sem partes; senao recusa config diferente da gravada.
+    AUDITORIA: tambem recusa pasta COM partes e SEM campanha_config.json (antes passava e gravava config nova sobre partes de origem desconhecida)."""
     p = os.path.join(out, "campanha_config.json")
+    if not nova and not os.path.exists(p) and not ignora and glob.glob(os.path.join(out, "parts", "*", "*.json")):
+        raise SystemExit("%s tem partes mas nao tem campanha_config.json: origem desconhecida (outra planta/c_area?). Use pasta nova com --nova, ou --ignora-config." % out)
     if nova:
         sobras = glob.glob(os.path.join(out, "parts", "*", "*")) + glob.glob(os.path.join(out, "sintonia_reativo.json*"))
         if sobras:
@@ -201,12 +204,32 @@ def _nat(o):
     return o.item() if hasattr(o, "item") else str(o)
 
 
-def _boot_ic(d, nboot=4000, seed=12345):
+N_MIN_IC = 10   # AUDITORIA: abaixo disso o IC bootstrap percentil cobre bem menos de 95% (simulado: n=3 -> 73%, n=5 -> 84%, n=10 -> 90%, n=20 -> 94%)
+
+
+def _boot_ic(d, nboot=4000, seed=12345, alpha=0.05):
+    """IC percentil bootstrap da media (referencia/sensibilidade). alpha = 0,05 -> IC95; para varios grupos use alpha/k (Bonferroni)."""
     import numpy as np
     d = np.asarray(d, float)
     rng = np.random.default_rng(seed)
     m = [rng.choice(d, len(d)).mean() for _ in range(nboot)]
-    return float(np.percentile(m, 2.5)), float(np.percentile(m, 97.5))
+    return float(np.percentile(m, 100 * alpha / 2)), float(np.percentile(m, 100 * (1 - alpha / 2)))
+
+
+def _t_ic(d, alpha=0.05):
+    """IC t de Student pareado da media (metodo primario). Exato sob normalidade aproximada mesmo com n pequeno; com Bonferroni use alpha/k."""
+    import numpy as np
+    from scipy import stats
+    d = np.asarray(d, float)
+    n = len(d)
+    m = float(d.mean())
+    if n < 2:
+        return m, m
+    s = float(d.std(ddof=1))
+    if s == 0.0:
+        return m, m
+    half = float(stats.t.ppf(1.0 - alpha / 2.0, df=n - 1)) * s / float(np.sqrt(n))
+    return m - half, m + half
 
 
 def _estado_clausula(r_seguro, p1_ok, val):
@@ -244,10 +267,15 @@ def calcula_veredito(linhas, lat=None, tol_soc=1e-6, diverg=None):
     p1 = base[base["ctrl"].isin(TEMS_CTRLS + ["R_SINT"]) & base["bloco"].isin(["nominal", "burst", "quant"])]
     g1 = p1.groupby(["ctrl", "bloco", "cenario", "sensor", "quant"]).agg(n=("seed", "count"), n_viol=("tj_max_C", lambda x: int((x > LIM_TJ).sum())), tj_pior=("tj_max_C", "max")).reset_index()
     g1t, g1r = g1[g1["ctrl"].isin(TEMS_CTRLS)], g1[g1["ctrl"] == "R_SINT"]
-    p1_ok = bool(len(g1t) and (g1t["n_viol"] == 0).all())
-    r_seguro = bool(len(g1r) and (g1r["n_viol"] == 0).all())
+    # AUDITORIA: divergencia do integrador em TEMS/R_SINT (blocos nominal/burst/quant) conta como violacao, simetrica a regra do S1 no P2 (antes a parte sumia: vies de sobrevivencia)
+    def _div_p1(ctrls):
+        return [d for d in (diverg or []) if d.get("bloco") in ("nominal", "burst", "quant") and any(c in ctrls for c in d.get("ctrls", []))]
+    div_t, div_r = _div_p1(TEMS_CTRLS), _div_p1(["R_SINT"])
+    p1_ok = bool(len(g1t) and (g1t["n_viol"] == 0).all() and not div_t)
+    r_seguro = bool(len(g1r) and (g1r["n_viol"] == 0).all() and not div_r)
     r_seguro_tol = bool(len(g1r) and (g1r["tj_pior"] <= LIM_TJ + TOL_SENS_K).all())
-    out["P1"] = {"status": "INSUFICIENTE" if not len(g1t) else ("ATENDIDO" if p1_ok else "NAO_ATENDIDO"), "grupos_tems": int(len(g1t)), "execucoes_tems": int(g1t["n"].sum()) if len(g1t) else 0,
+    out["P1"] = {"divergencias_TEMS": [{k: d.get(k) for k in ("bloco", "parte", "ctrls", "seeds")} for d in div_t], "divergencias_R_SINT": [{k: d.get(k) for k in ("bloco", "parte", "ctrls", "seeds")} for d in div_r],
+                 "status": "INSUFICIENTE" if not len(g1t) else ("ATENDIDO" if p1_ok else "NAO_ATENDIDO"), "grupos_tems": int(len(g1t)), "execucoes_tems": int(g1t["n"].sum()) if len(g1t) else 0,
                  "pior_tj_tems_C": float(g1t["tj_pior"].max()) if len(g1t) else None, "grupos_tems_com_violacao": g1t[g1t["n_viol"] > 0].round(4).to_dict("records"),
                  "R_SINT_sem_violacao": r_seguro, "R_SINT_pior_tj_C": float(g1r["tj_pior"].max()) if len(g1r) else None,
                  "R_SINT_grupos_com_violacao": g1r[g1r["n_viol"] > 0].round(4).to_dict("records")}
@@ -282,11 +310,13 @@ def calcula_veredito(linhas, lat=None, tol_soc=1e-6, diverg=None):
     v3 = sup[sup["soc_min"] < 0.70 - tol_soc]
     out["P3"] = {"status": "INSUFICIENTE" if sup.empty else ("ATENDIDO" if v3.empty else "NAO_ATENDIDO"), "execucoes": int(len(sup)),
                  "soc_min_pior": float(sup["soc_min"].min()) if len(sup) else None,
+                 "shed_Wh_max": (float(pd.to_numeric(sup["shed_Wh"], errors="coerce").max()) if ("shed_Wh" in sup and len(sup)) else None),   # AUDITORIA: o piso de SoC e imposto por construcao; o custo aparece como carga cortada
+                 "bus_resid_W_max": (float(pd.to_numeric(df["bus_resid_W"], errors="coerce").abs().max()) if "bus_resid_W" in df else None),
                  "violacoes_amostra": v3[["bloco", "cenario", "ctrl", "sensor", "seed", "soc_min"]].head(50).to_dict("records")}
     # ---- P4
     ref = base[(base["bloco"] == "nominal") & (base["cenario"] == "nominal") & (base["ctrl"] == "R_SINT")]
     par = df[(df["bloco"] == "pareto") & df["ctrl"].isin(TEMS_CTRLS) & (df["dt"] == 60.0)]
-    rows4, classes = [], []
+    p4_raw = []
     for sn in sorted(set(par["sensor"]) & set(ref["sensor"])):
         for ct in TEMS_CTRLS:
             diffs, f_ac, f_ab = [], 0, 0
@@ -304,25 +334,34 @@ def calcula_veredito(linhas, lat=None, tol_soc=1e-6, diverg=None):
                     f_ac += 1
                     continue
                 diffs.append(float(np.interp(tj_r, x, y)) - tp_r)
-            if len(diffs) >= 3:
-                lo, hi = _boot_ic(diffs)
-                cl = "TEMS_MAIOR" if lo > 0 else ("TEMS_MENOR" if hi < 0 else "EMPATE")
-            else:
-                lo = hi = None
-                cl = "INSUFICIENTE"
-            rows4.append({"sensor": sn, "ctrl": ct, "n_pares": len(diffs), "fora_do_alcance_do_pareto": f_ac + f_ab, "fora_R_SINT_mais_quente_que_m0": f_ac, "fora_R_SINT_mais_frio_que_o_maior_m": f_ab,
-                          "dif_media_vazao": float(np.mean(diffs)) if diffs else None, "ic95": [lo, hi], "classe": cl})
-            classes.append(cl)
+            p4_raw.append((sn, ct, diffs, f_ac, f_ab))
+    k4 = max(sum(1 for _, _, d, _, _ in p4_raw if len(d) >= 3), 1)
+    rows4, classes = [], []
+    for sn, ct, diffs, f_ac, f_ab in p4_raw:
+        if len(diffs) >= 3:
+            lo0, hi0 = _t_ic(diffs, alpha=0.05)
+            lo, hi = _t_ic(diffs, alpha=0.05 / k4)
+            blo, bhi = _boot_ic(diffs, alpha=0.05 / k4)
+            cl = "TEMS_MAIOR" if lo > 0 else ("TEMS_MENOR" if hi < 0 else "EMPATE")
+        else:
+            lo0 = hi0 = lo = hi = blo = bhi = None
+            cl = "INSUFICIENTE"
+        rows4.append({"sensor": sn, "ctrl": ct, "n_pares": len(diffs), "fora_do_alcance_do_pareto": f_ac + f_ab, "fora_R_SINT_mais_quente_que_m0": f_ac, "fora_R_SINT_mais_frio_que_o_maior_m": f_ab,
+                      "dif_media_vazao": float(np.mean(diffs)) if diffs else None, "ic95": [lo0, hi0], "ic_t_bonferroni": [lo, hi], "ic_boot_ref": [blo, bhi], "k_grupos": k4,
+                      "metodo_ic": "t_student_pareado_bonferroni", "classe": cl,
+                      "aviso_n_pequeno": (len(diffs) < N_MIN_IC)})
+        classes.append(cl)
     val = [c for c in classes if c != "INSUFICIENTE"]
     if not val:
         st4 = "INSUFICIENTE"
     elif any(c == "TEMS_MENOR" for c in val):
         st4 = "NAO_ATENDIDO"
     elif all(c == "TEMS_MAIOR" for c in val):
-        st4 = "ATENDIDO"
+        # AUDITORIA: pares fora do alcance do Pareto sao descartados (censura assimetrica); com censura nao se declara ATENDIDO limpo
+        st4 = "ATENDIDO_COM_CENSURA" if any(r["fora_do_alcance_do_pareto"] > 0 for r in rows4) else "ATENDIDO"
     else:
         st4 = "ATENDIDO_COM_EMPATE"
-    out["P4"] = {"status": st4, "detalhe": rows4, "nota": "EMPATE = IC95 bootstrap sobre sementes inclui 0; com poucas sementes o IC e largo (pouco poder)"}
+    out["P4"] = {"status": st4, "detalhe": rows4, "nota": "EMPATE = IC t de Student pareado com Bonferroni (alpha=0,05/k) inclui 0 (ic_boot_ref mantido como sensibilidade). Pares fora do alcance do Pareto sao censurados (ATENDIDO_COM_CENSURA)."}
     # ---- clausula de falsificacao: estrita + sensibilidade secundaria (pos-hoc)
     out["clausula_de_falsificacao"] = {"estado": _estado_clausula(r_seguro, p1_ok, val),
                                        "regra": "ESTRITA: R_SINT sem nenhuma violacao de 80 C e TEMS seguro (P1) e vazao sem TEMS_MAIOR => resultado reportado como empate/derrota do TEMS",
@@ -336,16 +375,27 @@ def calcula_veredito(linhas, lat=None, tol_soc=1e-6, diverg=None):
     def _pue_frac(g, ct):
         v = pd.to_numeric(g[g["ctrl"] == ct]["dE_over_ti_last3"], errors="coerce").abs().dropna()
         return float((v < LIM_PUE).mean()) if len(v) else None
+    def _n_grp():
+        n = 0
+        for _, g0 in pn.groupby(["bloco", "cenario", "sensor", "quant"]):
+            p0 = g0.pivot_table(index="seed", columns="ctrl", values="tops_frac_last")
+            if "TEMS_PINN" in p0.columns and "TEMS_RC3" in p0.columns and len((p0["TEMS_PINN"] - p0["TEMS_RC3"]).dropna()) >= 3:
+                n += 1
+        return max(n, 1)
+    k_grp = _n_grp()    # AUDITORIA: correcao de Bonferroni sobre os grupos avaliados (antes: IC95 por grupo e "algum grupo" bastava)
     for k, g in pn.groupby(["bloco", "cenario", "sensor", "quant"]):
         p = g.pivot_table(index="seed", columns="ctrl", values="tops_frac_last")
         if "TEMS_PINN" in p.columns and "TEMS_RC3" in p.columns:
             d = (p["TEMS_PINN"] - p["TEMS_RC3"]).dropna().values
             if len(d) >= 3:
                 sd_rc3 = float(p["TEMS_RC3"].std(ddof=1))
-                lo, hi = _boot_ic(d)
+                lo0, hi0 = _t_ic(d, alpha=0.05)
+                lo, hi = _t_ic(d, alpha=0.05 / k_grp)
+                blo, bhi = _boot_ic(d, alpha=0.05 / k_grp)
                 m = float(np.mean(d))
                 pr, pp = _pue_frac(g, "TEMS_RC3"), _pue_frac(g, "TEMS_PINN")
-                rows5.append({"bloco": k[0], "cenario": k[1], "sensor": k[2], "quant": k[3], "n": int(len(d)), "dif_media": m, "desvio_RC3_entre_sementes": sd_rc3, "ic95": [lo, hi],
+                rows5.append({"bloco": k[0], "cenario": k[1], "sensor": k[2], "quant": k[3], "n": int(len(d)), "dif_media": m, "desvio_RC3_entre_sementes": sd_rc3, "ic95": [lo0, hi0], "ic_bonferroni": [lo, hi], "ic_boot_ref": [blo, bhi], "k_grupos": k_grp, "metodo_ic": "t_student_pareado_bonferroni", "aviso_n_pequeno": bool(len(d) < N_MIN_IC),
+                              "atribuivel_sem_correcao": bool(abs(m) > max(sd_rc3, 1e-6) and (lo0 > 0 or hi0 < 0)),
                               "atribuivel_a_PINN": bool(abs(m) > max(sd_rc3, 1e-6) and (lo > 0 or hi < 0)),
                               "pue_ok_RC3": pr, "pue_ok_PINN": pp, "ressalva_periodicidade": bool(any(x is None or x < 1.0 for x in (pr, pp)))})
     n_at = sum(1 for r in rows5 if r["atribuivel_a_PINN"])
@@ -355,7 +405,7 @@ def calcula_veredito(linhas, lat=None, tol_soc=1e-6, diverg=None):
     else:
         lat_txt = lat
     out["P5"] = {"status": "INSUFICIENTE" if not rows5 else ("ATRIBUIVEL_EM_ALGUNS_GRUPOS" if n_at else "NAO_ATRIBUIVEL"), "grupos_avaliados": len(rows5), "grupos_atribuiveis": n_at,
-                 "detalhe": rows5, "latencia_decisao_ms": lat_txt, "regra": "|dif media| > max(desvio entre sementes do RC3, 1e-6) e IC95 sem o zero; senao o argumento da PINN e a latencia. ressalva_periodicidade = algum controlador do grupo com fracao de PUE periodico < 1 (ou sem dado)"}
+                 "detalhe": rows5, "latencia_decisao_ms": lat_txt, "regra": "|dif media| > max(desvio entre sementes do RC3, 1e-6) e IC t de Student pareado com correcao de Bonferroni (alpha = 0,05/k grupos) sem o zero (ic_boot_ref mantido como sensibilidade); senao o argumento da PINN e a latencia. ressalva_periodicidade = algum controlador do grupo com fracao de PUE periodico < 1 (ou sem dado)"}
     inf = df[df["n_infeasible"] > 0]
     inst = []
     for _, r in inf.iterrows():
@@ -584,8 +634,14 @@ def main(argv=None):
     if a.dry_run:
         print({NOMES.get(b, "traces"): len(v) for b, v in B.items()}, "| norb", cfg["norb"], "| norb-sint", a.norb_sint, "| seeds", cfg["seeds"], "| sensores", cfg["sensores"], "| rajadas/orbita", cfg["burst_per_orbit"])
         return 0
-    confere_config(out, {"norb": cfg["norb"], "norb_sint": a.norb_sint, "seeds": cfg["seeds"], "burst_per_orbit": cfg["burst_per_orbit"], "quick": bool(a.quick), "ckpt": a.ckpt}, a.nova, a.ignora_config)
-    from contrato_parametros import PROJETO_1P0, contract_hash, verify_checkpoint
+    from contrato_parametros import PROJETO_1P0, contract_hash, verify_checkpoint, plant_fingerprint
+    if a.nova:
+        os.environ["M5_STRICT"] = "1"      # campanha final: checkpoint treinado em outra planta = erro, nao aviso
+        ENV["M5_STRICT"] = "1"
+    if len(seeds) < N_MIN_IC and not a.quick:
+        print("AVISO: %d sementes (< %d): o IC95 bootstrap do P4/P5 tem cobertura real < 90%% (n=3: ~73%%; n=5: ~84%%)." % (len(seeds), N_MIN_IC))
+    confere_config(out, {"norb": cfg["norb"], "norb_sint": a.norb_sint, "seeds": cfg["seeds"], "burst_per_orbit": cfg["burst_per_orbit"], "quick": bool(a.quick), "ckpt": a.ckpt,
+                         "contrato_sha256": contract_hash(PROJETO_1P0), "planta_sha256": plant_fingerprint()}, a.nova, a.ignora_config)
     print("hash do contrato:", contract_hash(PROJETO_1P0), "| checkpoint:", verify_checkpoint(a.ckpt))
     print("norb", cfg["norb"], "| norb-sint", a.norb_sint, "| seeds", cfg["seeds"], "| chunk", a.chunk, "| jobs", a.jobs)
     tempos = []

@@ -1,6 +1,6 @@
 """junta_campanhas.py -- junta campanhas longas COMPATIVEIS (mesmo horizonte, mesma sintonia, mesmo checkpoint, sementes DISJUNTAS) e recalcula o veredito P1-P5
 com a MESMA funcao do orquestrador v8 (rodar_campanha_marco5.calcula_veredito), mais a janela de PUE periodico de k orbitas (janela_pue.py).
-SO LEITURA das pastas de entrada: nao simula, nao edita nada congelado. ESCRITO SEM TER SIDO EXECUTADO.
+SO LEITURA das pastas de entrada: nao simula, nao edita nada congelado. AUDITORIA 22/11/2026: codigo de saida != 0 se o veredito falhar; o hash do contrato agora inclui a planta (c_area), entao campanhas de plantas diferentes nao juntam.
 
 Entradas: pastas de campanha (cada uma com campanha_config.json e parts/[1-6]/*.json OU m5_campanha_*.json). Prefere parts/ (fonte primaria) como o v8.
 Verificacoes ANTES de juntar (erro => nao junta, exceto com --forca, que vira aviso; sementes repetidas SEMPRE sao erro):
@@ -298,7 +298,10 @@ def main(argv=None):
     with open(os.path.join(a.out, "resumo_juntas.txt"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(s)
     print(s)
-    return 1 if erros else 0
+    falhas = [n for n, (v, _) in vereditos.items() if "erro" in v] + (["JUNTAS"] if (juntas is not None and "erro" in juntas[1]) else [])
+    if falhas:      # AUDITORIA: antes a excecao de calcula_veredito virava {"erro":...} e o script saia com 0
+        print("FALHA no calculo do veredito em: %s" % falhas, file=sys.stderr)
+    return 1 if (erros or falhas) else 0
 
 
 def autoteste():

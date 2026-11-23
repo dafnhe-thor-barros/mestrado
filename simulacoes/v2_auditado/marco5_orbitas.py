@@ -1,6 +1,5 @@
 """marco5_orbitas.py -- WRAPPER do marco5_tems.py (nao edita o arquivo congelado). Mesmo CLI; so acrescenta ao resultado de cada execucao
 as listas por orbita (orb_soc_end, orb_ti_Wh, orb_tops, orb_tj_max_C) para calcular janelas de PUE periodico depois (janela_pue.py).
-ESCRITO SEM TER SIDO EXECUTADO.
 
 Como funciona: troca marco5_tems.run_scenario por uma versao que forca series=True, calcula as listas por orbita, e remove a serie completa do
 resultado se o chamador nao a pediu (--save_traces continua funcionando). A simulacao em si e a mesma chamada ao run_scenario original.

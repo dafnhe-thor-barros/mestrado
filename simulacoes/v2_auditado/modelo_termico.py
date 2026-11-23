@@ -34,7 +34,7 @@ PAR = {
     "k": 167.0,           # W/(m K) [NAO VERIFICADO] aluminio, memoria
     "delta": 2.0e-3,      # m [LEGADO 4_1 fin_efficiency_diagnostic]
     "L": 0.075,           # m [LEGADO 4_1] meia distancia entre tubos
-    "c_area": 4050.0,     # J/(m2 K) [LEGADO 4_1: 4.5 kg/m2 x 900 J/kgK]
+    "c_area": 4860.0,     # J/(m2 K) = 2700 kg/m3 * 900 J/(kg K) * 2.0e-3 m (chapa uniforme Al 6061-T6, delta=2 mm)
     "n_nodes": 40,        # [HIPOTESE DECLARADA] malha; convergencia medida em report_conv
     "r_int": 0.08,        # K/W por modulo, juncao -> coletor [HIPOTESE DECLARADA] sem fonte; sensibilidade 0.04..0.16
     "c_mod": 500.0,       # J/K por modulo (juncao+placa fria) [HIPOTESE DECLARADA]
@@ -286,11 +286,11 @@ class Plant:
             dlt = _thomas(js, jd, ju, -res)
             mx = float(np.max(np.abs(dlt)))
             if not math.isfinite(mx):
-                raise RuntimeError("Newton divergiu (nao finito)")
+                raise RuntimeError("Newton nao convergiu: divergiu (nao finito); Tj=%.1f K" % float(y_old[0]))
             y = y + (dlt * (maxstep / mx) if mx > maxstep else dlt)
             if mx < tol:
                 return y, it + 1
-        raise RuntimeError("Newton nao convergiu em %d iteracoes" % itmax)
+        raise RuntimeError("Newton nao convergiu em %d iteracoes (Tj=%.1f K, |dy|max=%.2e K)" % (itmax, float(y[0]), mx))
 
     def steady(self, y0=None, t=0.0):
         """Estado estacionario da forcante estatica em t. Retorna None se nao houver solucao estavel (fuga termica / divergencia)."""

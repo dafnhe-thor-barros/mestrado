@@ -1,6 +1,8 @@
-"""gerar_figuras_marco5.py -- Gera figura 2x2 (300 DPI) do Marco 5 a partir de m5_n20/m5_traces_figuras.json."""
+"""gerar_figuras_marco5.py -- Gera figuras 2x2 (300 DPI) do Marco 5 a partir de m5_n20_4860_s10_29/."""
+import csv
 import json
 import os
+from collections import defaultdict
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -9,7 +11,8 @@ import numpy as np
 DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(DIR, "..", ".."))
 FIG_DIR = os.path.join(ROOT, "figuras")
-TRACES_PATH = os.path.join(DIR, "m5_n20", "m5_traces_figuras.json")
+CAMP_DIR = os.path.join(DIR, "m5_n20_4860_s10_29")
+TRACES_PATH = os.path.join(CAMP_DIR, "m5_traces_figuras.json")
 
 plt.rcParams.update({
     "font.family": "serif",
@@ -59,7 +62,7 @@ def main():
         ax_tj.plot(t_min, r["tj_C"], **STYLE[ctrl])
     ax_tj.axhline(80.0, color="black", ls="--", lw=1.0, label=r"Limite $80^\circ\mathrm{C}$")
     ax_tj.set_ylabel(r"Temperatura de junção $T_j$ ($^\circ\mathrm{C}$)")
-    ax_tj.set_title("(a) Cenário nominal: $T_j(t)$ na 20ª órbita (semente 15)")
+    ax_tj.set_title("(a) Cenário nominal: $T_j(t)$ na 20ª órbita (semente 10)")
     ax_tj.legend(loc="lower right", frameon=True, ncol=2)
 
     # (b) Nominal: f(t)
@@ -104,12 +107,26 @@ def main():
     print("Saved:", out, os.path.getsize(out), "bytes")
 
     # ---- Figura 4.3: Sintese quantitativa 2x2 (P2, Latencia, Convergencia SoC, PUE 3 vs 9) ----
-    with open(os.path.join(DIR, "m5_n20_consolidado", "m5_veredito_P1_P5_juntas.json"), encoding="utf-8") as f:
+    with open(os.path.join(CAMP_DIR, "m5_veredito_P1_P5.json"), encoding="utf-8") as f:
         ver = json.load(f)
+    with open(os.path.join(CAMP_DIR, "latencia_isolada.json"), encoding="utf-8") as f:
+        lat_raw = json.load(f)
+    with open(os.path.join(CAMP_DIR, "m5_pue_janela.json"), encoding="utf-8") as f:
+        pue9 = json.load(f)
     with open(os.path.join(DIR, "conv_curto", "conv_TEMS_RC3_sem_calibracao_s10_soc020_n20.json"), encoding="utf-8") as f:
         c20 = json.load(f)
     with open(os.path.join(DIR, "conv_curto", "conv_TEMS_RC3_sem_calibracao_s10_soc095_n20.json"), encoding="utf-8") as f:
         c95 = json.load(f)
+
+    # Calcula PUE janela 3 a partir da tabela agregada do resumo
+    with open(os.path.join(CAMP_DIR, "m5_resumo_para_colar.txt"), encoding="utf-8") as f:
+        txt_res = f.read()
+    blk = txt_res.split("bloco,cenario,")[1].split("\n\n")[0]
+    lines = ["bloco,cenario," + blk.splitlines()[0]] + blk.splitlines()[1:]
+    tot_j3, ok_j3 = defaultdict(int), defaultdict(float)
+    for row in csv.DictReader(lines):
+        tot_j3[row["ctrl"]] += int(row["n"])
+        ok_j3[row["ctrl"]] += int(row["n"]) * float(row["frac_pue_ok"])
 
     fig2, axes2 = plt.subplots(2, 2, figsize=(11.0, 7.6))
     ax_p2, ax_lat = axes2[0]
@@ -117,7 +134,6 @@ def main():
 
     # (a) P2: pior Tj por cenario
     cens = ["eps_baixo", "r_int_alto", "r_int_muito_alto", "combinada"]
-    cen_labels = [r"\texttt{eps\_baixo}", r"\texttt{r\_int\_alto}", r"\texttt{r\_int\_muito\_alto}", r"\texttt{combinada}"]
     p2_map = {(d["cenario"], d["ctrl"]): d["tj_pior_C"] for d in ver["P2"]["detalhe"]}
     x = np.arange(len(cens))
     w = 0.25
@@ -128,14 +144,16 @@ def main():
     ax_p2.set_xticks(x)
     ax_p2.set_xticklabels(["eps_baixo", "r_int_alto", "r_int_muito_alto", "combinada"], fontsize=8.5)
     ax_p2.set_ylim(75, 90)
-    ax_p2.set_ylabel(r"Pior $T_j$ em 10 sementes ($^\circ\mathrm{C}$)")
-    ax_p2.set_title("(a) Critério P2: pior $T_j$ sob perturbações (20 órbitas)")
+    ax_p2.set_ylabel(r"Pior $T_j$ em 20 sementes ($^\circ\mathrm{C}$)")
+    ax_p2.set_title("(a) Critério P2: pior $T_j$ sob perturbações (20 órbitas, $n=20$)")
     ax_p2.legend(loc="upper left", frameon=True, ncol=2)
 
-    # (b) Latencia isolada (m5_n20)
+    # (b) Latencia isolada (m5_n20_4860_s10_29)
+    lat_map = {r["ctrl"]: r for r in lat_raw["resultados"]}
     cats = ["TEMS_RC3", "TEMS_PINN"]
-    means = [50.873, 7.683]
-    p99s = [67.238, 16.354]
+    means = [lat_map[c]["decision_ms_mean"] for c in cats]
+    p99s = [lat_map[c]["decision_ms_p99"] for c in cats]
+    speedup = means[0] / means[1]
     xl = np.arange(len(cats))
     wl = 0.32
     b1 = ax_lat.bar(xl - wl/2, means, wl, color="#1f77b4", label="Média (ms)")
@@ -148,7 +166,7 @@ def main():
     ax_lat.set_xticklabels(cats)
     ax_lat.set_ylim(0, 78)
     ax_lat.set_ylabel("Tempo de decisão completa (ms)")
-    ax_lat.set_title(r"(b) Latência isolada em \texttt{i5-8500T} (PINN $6{,}62\times$ mais rápida)")
+    ax_lat.set_title(rf"(b) Latência isolada em \texttt{{i5-8500T}} (PINN ${speedup:.2f}\times$ mais rápida)".replace(".", "{,}"))
     ax_lat.legend(loc="upper right", frameon=True)
 
     # (c) Convergencia orbital (soc_end por orbita, 20 orbitas)
@@ -166,8 +184,11 @@ def main():
 
     # (d) PUE periodico: janela 3 vs janela 9
     ctrls_pue = ["R_SINT", "TEMS_RC3", "TEMS_PINN", "TEMS_SOLVER", "S1"]
-    j3 = [50.00, 43.10, 42.58, 0.00, 86.11]
-    j9 = [100.0, 100.0, 99.03, 100.0, 86.11]
+    j3 = [100.0 * ok_j3[c] / tot_j3[c] for c in ctrls_pue]
+    j9 = [100.0 * pue9["por_ctrl"][c]["final_ok"] / pue9["por_ctrl"][c]["final_tot"] for c in ctrls_pue]
+    print("PUE J3:", {c: round(v, 2) for c, v in zip(ctrls_pue, j3)})
+    print("PUE J9:", {c: round(v, 2) for c, v in zip(ctrls_pue, j9)})
+    print("P5 atribuiveis:", [(d["bloco"], d["cenario"], d["sensor"], d["quant"], round(100*d["dif_media"], 3)) for d in ver["P5"]["detalhe"] if d["atribuivel_a_PINN"]])
     xp = np.arange(len(ctrls_pue))
     wp = 0.34
     ax_pue.bar(xp - wp/2, j3, wp, color="#9edae5", edgecolor="#17becf", label="Janela 3 órbitas")
@@ -176,7 +197,7 @@ def main():
     ax_pue.set_xticklabels(ctrls_pue, fontsize=8.0)
     ax_pue.set_ylim(0, 115)
     ax_pue.set_ylabel("Execuções com PUE periódico (%)")
-    ax_pue.set_title(r"(d) Periodicidade do PUE ($|\Delta E|/E_{TI} < 10^{-3}$, 876 exec.)")
+    ax_pue.set_title(r"(d) Periodicidade do PUE ($|\Delta E|/E_{TI} < 10^{-3}$, 1.728 exec.)")
     ax_pue.legend(loc="lower right", frameon=True)
 
     fig2.tight_layout()

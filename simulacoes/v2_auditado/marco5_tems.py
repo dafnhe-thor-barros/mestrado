@@ -13,8 +13,11 @@ import numpy as np
 
 from modelo_termico import (T0K, SIGMA, T_ORB, T_ECL, IA, Plant, static_drive, _merge, optics,
                             ia_p, ia_f_for_power, size_bess, analytic_orbit, orbit_breaks)
-from contrato_parametros import (A_PL_PROJETO, PROJETO_1P0, LEGADO_2B_0P90, M_PRED_K, M_OOD_MAX_K, OOD_CORTES, DTIP_PRIOR, DTIP_RANGE,
+from contrato_parametros import (A_PL_PROJETO, PROJETO_1P0, LEGADO_2B_0P90, M_PRED_K, M_PRED_K_RC3, M_OOD_MAX_K, OOD_CORTES, DTIP_PRIOR, DTIP_RANGE,
                                  SENSOR_MARGEM_K, sensor_cfg, contract_hash, sha256_file, verify_checkpoint)
+
+
+_TB = 1e-6   # tolerancia de fronteira de orbita [s]: os instantes da malha de eventos sao arredondados a 1e-6 s (run_closed_loop), entao a tolerancia tem de ser >= 5e-7
 
 
 def _now():
@@ -102,6 +105,7 @@ def bus_step(c, pv_out, p_ti, dt, E, ecap, floor):
     net = pv_bus - l_req
     e_max, e_min = c["soc_max"] * ecap, floor * ecap
     ti, chem_in, chem_out, q_bd, q_bat = p_ti, 0.0, 0.0, 0.0, 0.0
+    aux = c["p_aux"]      # AUDITORIA: com o BESS no piso e PV insuficiente, a carga auxiliar tambem cai (antes: resid = P_aux, energia criada do nada)
     if net >= 0.0:
         head = max(0.0, e_max - E) * 3600.0 / dt
         to_bat = min(net, head / (c["eta_ch"] * c["eta_bd"]))
@@ -115,15 +119,16 @@ def bus_step(c, pv_out, p_ti, dt, E, ecap, floor):
         dmax = avail * c["eta_dis"] * c["eta_bd"]
         if deficit > dmax:
             deficit = dmax
-            ti = max(0.0, (pv_bus + deficit - c["p_aux"]) * chain)
+            aux = min(aux, pv_bus + deficit)
+            ti = max(0.0, (pv_bus + deficit - aux) * chain)
         s = deficit / c["eta_bd"]
         chem_out = s / c["eta_dis"]
         q_bd, q_bat = s - deficit, chem_out - s
         used_bus = pv_bus
     used_out = used_bus / c["eta_buck"]
     q_buck = used_out - used_bus
-    q_rest = c["q_aux"] + q_buck + q_bd + (q_bat if c["bat_losses_in_qrest"] else 0.0)
-    resid = used_out - (q_buck + ti / chain + c["p_aux"] + q_bd + q_bat + chem_in - chem_out)
+    q_rest = c["q_aux"] * aux / c["p_aux"] + q_buck + q_bd + (q_bat if c["bat_losses_in_qrest"] else 0.0)
+    resid = used_out - (q_buck + ti / chain + aux + q_bd + q_bat + chem_in - chem_out)
     return {"ti": ti, "E": E + (chem_in - chem_out) * dt / 3600.0, "q_rest": q_rest, "used_out": used_out,
             "curtail": pv_out - used_out, "resid": resid}
 
@@ -230,6 +235,8 @@ class RC3(PredictorBase):
             from scipy.integrate import solve_ivp
             sol = solve_ivp(lambda t, x: self._rhs(x, f, qa, qr)[0], (0.0, dur), x0, method="Radau",
                             t_eval=np.linspace(0.0, dur, n + 1), rtol=1e-8, atol=1e-6)
+            if not sol.success or sol.y.shape[1] != n + 1:
+                raise RuntimeError("RC3: Newton nao convergiu (Radau: %s)" % sol.message)
             Y = sol.y.T
         else:
             h, x, xs = dur / n, x0, [x0]
@@ -279,8 +286,8 @@ class SolverPred(PredictorBase):
 
 class PINNPred(PredictorBase):
     """PINN v2 (modelo_pinn.py) como preditor.
-    ATENCAO [NAO VERIFICADO]: este codigo NUNCA foi executado (o sandbox do assistente nao tem torch) e os NOMES da API de modelo_pinn usados abaixo
-    (load, W_S, predict_state, estimate_dtip, RNG_, DJR) foram assumidos, nao lidos. test_marco5.py::test_pinn_api_presente aponta qualquer divergencia.
+    Auditoria 22/11/2026: os nomes da API de modelo_pinn usados abaixo (load, W_S, predict_state, estimate_dtip, RNG_, DJR) foram conferidos contra o arquivo
+    (assinaturas e ordem PNAMES compativeis). Execucao com torch continua dependendo de test_marco5.py::test_pinn_api_presente na maquina do autor.
     Estado = (T_j, T_raiz, Delta_ponta)."""
     name = "PINN"
 
@@ -316,12 +323,12 @@ class PINNPred(PredictorBase):
                                            np.linspace(0.0, 15.0, 61) if grid is None else grid)["dtip"])
 
     def domain_distance(self, case):
-        """Distancia L-infinito normalizada a caixa de treino da v2. [HIPOTESE DECLARADA] reconstrucao minha: nao li a definicao do arquivo de auditoria."""
+        """Distancia euclidiana (L2) normalizada a caixa de treino da v2 — alinhada exatamente com auditoria_marco4_robusta.box_distance_v2."""
         f, qa, qr, tj0, tr0, dtip = case
         mp = self.mp
         ex = [max(0.0, lo - v, v - hi) / (hi - lo) for v, (lo, hi) in
               ((f, mp.RNG_["f"]), (qa, mp.RNG_["q_abs"]), (qr, mp.RNG_["q_rest"]), (tr0, mp.RNG_["tr0"]), (dtip, mp.RNG_["dtip"]), (tj0 - tr0, mp.DJR))]
-        return float(max(ex))
+        return float(math.sqrt(sum(e * e for e in ex)))
 
 
 # ---------------- controlador
@@ -333,7 +340,8 @@ class Controller:
         self.floor = c["soc_min"] if self.sup else 0.0
         self.dtc, self.W = c["dt_ctrl"], c["w_s"]
         self.pred, self.fb = cfg.get("pred"), cfg.get("fallback")
-        self.m_pred, self.m_sensor, self.m_total = cfg.get("m_pred", M_PRED_K), cfg.get("m_sensor", 0.0), cfg.get("m_total")
+        m_pred_pad = M_PRED_K_RC3 if (M_PRED_K_RC3 is not None and getattr(cfg.get("pred"), "name", "").startswith("RC3")) else M_PRED_K
+        self.m_pred, self.m_sensor, self.m_total = cfg.get("m_pred", m_pred_pad), cfg.get("m_sensor", 0.0), cfg.get("m_total")
         self.boost, self.dt_pred = cfg.get("boost", False), cfg.get("dt_pred", 15.0)
         scfg = cfg.get("sensors") or sensor_cfg("ideal")
         self.sj, self.sr = max(scfg["sigma_tj"], 0.05), max(scfg["sigma_rtd"], 0.01)
@@ -443,8 +451,10 @@ class Controller:
             pr = self.fb
             self.n_fallback += 1
             dtip = self.estimate_now(pr, t)
+            if M_PRED_K_RC3 is not None:
+                m_pred = max(m_pred, M_PRED_K_RC3)     # o fallback e o RC3: usa a margem do RC3, nao a do PINN
         elif d > OOD_CORTES[0]:
-            m_pred += M_OOD_MAX_K * (d - OOD_CORTES[0]) / (OOD_CORTES[1] - OOD_CORTES[0])
+            m_pred += M_OOD_MAX_K * min(1.0, (d - OOD_CORTES[0]) / (OOD_CORTES[1] - OOD_CORTES[0]))
         state = pr.init_state(tj_k, tr_k, dtip, y_true)
         m_tot = self.m_total if self.m_total is not None else m_pred + self.m_sensor
         limit = T0K + c["tj_lim_c"] - m_tot
@@ -546,22 +556,22 @@ def run_closed_loop(cfg):
 def summarize(c, rec, ecap, T, t_end, ctrl, soc0, max_res, mean_flow):
     t, h = np.array(rec["t"]), np.array(rec["h"])
     tj, soc, f = np.array(rec["tj"]) - T0K, np.array(rec["soc"]), np.array(rec["f"])
-    last = t > t_end - T + 1e-9 if t_end >= T else np.ones_like(t, bool)
+    last = t > t_end - T + _TB if t_end >= T else np.ones_like(t, bool)
     i0 = int(np.argmax(last))
     s0 = soc[i0 - 1] if i0 > 0 else soc0
     lim = c["tj_lim_c"]
     ti_wh = float(np.sum(np.array(rec["p_ti"])[last] * h[last]) / 3600.0)
     pv_wh = float(np.sum(np.array(rec["pv_used"])[last] * h[last]) / 3600.0)
     de = float((soc[-1] - s0) * ecap)
-    pe = np.array(ctrl.pred_err) if ctrl.pred_err else np.zeros(1)
+    pe = np.array(ctrl.pred_err) if ctrl.pred_err else None    # AUDITORIA: sem preditor (S0/S1/R) o erro e None, nao 0 K
     pet = np.array(ctrl.pred_err_t) if ctrl.pred_err_t else np.zeros(0)
-    pe_ult = pe[pet > t_end - T + 1e-9] if (len(pet) and len(pet) == len(ctrl.pred_err)) else np.zeros(0)   # erro de predicao so na ULTIMA orbita (fora do transitorio de partida)
+    pe_ult = pe[pet > t_end - T + _TB] if (len(pet) and len(pet) == len(ctrl.pred_err)) else np.zeros(0)   # erro de predicao so na ULTIMA orbita (fora do transitorio de partida)
     def janela(k):
         """PUE e variacao de energia do BESS nas k ultimas orbitas. Exige t_end >= (k+1) T: a janela precisa deixar >= 1 orbita de aquecimento ANTES dela,
         senao o transitorio de partida (SoC 0,95 -> ~0,84) entra na conta e o criterio nao mede regime."""
         if t_end < (k + 1) * T - 1e-6:
             return None, None, None
-        m = t > t_end - k * T + 1e-9
+        m = t > t_end - k * T + _TB
         j0 = int(np.argmax(m))
         sa = soc[j0 - 1] if j0 > 0 else soc0
         ti = float(np.sum(np.array(rec["p_ti"])[m] * h[m]) / 3600.0)
@@ -575,11 +585,11 @@ def summarize(c, rec, ecap, T, t_end, ctrl, soc0, max_res, mean_flow):
             "soc_min": float(soc.min()), "soc_max": float(soc.max()), "soc_min_last": float(soc[last].min()),
             "t_soc_below_min_s": float(np.sum(h[soc < c["soc_min"] - 1e-6])), "shed_Wh": float(np.sum(np.array(rec["shed"]) * h) / 3600.0),
             "tops_frac_mean": float(np.sum(f * h) / np.sum(h) / c["f_max"]), "tops_frac_last": float(np.sum(f[last] * h[last]) / np.sum(h[last]) / c["f_max"]),
-            "pue_last": (pv_wh / ti_wh) if ti_wh > 0 else None, "dE_bess_last_Wh": de, "pue_periodico": bool(abs(de) / ecap < 1e-3),
-            "energy_resid_rel": float(max_res / max(mean_flow, 1e-300)), "pred_err_rms_K": float(np.sqrt(np.mean(pe ** 2))), "pred_err_max_K": float(np.max(np.abs(pe))),
-            "pred_err_min_signed_K": float(np.min(pe)), "pred_err_max_signed_K": float(np.max(pe)),
+            "pue_last": (pv_wh / ti_wh) if ti_wh > 0 else None, "dE_bess_last_Wh": de, "pue_periodico": bool(ti_wh > 0 and abs(de) / ti_wh < 1e-3),   # mesma definicao de LIM_PUE (|dE|/E_TI), antes era |dE|/ecap
+            "energy_resid_rel": float(max_res / max(mean_flow, 1e-300)), "pred_err_rms_K": (float(np.sqrt(np.mean(pe ** 2))) if pe is not None else None), "pred_err_max_K": (float(np.max(np.abs(pe))) if pe is not None else None),
+            "pred_err_min_signed_K": (float(np.min(pe)) if pe is not None else None), "pred_err_max_signed_K": (float(np.max(pe)) if pe is not None else None),
             "pred_err_rms_last_K": (float(np.sqrt(np.mean(pe_ult ** 2))) if len(pe_ult) else None), "pred_err_min_last_K": (float(pe_ult.min()) if len(pe_ult) else None),
-            "pred_err_t_worst_s": (float(ctrl.pred_err_t[int(np.argmax(np.abs(pe)))]) if ctrl.pred_err_t else None), "infeasible_t_s": list(ctrl.infeasible_t), "infeasible_diag": list(ctrl.infeasible_diag),
+            "pred_err_t_worst_s": (float(ctrl.pred_err_t[int(np.argmax(np.abs(pe)))]) if (ctrl.pred_err_t and pe is not None) else None), "infeasible_t_s": list(ctrl.infeasible_t), "infeasible_diag": list(ctrl.infeasible_diag),
             "dE_over_ti_last": rel1, "pue_last3": pue3, "dE_bess_last3_Wh": de3, "dE_over_ti_last3": rel3,
             "n_dec": ctrl.n_dec, "n_infeasible": ctrl.n_infeasible, "n_fallback": ctrl.n_fallback,
             "decision_ms_mean": float(np.mean(ctrl.decision_ms)) if ctrl.decision_ms else 0.0,

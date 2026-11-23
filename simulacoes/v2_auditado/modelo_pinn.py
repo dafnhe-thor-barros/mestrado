@@ -9,7 +9,7 @@ Mudancas em relacao a v1 (todas com flag; checkpoints v1 continuam carregaveis e
      cada caso informa se esta dentro do dominio de treino.
   5. Metricas em K: rms_K, max_abs_C, erro no pico de T_j (negativo = subestima = inseguro), vies, resumo por dominio. rel_L2_var foi removida.
   6. Estimador de Delta_ponta (ajuste por minimos quadrados ponderados sobre uma grade, usando a propria PINN como modelo direto) + avaliacao.
-Etiquetas: [HIPOTESE DECLARADA] = escolha minha sem fonte. Nao validado experimentalmente. Codigo NAO executado pelo autor (sem torch no sandbox).
+Etiquetas: [HIPOTESE DECLARADA] = escolha minha sem fonte. Nao validado experimentalmente. Obs. (auditoria 22/11/2026): os 14 testes pytest foram executados pelo autor; este docstring estava desatualizado.
 """
 import argparse
 import json
@@ -241,8 +241,14 @@ def train(epochs=20000, ns=48, lr=1e-3, seed=0, w=W_DEF, width=64, depth=4, hard
         fixed = make_batch(ns_lbfgs, torch.Generator().manual_seed(seed + 1000))
         lbfgs_phase(model, ph, fixed, lbfgs_steps, w, hist=hist)
     if out:
-        torch.save({"state": model.state_dict(), "width": width, "depth": depth, "hard_ic": hard_ic, "seed": seed, "version": 2, "hist": hist}, out)
+        torch.save({"state": model.state_dict(), "width": width, "depth": depth, "hard_ic": hard_ic, "seed": seed, "version": 2, "hist": hist,
+                    "planta_sha256": _planta_sha()}, out)      # impressao digital da planta usada no treino (registrar em contrato_parametros.CKPT_PLANTA_SHA256)
     return model, hist
+
+
+def _planta_sha():
+    from contrato_parametros import plant_fingerprint
+    return plant_fingerprint()
 
 
 def load(path):

@@ -1,5 +1,5 @@
 """rodar_campanha_longa.py -- orquestrador para campanhas com 20+ orbitas e janela de PUE periodico de k orbitas (padrao 9).
-ESCRITO SEM TER SIDO EXECUTADO. NAO edita rodar_campanha_marco5.py (v8): importa o modulo e troca tres funcoes (roda_um, confere_config, gerar_resumo).
+NAO edita rodar_campanha_marco5.py (v8): importa o modulo e troca tres funcoes (roda_um, confere_config, gerar_resumo).
 
 Diferencas em relacao ao v8:
   1) os processos filhos rodam marco5_orbitas.py (wrapper) em vez de marco5_tems.py; a latencia (--latencia) continua no marco5_tems.py original;

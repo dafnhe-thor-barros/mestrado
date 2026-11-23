@@ -1,5 +1,5 @@
 """janela_pue.py -- janela de PUE periodico calculada FORA do codigo congelado (opcao b). Python puro; numpy so em por_orbita/enriquece.
-ESCRITO SEM TER SIDO EXECUTADO.
+(auditoria 22/11/2026: tolerancia de fronteira corrigida.)
 
 Definicao (a mesma de marco5_tems.summarize.janela, L559-571, mas com k livre):
   rel(n, k) = |SoC_fim(n) - SoC_fim(n-k)| * E_cap / soma(E_TI das orbitas n-k+1..n)      (exige n >= k+1)
@@ -8,6 +8,7 @@ Os JSONs de resultado ganham (via marco5_orbitas.py) as listas por orbita orb_so
 aqui, sem tocar no marco5_tems.py. A janela de 9 orbitas e emenda POS-HOC (escolhida depois do teste de convergencia de 1 semente, RC3, sem_calibracao).
 """
 LIM_PUE = 1e-3
+TB = 1e-6   # AUDITORIA: os instantes da simulacao sao arredondados a 1e-6 s; a tolerancia de fronteira de orbita tem de ser >= 5e-7 (antes 1e-9: 9 de 20 fronteiras caiam na orbita seguinte)
 
 
 def por_orbita(ser, T, fmax, soc0, norb, t0k=273.15):
@@ -18,7 +19,7 @@ def por_orbita(ser, T, fmax, soc0, norb, t0k=273.15):
     tj = np.array(ser["tj"], float) - t0k
     out = {"orb_soc_end": [], "orb_ti_Wh": [], "orb_tops": [], "orb_tj_max_C": []}
     for k in range(int(norb)):
-        m = (t > k * T + 1e-9) & (t <= (k + 1) * T + 1e-9)
+        m = (t > k * T + TB) & (t <= (k + 1) * T + TB)
         if not m.any():
             break
         out["orb_soc_end"].append(float(soc[m][-1]))

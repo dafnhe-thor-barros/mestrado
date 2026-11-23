@@ -1,0 +1,33 @@
+{
+ "norb": 20,
+ "norb_sint": 6,
+ "seeds": [
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29
+ ],
+ "burst_per_orbit": 12,
+ "quick": false,
+ "ckpt": "v2c.pt",
+ "contrato_sha256": "C7DD9D8159CE49ABAB9B692AE7EAB2FF5C9AA16001C91BE9C1F6ABB2D3BA4B0D",
+ "planta_sha256": "3A4B013FEC539B08D056A5F32F0663900E3A87D628E28E7C3BAF022D4F40AB5D",
+ "worker": "marco5_orbitas.py",
+ "janela_pue": 9
+}
